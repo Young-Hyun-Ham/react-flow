@@ -1,0 +1,45 @@
+/* 노드의 기본 컨테이너 스타일 */
+.node {
+  position: relative;
+  border: 1px solid #777;
+  padding: 10px;
+  border-radius: 5px;
+  background: white;
+  min-width: 150px; /* 최소 너비 지정 */
+  color: black;
+}
+
+/* 삭제 버튼 스타일 */
+.deleteButton {
+  color : red;
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 100%;
+  border: 1px solid #ccc;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  line-height: 1;
+  transition: all 0.2s ease; /* 부드러운 전환 효과 추가 */
+}
+
+/* 삭제 버튼에 마우스를 올렸을 때 스타일 */
+.deleteButton:hover {
+  background-color: #f5f5f5;
+  transform: scale(1.1);
+}
+
+/* 텍스트 편집 시 사용되는 input 스타일 */
+.input {
+  width: 100%;
+  padding: 4px;
+  border: 1px solid #3498db;
+  border-radius: 3px;
+  box-sizing: border-box; /* 패딩과 테두리가 너비에 포함되도록 설정 */
+}
