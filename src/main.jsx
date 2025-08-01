@@ -6,6 +6,8 @@ import Flow from './Flow.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <Flow />
+    <div className='main-container'>
+      <Flow />
+    </div>
   </StrictMode>,
 )

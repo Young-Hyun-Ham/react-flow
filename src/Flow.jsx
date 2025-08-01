@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import ReactFlow, {
   Controls,
   Background,
@@ -6,69 +6,105 @@ import ReactFlow, {
   applyEdgeChanges,
   addEdge,
 } from 'reactflow';
-
-// React Flow의 기본 스타일을 불러옵니다.
 import 'reactflow/dist/style.css';
+import EditableNode from './EditableNode'; // EditableNode.jsx가 같은 폴더에 있다고 가정
 
-// 화면에 초기에 렌더링될 노드들을 정의합니다.
-const initialNodes = [
-  {
-    id: '1',
-    type: 'input', // 입력 노드 타입
-    data: { label: '시작 노드' },
-    position: { x: 250, y: 5 },
-  },
-  {
-    id: '2',
-    data: { label: '중간 노드' },
-    position: { x: 100, y: 100 },
-  },
-  {
-    id: '3',
-    type: 'output', // 출력 노드 타입
-    data: { label: '종료 노드' },
-    position: { x: 400, y: 100 },
-  },
-];
-
-// 초기에 렌더링될 엣지(연결선)를 정의합니다.
-const initialEdges = [
-  { id: 'e1-2', source: '1', target: '2', label: '첫 번째 연결' },
-  { id: 'e1-3', source: '1', target: '3', animated: true }, // animated: true로 애니메이션 효과 추가
-];
+// 새 노드의 고유 ID 생성을 위한 카운터
+let nodeIdCounter = 3;
 
 function Flow() {
-  // useNodesState와 useEdgesState Hook을 사용하여 노드와 엣지의 상태를 관리합니다.
-  const [nodes, setNodes] = useState(initialNodes);
-  const [edges, setEdges] = useState(initialEdges);
+  const nodeTypes = useMemo(() => ({ editableNode: EditableNode }), []);
 
-  // 노드가 변경될 때 (드래그, 삭제 등) 호출되는 콜백 함수
-  const onNodesChange = useCallback(
-    (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
-    [setNodes]
-  );
+  const [nodes, setNodes] = useState([]);
+  const [edges, setEdges] = useState([]);
 
-  // 엣지가 변경될 때 호출되는 콜백 함수
-  const onEdgesChange = useCallback(
-    (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
-    [setEdges]
-  );
+  const handleNodeChange = useCallback((id, newLabel) => {
+    setNodes((currentNodes) =>
+      currentNodes.map((node) => {
+        if (node.id === id) {
+          return { ...node, data: { ...node.data, label: newLabel } };
+        }
+        return node;
+      })
+    );
+  }, [setNodes]);
 
-  // 노드와 노드를 연결할 때 호출되는 콜백 함수
-  const onConnect = useCallback(
-    (connection) => setEdges((eds) => addEdge(connection, eds)),
-    [setEdges]
-  );
+  const initialNodes = [
+    {
+      id: '1',
+      type: 'editableNode',
+      position: { x: 100, y: 100 },
+      data: { label: '노드 1 (더블클릭)', onChange: handleNodeChange },
+    },
+    {
+      id: '2',
+      type: 'editableNode',
+      position: { x: 100, y: 200 },
+      data: { label: '노드 2 (수정 가능)', onChange: handleNodeChange },
+    },
+  ];
+  const initialEdges = [{ id: 'e1-2', source: '1', target: '2' }];
+
+  useState(() => {
+    setNodes(initialNodes);
+    setEdges(initialEdges);
+  }, []);
+
+  // --- 추가된 부분: 노드 추가 함수 ---
+  const addNode = useCallback(() => {
+    const newNodeId = `${nodeIdCounter++}`;
+    const newNode = {
+      id: newNodeId,
+      type: 'editableNode',
+      position: {
+        x: Math.random() * 400,
+        y: Math.random() * 400,
+      },
+      data: {
+        label: `새 노드 ${newNodeId}`,
+        onChange: handleNodeChange,
+      },
+    };
+    setNodes((currentNodes) => [...currentNodes, newNode]);
+  }, [handleNodeChange]);
+
+  // --- 추가된 부분: 마지막 노드 삭제 함수 ---
+  const deleteNode = useCallback(() => {
+    // 배열의 마지막 노드를 제거하는 간단한 예시
+    setNodes((currentNodes) => currentNodes.slice(0, -1));
+    setEdges((currentEdges) =>
+      currentEdges.filter((edge) => {
+        const lastNodeId = nodes[nodes.length - 1]?.id;
+        return edge.source !== lastNodeId && edge.target !== lastNodeId;
+      })
+    );
+  }, [nodes]);
+
+
+  const onNodesChange = useCallback((changes) => setNodes((nds) => applyNodeChanges(changes, nds)), [setNodes]);
+  const onEdgesChange = useCallback((changes) => setEdges((eds) => applyEdgeChanges(changes, eds)), [setEdges]);
+  const onConnect = useCallback((connection) => setEdges((eds) => addEdge(connection, eds)), [setEdges]);
 
   return (
-    <div style={{ height: '100vh', width: '800px' }}>
+    <div style={{ height: '100vh', width: '100%', position: 'relative' }}>
+      {/* --- 추가된 부분: 버튼 UI --- */}
+      <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 4, display: 'flex', gap: '10px' }}>
+        <button onClick={addNode} style={{ padding: '8px 12px', cursor: 'pointer' }}>
+          노드 추가 ➕
+        </button>
+        <button onClick={deleteNode} style={{ padding: '8px 12px', cursor: 'pointer' }}>
+          노드 삭제 ➖
+        </button>
+      </div>
+
       <ReactFlow
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        fitView // 초기 렌더링 시 모든 노드가 보이도록 뷰를 조정합니다.
+        nodeTypes={nodeTypes}
+        fitView
       >
         <Controls />
         <Background />
