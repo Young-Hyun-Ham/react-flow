@@ -45,6 +45,14 @@ const useStore = create((set, get) => ({
   updateReply: (nodeId, index, part, value) => { /* ... */ },
   deleteReply: (nodeId, index) => { /* ... */ },
 
+  updateNodeContent: (nodeId, content) => {
+    set((state) => ({
+      nodes: state.nodes.map((node) =>
+        node.id === nodeId ? { ...node, data: { ...node.data, content } } : node
+      ),
+    }));
+  },
+
 
   // 3. DB에서 시나리오 데이터를 불러오는 액션
   fetchScenario: async () => {
