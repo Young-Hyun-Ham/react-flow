@@ -1,6 +1,6 @@
 import { Handle, Position } from 'reactflow';
 import styles from './ChatNodes.module.css';
-import useStore from './store'; // Zustand 스토어를 import 합니다.
+import useStore from '../store'; // Zustand 스토어를 import 합니다.
 
 function ConfirmationNode({ id, data }) {
   const updateNodeContent = useStore((state) => state.updateNodeContent);

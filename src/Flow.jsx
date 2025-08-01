@@ -3,9 +3,9 @@ import ReactFlow, { Controls } from 'reactflow';
 import 'reactflow/dist/style.css';
 
 // 커스텀 노드 컴포넌트들
-import TextNode from './TextNode';
-import SlotFillingNode from './SlotFillingNode';
-import ConfirmationNode from './ConfirmationNode';
+import TextNode from './nodes/TextNode';
+import SlotFillingNode from './nodes/SlotFillingNode';
+import ConfirmationNode from './nodes/ConfirmationNode';
 // 시뮬레이터는 그대로 유지
 import ChatbotSimulator from './ChatbotSimulator'; 
 
