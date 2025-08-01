@@ -1,15 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react'; // useEffect import
 import ReactFlow, { Controls } from 'reactflow';
 import 'reactflow/dist/style.css';
 
-// 커스텀 노드 컴포넌트들
 import TextNode from './nodes/TextNode';
 import SlotFillingNode from './nodes/SlotFillingNode';
 import ConfirmationNode from './nodes/ConfirmationNode';
-// 시뮬레이터는 그대로 유지
 import ChatbotSimulator from './ChatbotSimulator'; 
-
-// 1. Zustand 스토어를 import 합니다.
 import useStore from './store';
 
 function Flow() {
@@ -19,19 +15,42 @@ function Flow() {
     confirmation: ConfirmationNode,
   }), []);
 
-  // 2. useState와 콜백 함수들을 모두 제거하고, 스토어에서 상태와 액션을 직접 가져옵니다.
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect } = useStore();
+  // 1. 스토어에서 새로운 액션들을 가져옵니다.
+  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, fetchScenario, saveScenario } = useStore();
+
+  // 2. 컴포넌트가 처음 마운트될 때 DB에서 데이터를 불러옵니다.
+  useEffect(() => {
+    fetchScenario();
+  }, [fetchScenario]); // fetchScenario는 안정적이므로 이 훅은 한 번만 실행됩니다.
 
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100vw' }}>
-      <div style={{ flexGrow: 1, height: '100%' }}>
-        {/* 3. 스토어에서 가져온 상태와 액션을 ReactFlow에 그대로 전달합니다. */}
+      <div style={{ flexGrow: 1, height: '100%', position: 'relative' }}>
+        {/* 3. 시나리오 저장 버튼 추가 */}
+        <button
+          onClick={saveScenario}
+          style={{
+            position: 'absolute',
+            top: 15,
+            right: 15,
+            zIndex: 10,
+            padding: '10px 20px',
+            backgroundColor: '#3498db',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+          }}
+        >
+          Save Scenario
+        </button>
+
         <ReactFlow
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
-  
           onConnect={onConnect}
           nodeTypes={nodeTypes}
           fitView
@@ -40,9 +59,7 @@ function Flow() {
           <Controls />
         </ReactFlow>
       </div>
-
-      {/* 시뮬레이터는 스토어에서 직접 데이터를 가져오도록 수정하거나, 그대로 props를 전달할 수 있습니다. */}
-      {/* 여기서는 간단하게 props를 전달하는 방식을 유지합니다. */}
+      
       <ChatbotSimulator nodes={nodes} edges={edges} />
     </div>
   );

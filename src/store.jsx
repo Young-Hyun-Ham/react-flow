@@ -4,8 +4,11 @@ import {
   applyNodeChanges,
   applyEdgeChanges,
 } from 'reactflow';
+// 1. Firebase 관련 모듈과 DB 인스턴스를 import 합니다.
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db } from './firebase';
 
-// 초기 노드와 엣지 데이터
+// 기존 초기 데이터는 DB에 데이터가 없을 때 사용할 기본값(fallback)으로 활용합니다.
 const initialNodes = [
     { id: '1', type: 'text', position: { x: 50, y: 50 }, data: { id: 'start', content: '선박 예약을 시작합니다! :)' } },
     { id: '2', type: 'slotFilling', position: { x: 350, y: 10 }, data: { id: 'ask_departure_port', content: '출발 항구를 입력해주세요!!', slot: 'departurePort' } },
@@ -24,52 +27,54 @@ const initialEdges = [
     { id: 'e5-7', source: '5', target: '7', sourceHandle: 'cancel' },
 ];
 
+// 데이터를 저장할 문서의 참조를 미리 정의합니다.
+const scenarioDocRef = doc(db, "scenarios", "mainScenario");
 
-// Zustand 스토어 생성
 const useStore = create((set, get) => ({
-  nodes: initialNodes,
-  edges: initialEdges,
+  // 2. 초기 상태는 빈 배열로 시작합니다. 데이터는 DB에서 불러옵니다.
+  nodes: [],
+  edges: [],
+  
+  // ... 기존 onNodesChange, onEdgesChange, onConnect, deleteNode, updateNodeData 등 액션들 ...
+  onNodesChange: (changes) => set({ nodes: applyNodeChanges(changes, get().nodes) }),
+  onEdgesChange: (changes) => set({ edges: applyEdgeChanges(changes, get().edges) }),
+  onConnect: (connection) => set({ edges: addEdge(connection, get().edges) }),
+  deleteNode: (nodeId) => { /* ... */ },
+  updateNodeData: (nodeId, newData) => { /* ... */ },
+  addReply: (nodeId) => { /* ... */ },
+  updateReply: (nodeId, index, part, value) => { /* ... */ },
+  deleteReply: (nodeId, index) => { /* ... */ },
 
-  // React Flow의 onNodesChange 이벤트 핸들러
-  onNodesChange: (changes) => {
-    set({
-      nodes: applyNodeChanges(changes, get().nodes),
-    });
+
+  // 3. DB에서 시나리오 데이터를 불러오는 액션
+  fetchScenario: async () => {
+    try {
+      const docSnap = await getDoc(scenarioDocRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        // DB에 저장된 nodes와 edges로 상태를 설정합니다.
+        set({ nodes: data.nodes || [], edges: data.edges || [] });
+      } else {
+        // 문서가 없으면(최초 실행 시) initial 데이터로 문서를 생성하고 상태를 설정합니다.
+        console.log("No such document! Creating one with initial data.");
+        await setDoc(scenarioDocRef, { nodes: initialNodes, edges: initialEdges });
+        set({ nodes: initialNodes, edges: initialEdges });
+      }
+    } catch (error) {
+      console.error("Error fetching scenario:", error);
+    }
   },
 
-  // React Flow의 onEdgesChange 이벤트 핸들러
-  onEdgesChange: (changes) => {
-    set({
-      edges: applyEdgeChanges(changes, get().edges),
-    });
-  },
-
-  // React Flow의 onConnect 이벤트 핸들러
-  onConnect: (connection) => {
-    set({
-      edges: addEdge(connection, get().edges),
-    });
-  },
-
-  // 특정 노드를 삭제하는 액션
-  deleteNode: (nodeId) => {
-    set({
-      nodes: get().nodes.filter(node => node.id !== nodeId),
-      edges: get().edges.filter(edge => edge.source !== nodeId && edge.target !== nodeId),
-    });
-  },
-
-  // (예시) 노드 내부의 컨텐츠를 업데이트하는 액션
-  updateNodeContent: (nodeId, newContent) => {
-    console.log('Updating node content:', nodeId, newContent);
-    set({
-      nodes: get().nodes.map((node) => {
-        if (node.id === nodeId) {
-          return { ...node, data: { ...node.data, content: newContent } };
-        }
-        return node;
-      }),
-    });
+  // 4. 현재 시나리오를 DB에 저장하는 액션
+  saveScenario: async () => {
+    try {
+      const { nodes, edges } = get();
+      await setDoc(scenarioDocRef, { nodes, edges });
+      alert('시나리오가 저장되었습니다!'); // 사용자에게 피드백
+    } catch (error) {
+      console.error("Error saving scenario:", error);
+      alert('저장에 실패했습니다.');
+    }
   },
 }));
 

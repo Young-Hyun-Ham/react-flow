@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local Environment Variables
+# 이 파일을 Git 추적에서 제외하여 민감한 키 유출을 방지합니다.
+.env
+.env.local
+.env.*.local
+
+# ...
