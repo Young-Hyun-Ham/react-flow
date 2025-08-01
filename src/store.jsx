@@ -61,6 +61,7 @@ const useStore = create((set, get) => ({
 
   // (예시) 노드 내부의 컨텐츠를 업데이트하는 액션
   updateNodeContent: (nodeId, newContent) => {
+    console.log('Updating node content:', nodeId, newContent);
     set({
       nodes: get().nodes.map((node) => {
         if (node.id === nodeId) {

@@ -1,7 +1,9 @@
 import { Handle, Position } from 'reactflow';
 import styles from './ChatNodes.module.css';
+import useStore from './store'; // Zustand 스토어를 import 합니다.
 
-function SlotFillingNode({ data }) {
+function SlotFillingNode({ id, data }) {
+  const updateNodeContent = useStore((state) => state.updateNodeContent);
   return (
     <div className={styles.nodeWrapper}>
       <Handle type="target" position={Position.Left} />
@@ -15,6 +17,7 @@ function SlotFillingNode({ data }) {
           <textarea
             className={styles.textInput}
             defaultValue={data.content}
+            onChange={(evt) => updateNodeContent(id, evt.target.value)}
             rows={2}
           />
         </div>
