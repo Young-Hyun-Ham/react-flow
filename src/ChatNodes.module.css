@@ -1,7 +1,7 @@
 .nodeWrapper {
   width: 250px;
   background-color: white;
-  border: 1px solid #ddd;
+  border: 1px solid #c5c5c5;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   color: black;
@@ -62,7 +62,7 @@
 .textInput {
   width: 100%;
   padding: 8px;
-  border: 1px solid #ddd;
+  border: 1px solid #b4b4b4;
   border-radius: 4px;
   box-sizing: border-box;
   resize: vertical;

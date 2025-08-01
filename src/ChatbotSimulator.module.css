@@ -53,6 +53,8 @@
   max-width: 70%;
   word-wrap: break-word;
   line-height: 1.4;
+  white-space: pre-wrap;
+  text-align: left;
 }
 
 .botMessage {
@@ -76,8 +78,45 @@
   gap: 8px;
 }
 
-.optionButton {
+/* --- 추가된 부분: 텍스트 입력 영역 --- */
+.inputArea {
+  display: flex;
+  width: 100%;
+  gap: 8px;
+}
+
+.textInput {
+  flex-grow: 1;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  padding: 0 15px;
+  font-size: 0.9rem;
+  outline: none;
+}
+.textInput:focus {
+  border-color: #007aff;
+}
+
+.sendButton {
   flex-shrink: 0;
+  width: 60px;
+  border: none;
+  border-radius: 20px;
+  background-color: #007aff;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.sendButton:hover {
+  background-color: #0056b3;
+}
+/* --- 여기까지 --- */
+
+
+/* '빠른 답장' 칩 스타일 버튼 */
+.optionButton {
+  flex-shrink: 0; 
   padding: 8px 16px;
   border: 1px solid #e0e0e0;
   background-color: white;
