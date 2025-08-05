@@ -70,7 +70,7 @@
 
 .quickReply {
   display: flex;
-  justify-content: space-between;
+  flex-direction: row;
   align-items: center;
   gap: 4px; /* 입력 필드 사이 간격 추가 */
   padding: 6px 8px;
@@ -80,6 +80,7 @@
 
 .quickReplyInput {
   flex-grow: 1; /* 입력 필드가 공간을 채우도록 */
+  width: 0; /* 💡 수정된 부분: input의 기본 너비를 무시하도록 설정 */
   border: none;
   background: none;
   outline: none;
@@ -103,7 +104,6 @@
   background-color: #f0f0f0;
 }
 
-/* --- 💡 추가된 부분 --- */
 .deleteReplyButton {
   background: none;
   border: none;
