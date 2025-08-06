@@ -13,7 +13,7 @@ function TextNode({ id, data }) {
     <div className={styles.nodeWrapper}>
       <Handle type="target" position={Position.Left} />
       <div className={`${styles.nodeHeader} ${styles.headerText}`}>
-        <span className={styles.headerTextContent}>Type: text</span>
+        <span className={styles.headerTextContent}>text</span>
         <button onClick={() => deleteNode(id)} className={styles.deleteButton}>🗑️</button>
       </div>
       <div className={styles.nodeBody}>

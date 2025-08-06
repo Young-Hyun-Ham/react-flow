@@ -13,7 +13,7 @@ function SlotFillingNode({ id, data }) {
     <div className={styles.nodeWrapper}>
       <Handle type="target" position={Position.Left} />
       <div className={`${styles.nodeHeader} ${styles.headerSlotFilling}`}>
-        <span className={styles.headerTextContent}>Type: slotFilling</span>
+        <span className={styles.headerTextContent}>slotFilling</span>
         <button onClick={() => deleteNode(id)} className={styles.deleteButton}>🗑️</button>
       </div>
       <div className={styles.nodeBody}>

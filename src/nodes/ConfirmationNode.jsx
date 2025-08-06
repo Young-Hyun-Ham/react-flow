@@ -10,7 +10,7 @@ function ConfirmationNode({ id, data }) {
     <div className={styles.nodeWrapper}>
       <Handle type="target" position={Position.Left} />
       <div className={`${styles.nodeHeader} ${styles.headerConfirmation}`}>
-        <span className={styles.headerTextContent}>Type: confirmation</span>
+        <span className={styles.headerTextContent}>confirmation</span>
         <button onClick={() => deleteNode(id)} className={styles.deleteButton}>🗑️</button>
       </div>
       <div className={styles.nodeBody}>
