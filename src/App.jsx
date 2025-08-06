@@ -19,14 +19,14 @@ function App() {
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       // 사용자가 로그인했고, 허용된 이메일 목록에 없는 경우
-      if (currentUser && !allowedEmails.includes(currentUser.email)) {
-        signOut(auth); // 강제로 로그아웃 처리
-        alert("접근 권한이 없는 계정입니다.");
-        setUser(null); // 사용자 상태를 null로 설정
-      } else {
+      // if (currentUser && !allowedEmails.includes(currentUser.email)) {
+      //   signOut(auth); // 강제로 로그아웃 처리
+      //   alert("접근 권한이 없는 계정입니다.");
+      //   setUser(null); // 사용자 상태를 null로 설정
+      // } else {
         // 허용된 사용자이거나 로그아웃 상태인 경우
         setUser(currentUser);
-      }
+      // }
       setLoading(false);
     });
 
