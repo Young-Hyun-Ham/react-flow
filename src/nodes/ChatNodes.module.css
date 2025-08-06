@@ -7,6 +7,11 @@
   color: black;
 }
 
+/* --- 💡 추가된 부분: FormNode 너비 확장 --- */
+.formNodeWrapper {
+  width: 320px;
+}
+
 .nodeHeader {
   display: flex;
   justify-content: space-between;
@@ -16,11 +21,10 @@
   border-top-right-radius: 8px;
   color: white;
 }
-/* 타입별 헤더 색상 */
-.headerText { background-color: #f39c12; } /* Orange */
-.headerSlotFilling { background-color: #3498db; } /* Blue */
-.headerConfirmation { background-color: #2ecc71; } /* Green */
-.headerForm { background-color: #9b59b6; } /* --- 💡 추가된 부분: Purple --- */
+.headerMessage { background-color: #f39c12; }
+.headerApi { background-color: #3498db; }
+.headerBranch { background-color: #2ecc71; }
+.headerForm { background-color: #9b59b6; }
 
 .headerTextContent {
   font-size: 0.8rem;
@@ -69,23 +73,38 @@
   resize: vertical;
 }
 
+/* --- 💡 추가된 부분: Form Title 입력 필드 스타일 --- */
+.formTitleInput {
+  font-size: 1rem;
+  font-weight: bold;
+  text-align: center;
+  border: none;
+  border-bottom: 1px solid #ddd;
+  border-radius: 0;
+}
+.formTitleInput:focus {
+  outline: none;
+  border-bottom-color: #9b59b6;
+}
+
+
 .quickReply {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 4px; /* 입력 필드 사이 간격 추가 */
+  gap: 4px;
   padding: 6px 8px;
   background-color: #f5f5f5;
   border-radius: 4px;
 }
 
 .quickReplyInput {
-  flex-grow: 1; /* 입력 필드가 공간을 채우도록 */
-  width: 0; /* 💡 수정된 부분: input의 기본 너비를 무시하도록 설정 */
+  flex-grow: 1;
+  width: 0;
   border: none;
   background: none;
   outline: none;
-  border-bottom: 1px solid transparent; /* 포커스 시 밑줄 효과를 위한 준비 */
+  border-bottom: 1px solid transparent;
 }
 
 .quickReplyInput:focus {
@@ -115,10 +134,9 @@
   padding: 0 4px;
 }
 .deleteReplyButton:hover {
-  color: #e74c3c; /* Red */
+  color: #e74c3c;
 }
 
-/* --- 💡 추가된 부분 --- */
 .formElementsPlaceholder {
   padding: 10px;
   background-color: #f5f5f5;
@@ -127,4 +145,55 @@
   color: #777;
   font-style: italic;
   font-size: 0.8rem;
+}
+
+/* --- 💡 추가된 부분: Form 미리보기 관련 스타일 --- */
+.formPreview {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background-color: #fafafa;
+}
+
+.previewElement {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.previewLabel {
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #555;
+}
+
+.previewInput, .previewBox {
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+  font-size: 0.85rem;
+  color: #333;
+}
+
+.previewBox {
+  color: #777;
+}
+
+.previewGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+  gap: 6px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #555;
+}
+
+.previewGrid div {
+  padding: 10px 5px;
+  background-color: #e9ecef;
+  border-radius: 4px;
 }

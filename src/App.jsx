@@ -15,7 +15,7 @@ function App() {
   useEffect(() => {
     // --- 💡 추가된 부분: 허용할 구글 이메일 목록 ---
     // const allowedEmails = ['cutiefunny@gmail.com', 'hyh8414@gmail.com'];
-    const allowedEmails = ['cutiefunny@gmail.com', 'hyh8414@gmail.com'];
+    const allowedEmails = ['cutiefunny@gmail.com', 'hyh8414@gmail.com', 'hmlee@cyberlogitec.com','hmlee@wisenut.co.kr','circlebell@wisenut.co.kr','jwjun@wisenut.co.kr'];
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       // 사용자가 로그인했고, 허용된 이메일 목록에 없는 경우

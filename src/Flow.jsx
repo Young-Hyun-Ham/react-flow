@@ -2,10 +2,10 @@ import { useMemo, useEffect, useState } from 'react';
 import ReactFlow, { Controls } from 'reactflow';
 import 'reactflow/dist/style.css';
 
-import TextNode from './nodes/TextNode';
-import SlotFillingNode from './nodes/SlotFillingNode';
-import ConfirmationNode from './nodes/ConfirmationNode';
-import FormNode from './nodes/FormNode'; // --- 💡 추가된 부분
+import MessageNode from './nodes/MessageNode'; // 💡 변경
+import BranchNode from './nodes/BranchNode'; // 💡 변경
+import ApiNode from './nodes/ApiNode'; // 💡 변경
+import FormNode from './nodes/FormNode';
 import ChatbotSimulator from './ChatbotSimulator';
 import NodeController from './NodeController';
 import useStore from './store';
@@ -13,10 +13,10 @@ import styles from './Flow.module.css';
 
 function Flow({ scenarioId, onBack }) {
   const nodeTypes = useMemo(() => ({
-    text: TextNode,
-    slotFilling: SlotFillingNode,
-    confirmation: ConfirmationNode,
-    form: FormNode, // --- 💡 추가된 부분
+    message: MessageNode, // 💡 변경
+    branch: BranchNode, // 💡 변경
+    api: ApiNode, // 💡 변경
+    form: FormNode,
   }), []);
 
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, fetchScenario, saveScenario, addNode, setSelectedNodeId } = useStore();
@@ -85,11 +85,11 @@ function Flow({ scenarioId, onBack }) {
     <div className={styles.flowContainer}>
       <div className={styles.leftSidebar}>
         <h3>노드 추가</h3>
-        <button onClick={() => addNode('text')} className={`${styles.sidebarButton} ${styles.textButton}`}>+ Text</button>
-        <button onClick={() => addNode('slotFilling')} className={`${styles.sidebarButton} ${styles.slotButton}`}>+ Slot Filling</button>
-        <button onClick={() => addNode('confirmation')} className={`${styles.sidebarButton} ${styles.confirmButton}`}>+ Confirmation</button>
-        {/* --- 💡 추가된 부분 --- */}
+        {/* --- 💡 수정된 부분 --- */}
+        <button onClick={() => addNode('message')} className={`${styles.sidebarButton} ${styles.messageButton}`}>+ Message</button>
         <button onClick={() => addNode('form')} className={`${styles.sidebarButton} ${styles.formButton}`}>+ Form</button>
+        <button onClick={() => addNode('branch')} className={`${styles.sidebarButton} ${styles.branchButton}`}>+ 조건분기</button>
+        <button onClick={() => addNode('api')} className={`${styles.sidebarButton} ${styles.apiButton}`}>+ API</button>
       </div>
 
       <div className={styles.mainContent}>
@@ -112,7 +112,7 @@ function Flow({ scenarioId, onBack }) {
           <Controls />
         </ReactFlow>
       </div>
-      
+
       <div className={styles.resizerV} onMouseDown={handleMainResize} />
       <div className={styles.rightContainer} style={{ width: `${rightPanelWidth}px` }}>
         <div className={styles.panel} style={{ width: `${controllerWidth}px` }}>

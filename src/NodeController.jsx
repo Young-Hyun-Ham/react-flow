@@ -1,20 +1,98 @@
+import { useState, useEffect } from 'react'; // --- 💡 수정된 부분: useEffect import 추가 ---
 import useStore from './store';
 import styles from './NodeController.module.css';
 
+function ElementEditor({ nodeId, element, index }) {
+  const { updateElement, deleteElement } = useStore();
+
+  if (!element) {
+    return <p className={styles.placeholder}>편집할 요소를 선택하세요.</p>;
+  }
+
+  const handleUpdate = (field, value) => {
+    updateElement(nodeId, index, { ...element, [field]: value });
+  };
+
+  const handleValidationUpdate = (field, value) => {
+    const newValidation = { ...element.validation, [field]: value };
+    updateElement(nodeId, index, { ...element, validation: newValidation });
+  };
+  
+  const renderSharedControls = () => (
+    <>
+      <div className={styles.formGroup}>
+        <label>Name</label>
+        <input type="text" value={element.name || ''} onChange={(e) => handleUpdate('name', e.target.value)} />
+      </div>
+      <div className={styles.formGroup}>
+        <label>Label</label>
+        <input type="text" value={element.label || ''} onChange={(e) => handleUpdate('label', e.target.value)} />
+      </div>
+    </>
+  );
+
+  const renderInputControls = () => (
+    <>
+      {renderSharedControls()}
+      <div className={styles.formGroup}>
+        <label>Placeholder</label>
+        <input type="text" value={element.placeholder || ''} onChange={(e) => handleUpdate('placeholder', e.target.value)} />
+      </div>
+      <div className={styles.formGroup}>
+        <label>Validation Type</label>
+        <select value={element.validation?.type || 'text'} onChange={(e) => handleValidationUpdate('type', e.target.value)}>
+          <option value="text">Text</option>
+          <option value="email">Email</option>
+          <option value="phone number">Phone Number</option>
+          <option value="custom">Custom (Regex)</option>
+        </select>
+      </div>
+      {element.validation?.type === 'custom' && (
+        <div className={styles.formGroup}>
+          <label>Regex</label>
+          <input type="text" value={element.validation.regex || ''} onChange={(e) => handleValidationUpdate('regex', e.target.value)} />
+        </div>
+      )}
+    </>
+  );
+
+  const renderDateControls = () => (
+     <>
+      {renderSharedControls()}
+      <div className={styles.formGroup}>
+        <label>Validation Type</label>
+        <select value={element.validation?.type || 'date'} onChange={(e) => handleValidationUpdate('type', e.target.value)}>
+          <option value="date">Default Date</option>
+        </select>
+      </div>
+    </>
+  )
+
+  return (
+    <div className={styles.elementEditor}>
+      <h4>Edit {element.type}</h4>
+      {element.type === 'input' && renderInputControls()}
+      {element.type === 'date' && renderDateControls()}
+      {/* TODO: Add controls for other element types (grid, etc.) */}
+      <div className={styles.editorActions}>
+        <button className={styles.deleteElementButton} onClick={() => deleteElement(nodeId, index)}>삭제</button>
+        <button className={styles.saveElementButton}>저장</button>
+      </div>
+    </div>
+  );
+}
+
+
 function NodeController() {
-  const {
-    selectedNodeId,
-    nodes,
-    updateNodeData,
-    addReply,
-    updateReply,
-    deleteReply,
-    addElement,
-    updateElement,
-    deleteElement
-  } = useStore();
+  const { selectedNodeId, nodes, updateNodeData, addReply, updateReply, deleteReply, addElement } = useStore();
+  const [selectedElementId, setSelectedElementId] = useState(null);
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
+
+  useEffect(() => {
+    setSelectedElementId(null);
+  }, [selectedNodeId]);
+
 
   if (!selectedNode) {
     return (
@@ -31,176 +109,109 @@ function NodeController() {
     updateNodeData(selectedNode.id, { [key]: value });
   };
 
-  const renderElementControls = (element, index) => {
-    switch (element.type) {
-      case 'image':
-        return (
-          <div className={styles.elementDetails}>
-            <input
-              type="text"
-              placeholder="Image URL"
-              value={element.src || ''}
-              onChange={(e) => updateElement(selectedNode.id, index, { src: e.target.value })}
-            />
-            <input
-              type="text"
-              placeholder="Alt Text"
-              value={element.alt || ''}
-              onChange={(e) => updateElement(selectedNode.id, index, { alt: e.target.value })}
-            />
+  const renderFormControls = () => {
+    const { id, data } = selectedNode;
+    const elementTabs = ['input', 'date', 'grid', 'checkbox', 'dropbox'];
+
+    const elements = data.elements || [];
+    const selectedElementIndex = elements.findIndex(el => el.id === selectedElementId);
+    const selectedElement = selectedElementIndex > -1 ? elements[selectedElementIndex] : null;
+
+    return (
+      <>
+        <div className={styles.formGroup}>
+          <label>Form Title</label>
+          <input type="text" value={data.title || ''} onChange={(e) => handleDataChange('title', e.target.value)} />
+        </div>
+        <div className={styles.formGroup}>
+          <label>Add Element</label>
+          <div className={styles.elementTabs}>
+            {elementTabs.map(type => (
+              <button key={type} onClick={() => addElement(id, type)}>{type}</button>
+            ))}
           </div>
-        );
-      case 'grid':
-        return (
-          <div className={styles.elementDetails}>
-            <label>Columns: {element.columns}</label>
-            <input
-              type="range"
-              min="1"
-              max="4"
-              value={element.columns || 2}
-              onChange={(e) => updateElement(selectedNode.id, index, { columns: parseInt(e.target.value, 10) })}
-            />
+        </div>
+        <div className={styles.separator} />
+        <div className={styles.formGroup}>
+          <label>Elements List</label>
+          <div className={styles.elementsContainer}>
+            {elements.length > 0 ? (
+              elements.map(el => (
+                <div
+                  key={el.id}
+                  className={`${styles.elementItem} ${el.id === selectedElementId ? styles.selected : ''}`}
+                  onClick={() => setSelectedElementId(el.id)}
+                >
+                  <span>{el.label || el.type}</span>
+                  <span>({el.type})</span>
+                </div>
+              ))
+            ) : (
+              <p className={styles.placeholder}>추가된 요소가 없습니다.</p>
+            )}
           </div>
-        );
-      default:
-        return null;
-    }
+        </div>
+        <div className={styles.separator} />
+        <ElementEditor nodeId={id} element={selectedElement} index={selectedElementIndex} />
+      </>
+    );
   };
 
-  const renderControls = () => {
+  const renderDefaultControls = () => {
     const { id, type, data } = selectedNode;
     return (
       <>
-        {/* Text, SlotFilling 노드를 위한 Content 필드 (Form 노드에서는 숨김) */}
-        {type !== 'form' && (
+        <div className={styles.formGroup}>
+          <label>Content</label>
+          <textarea value={data.content || ''} onChange={(e) => handleDataChange('content', e.target.value)} rows={4} />
+        </div>
+
+        {type === 'api' && (
           <div className={styles.formGroup}>
-            <label>Content</label>
-            <textarea
-              value={data.content || ''}
-              onChange={(e) => handleDataChange('content', e.target.value)}
-              rows={4}
-            />
+            <label>Slot</label>
+            <input type="text" value={data.slot || ''} onChange={(e) => handleDataChange('slot', e.target.value)} />
           </div>
         )}
 
-        {type === 'slotFilling' && (
+        {(type === 'message' || type === 'api' || type === 'branch') && (
           <div className={styles.formGroup}>
-            <label>Slot</label>
-            <input
-              type="text"
-              value={data.slot || ''}
-              onChange={(e) => handleDataChange('slot', e.target.value)}
-            />
-          </div>
-        )}
-        {(type === 'text' || type === 'slotFilling') && (
-          <div className={styles.formGroup}>
-            <label>Quick Replies</label>
+            <label>{type === 'branch' ? 'Branches' : 'Quick Replies'}</label>
             <div className={styles.repliesContainer}>
               {data.replies?.map((reply, index) => (
-                <div key={index} className={styles.quickReply}>
+                <div key={reply.value} className={styles.quickReply}>
                   <input
                     className={styles.quickReplyInput}
                     value={reply.display}
                     onChange={(e) => updateReply(id, index, 'display', e.target.value)}
                     placeholder="표시될 텍스트"
                   />
-                  <input
-                    className={styles.quickReplyInput}
-                    value={reply.value}
-                    onChange={(e) => updateReply(id, index, 'value', e.target.value)}
-                    placeholder="실제 값"
-                  />
+                  {type !== 'branch' && (
+                    <input
+                      className={styles.quickReplyInput}
+                      value={reply.value}
+                      onChange={(e) => updateReply(id, index, 'value', e.target.value)}
+                      placeholder="실제 값"
+                    />
+                  )}
                   <button onClick={() => deleteReply(id, index)} className={styles.deleteReplyButton}>×</button>
                 </div>
               ))}
-              <button onClick={() => addReply(id)} className={styles.addReplyButton}>+ Add Reply</button>
+              <button onClick={() => addReply(id)} className={styles.addReplyButton}>
+                {type === 'branch' ? '+ Add Branch' : '+ Add Reply'}
+              </button>
             </div>
           </div>
         )}
-
-        {type === 'form' && (
-          <>
-            <div className={styles.formGroup}>
-              <label>Form Title</label>
-              <input
-                type="text"
-                value={data.title || ''}
-                onChange={(e) => handleDataChange('title', e.target.value)}
-              />
-            </div>
-            {/* --- 💡 추가된 부분: 데이터 소스 선택 --- */}
-            <div className={styles.formGroup}>
-              <label>Data Source</label>
-              <div className={styles.dataSourceSelector}>
-                <label>
-                  <input type="radio" name={`dataSourceType-${id}`} value="json" checked={data.dataSourceType === 'json'} onChange={(e) => handleDataChange('dataSourceType', e.target.value)} />
-                  JSON
-                </label>
-                <label>
-                  <input type="radio" name={`dataSourceType-${id}`} value="api" checked={data.dataSourceType === 'api'} onChange={(e) => handleDataChange('dataSourceType', e.target.value)} />
-                  API
-                </label>
-              </div>
-              {data.dataSourceType === 'json' ? (
-                <textarea
-                  placeholder="Enter JSON data here..."
-                  value={data.dataSource || ''}
-                  onChange={(e) => handleDataChange('dataSource', e.target.value)}
-                  rows={5}
-                />
-              ) : (
-                <input
-                  type="text"
-                  placeholder="Enter API endpoint URL..."
-                  value={data.dataSource || ''}
-                  onChange={(e) => handleDataChange('dataSource', e.target.value)}
-                />
-              )}
-            </div>
-            <div className={styles.formGroup}>
-              <label>Form Elements</label>
-              <div className={styles.elementsContainer}>
-                {data.elements?.map((element, index) => (
-                  <div key={element.id} className={styles.elementControl}>
-                    <div className={styles.elementHeader}>
-                      <strong>{element.type}</strong>
-                      <button onClick={() => deleteElement(id, index)} className={styles.deleteElementButton}>×</button>
-                    </div>
-                    {renderElementControls(element, index)}
-                  </div>
-                ))}
-                <div className={styles.addElementButtons}>
-                  <button onClick={() => addElement(id, 'image')}>+ Image</button>
-                  <button onClick={() => addElement(id, 'grid')}>+ Grid</button>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
       </>
     );
-  };
+  }
 
   return (
     <div className={styles.controllerContainer}>
       <div className={styles.mainControls}>
         <h3>타입: {selectedNode.type}</h3>
         <div className={styles.form}>
-          {renderControls()}
-        </div>
-      </div>
-      <div className={styles.separator} />
-      <div className={styles.advancedControls}>
-        <h3>Advanced</h3>
-        <div className={styles.formGroup}>
-          <label>API Endpoint (Optional)</label>
-          <input type="text" placeholder="e.g., https://api.example.com/data" />
-        </div>
-         <div className={styles.formGroup}>
-          <label>Additional Config (JSON)</label>
-          <textarea rows={3} placeholder='{ "key": "value" }'></textarea>
+          {selectedNode.type === 'form' ? renderFormControls() : renderDefaultControls()}
         </div>
       </div>
     </div>

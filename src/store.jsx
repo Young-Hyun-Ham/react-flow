@@ -45,17 +45,16 @@ const useStore = create((set, get) => ({
     };
 
     switch (type) {
-      case 'text':
-        newNode.data = { id: 'new_text', content: '새 텍스트 메시지', replies: [] };
+      case 'message':
+        newNode.data = { id: 'new_message', content: '새 텍스트 메시지', replies: [] };
         break;
-      case 'slotFilling':
-        newNode.data = { id: 'new_slot', content: '질문을 입력하세요.', slot: 'newSlot', replies: [] };
+      case 'api':
+        newNode.data = { id: 'new_api', content: '질문을 입력하세요.', slot: 'newSlot', replies: [] };
         break;
-      case 'confirmation':
-        newNode.data = { id: 'new_confirm', content: '확인 질문을 입력하세요.', replies: [{ display: '확인', value: 'confirm' }, { display: '취소', value: 'cancel' }] };
+      case 'branch':
+        newNode.data = { id: 'new_branch', content: '조건 분기 질문을 입력하세요.', replies: [{ display: '조건1', value: `cond_${+new Date()}` }, { display: '조건2', value: `cond_${+new Date() + 1}` }] };
         break;
       case 'form':
-        // --- 💡 수정된 부분: Form 노드 초기 데이터 ---
         newNode.data = {
           id: 'new_form',
           title: '새 양식',
@@ -75,7 +74,12 @@ const useStore = create((set, get) => ({
     set((state) => ({
       nodes: state.nodes.map((node) => {
         if (node.id === nodeId) {
-          const newReplies = [...(node.data.replies || []), { display: '새 답장', value: 'newValue' }];
+          const nodeType = node.type;
+          const newReply = {
+            display: nodeType === 'branch' ? '새 조건' : '새 답장',
+            value: `${nodeType === 'branch' ? 'cond' : 'val'}_${+new Date()}`
+          };
+          const newReplies = [...(node.data.replies || []), newReply];
           return { ...node, data: { ...node.data, replies: newReplies } };
         }
         return node;
@@ -107,19 +111,35 @@ const useStore = create((set, get) => ({
       }),
     }));
   },
-
+  
+  // --- 💡 수정된 부분: Form Element 추가 로직 확장 ---
   addElement: (nodeId, elementType) => {
     set((state) => ({
       nodes: state.nodes.map((node) => {
         if (node.id === nodeId && node.type === 'form') {
-          const newElement = { type: elementType, id: `${elementType}-${+new Date()}` };
-          if (elementType === 'grid') {
-            newElement.columns = 2;
-            newElement.items = [];
-          } else if (elementType === 'image') {
-            newElement.src = '';
-            newElement.alt = '';
+          let newElement;
+          const newId = `${elementType}-${+new Date()}`;
+
+          switch (elementType) {
+            case 'input':
+              newElement = { id: newId, type: 'input', name: '', label: 'New Input', placeholder: '', validation: { type: 'text' } };
+              break;
+            case 'date':
+              newElement = { id: newId, type: 'date', name: '', label: 'New Date' };
+              break;
+            case 'grid':
+              newElement = { id: newId, type: 'grid', columns: 2, items: [] };
+              break;
+            case 'checkbox':
+              newElement = { id: newId, type: 'checkbox', name: '', label: 'New Checkbox', options: [] };
+              break;
+            case 'dropbox':
+              newElement = { id: newId, type: 'dropbox', name: '', label: 'New Dropbox', options: [] };
+              break;
+            default:
+              newElement = { id: newId, type: elementType };
           }
+
           const newElements = [...(node.data.elements || []), newElement];
           return { ...node, data: { ...node.data, elements: newElements } };
         }

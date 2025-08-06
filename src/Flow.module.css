@@ -39,19 +39,19 @@
   opacity: 0.9;
 }
 
-.textButton {
+/* --- 💡 수정된 부분 --- */
+.messageButton {
   background-color: #f39c12; /* Orange */
 }
 
-.slotButton {
+.apiButton {
   background-color: #3498db; /* Blue */
 }
 
-.confirmButton {
+.branchButton {
   background-color: #2ecc71; /* Green */
 }
 
-/* --- 💡 추가된 부분 --- */
 .formButton {
   background-color: #9b59b6; /* Purple */
 }
