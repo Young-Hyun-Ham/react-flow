@@ -31,7 +31,7 @@
   transition: background-color 0.2s;
   position: absolute;
   right: 15px;
-  top: 10px;
+  top: 70px;
 }
 .headerRestartButton:hover {
   background-color: #dcdcdc;
