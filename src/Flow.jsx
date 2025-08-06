@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState, useCallback } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import ReactFlow, { Controls } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -19,7 +19,6 @@ function Flow({ scenarioId, onBack }) {
 
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, fetchScenario, saveScenario, addNode, setSelectedNodeId } = useStore();
 
-  // --- 💡 추가된 부분: 리사이징을 위한 상태 ---
   const [rightPanelWidth, setRightPanelWidth] = useState(760);
   const [controllerWidth, setControllerWidth] = useState(380);
 
@@ -37,17 +36,16 @@ function Flow({ scenarioId, onBack }) {
     setSelectedNodeId(null);
   };
 
-  // --- 💡 추가된 부분: 리사이저 드래그 이벤트 핸들러 ---
-  const createResizeHandler = (setter, initialSize) => (mouseDownEvent) => {
+  // --- 💡 수정된 부분: 리사이저 드래그 로직 수정 ---
+  const handleMainResize = (mouseDownEvent) => {
     mouseDownEvent.preventDefault();
-    const startSize = initialSize;
+    const startSize = rightPanelWidth;
     const startPosition = mouseDownEvent.clientX;
 
     const onMouseMove = (mouseMoveEvent) => {
       const newSize = startSize - (mouseMoveEvent.clientX - startPosition);
-      // 패널의 최소/최대 너비 제한
-      if (newSize > 300 && newSize < 1200) {
-        setter(newSize);
+      if (newSize > 600 && newSize < 1200) {
+        setRightPanelWidth(newSize);
       }
     };
 
@@ -59,10 +57,28 @@ function Flow({ scenarioId, onBack }) {
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
   };
-  
-  const handleMainResize = createResizeHandler(setRightPanelWidth, rightPanelWidth);
-  const handleSideResize = createResizeHandler(setControllerWidth, controllerWidth);
 
+  const handleSideResize = (mouseDownEvent) => {
+    mouseDownEvent.preventDefault();
+    const startSize = controllerWidth;
+    const startPosition = mouseDownEvent.clientX;
+
+    const onMouseMove = (mouseMoveEvent) => {
+      const newSize = startSize + (mouseMoveEvent.clientX - startPosition);
+      const totalWidth = rightPanelWidth;
+      if (newSize > 300 && (totalWidth - newSize) > 300) {
+        setControllerWidth(newSize);
+      }
+    };
+
+    const onMouseUp = () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
 
   return (
     <div className={styles.flowContainer}>
@@ -94,7 +110,6 @@ function Flow({ scenarioId, onBack }) {
         </ReactFlow>
       </div>
       
-      {/* --- 💡 수정된 부분: 리사이저 및 패널 구조 변경 --- */}
       <div className={styles.resizerV} onMouseDown={handleMainResize} />
       <div className={styles.rightContainer} style={{ width: `${rightPanelWidth}px` }}>
         <div className={styles.panel} style={{ width: `${controllerWidth}px` }}>
