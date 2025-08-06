@@ -1,8 +1,8 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
-// 1. .env 파일에서 Vite 환경 변수를 가져옵니다.
-// Vite에서는 `import.meta.env` 객체를 통해 접근합니다.
+// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -12,8 +12,12 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// 2. Firebase 앱을 초기화합니다.
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// 3. 다른 컴포넌트에서 사용할 수 있도록 Firestore 인스턴스를 초기화하고 내보냅니다.
+// Initialize Cloud Firestore and get a reference to the service
 export const db = getFirestore(app);
+
+// --- 💡 수정된 부분: 새로 만드신 Storage 버킷 주소를 명시합니다 ---
+// Initialize Cloud Storage with the new bucket URL
+export const storage = getStorage(app, "gs://react-flow-3e904.firebasestorage.app");

@@ -4,46 +4,67 @@
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
-}
-
-.logo-container {
+.app-container {
   display: flex;
-  width: 100vh;
-  justify-content: center;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background-color: #f0f2f5;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  padding: 0 20px;
+  background-color: #fff;
+  border-bottom: 1px solid #ddd;
+  flex-shrink: 0;
+  height: 60px;
+  color: #1c1e21;
+}
+
+.app-header h1 {
+  font-size: 1.5rem;
+  color: #333;
+  margin: 0;
+}
+
+.app-header nav {
+  display: flex;
+  gap: 10px;
+}
+
+.app-header nav button {
+  padding: 8px 16px;
+  font-size: 1rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background-color: transparent;
+  color: #606770;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.app-header nav button.active {
+  color: #1877f2;
+  border-bottom: 3px solid #1877f2;
+  border-radius: 6px 6px 0 0;
+}
+
+.app-main {
+  flex-grow: 1;
+  overflow-y: auto; /* Allow scrolling for content */
+  color: #1c1e21; 
+  background-color: #f0f2f5;
+}
+
+/* Overwrite ScenarioList's inline styles to fit the new layout */
+div[style*="padding: 40px"] {
+  padding: 20px !important;
+}
+
+h1[style*="font-size: 2rem"] {
+  font-size: 1.8rem !important;
+  color: #1c1e21 !important;
 }
