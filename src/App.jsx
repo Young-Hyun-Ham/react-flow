@@ -3,7 +3,7 @@ import { auth, onAuthStateChanged, signOut } from './firebase';
 import Flow from './Flow';
 import ScenarioList from './ScenarioList';
 import Board from './Board';
-import Login from './Login'; // Import Login component
+import Login from './Login';
 import './App.css';
 
 function App() {
@@ -13,11 +13,24 @@ function App() {
   const [view, setView] = useState('flow');
 
   useEffect(() => {
+    // --- 💡 추가된 부분: 허용할 구글 이메일 목록 ---
+    // const allowedEmails = ['cutiefunny@gmail.com', 'hyh8414@gmail.com'];
+    const allowedEmails = ['cutiefunny@gmail.com', 'hyh8414@gmail.com'];
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+      // 사용자가 로그인했고, 허용된 이메일 목록에 없는 경우
+      if (currentUser && !allowedEmails.includes(currentUser.email)) {
+        signOut(auth); // 강제로 로그아웃 처리
+        alert("접근 권한이 없는 계정입니다.");
+        setUser(null); // 사용자 상태를 null로 설정
+      } else {
+        // 허용된 사용자이거나 로그아웃 상태인 경우
+        setUser(currentUser);
+      }
       setLoading(false);
     });
-    return () => unsubscribe(); // Cleanup subscription on unmount
+
+    return () => unsubscribe(); // 컴포넌트 언마운트 시 구독 해제
   }, []);
 
   const handleLogout = async () => {
