@@ -137,7 +137,13 @@ function ChatbotSimulator({ nodes, edges }) {
 
   return (
     <div className={styles.simulator}>
-      <div className={styles.header}>챗봇</div>
+      {/* --- 💡 수정된 부분: 헤더에 버튼 추가 --- */}
+      <div className={styles.header}>
+        <span>챗봇</span>
+        <button className={styles.headerRestartButton} onClick={startSimulation}>
+          다시 시작
+        </button>
+      </div>
       <div className={styles.history}>
         {history.map((item, index) => {
           if (item.type === 'bot' && item.nodeId) {

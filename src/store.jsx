@@ -42,7 +42,8 @@ const useStore = create((set, get) => ({
 
     switch (type) {
       case 'text':
-        newNode.data = { id: 'new_text', content: '새 텍스트 메시지' };
+        // --- 💡 수정된 부분: replies를 빈 배열로 초기화 ---
+        newNode.data = { id: 'new_text', content: '새 텍스트 메시지', replies: [] };
         break;
       case 'slotFilling':
         newNode.data = { id: 'new_slot', content: '질문을 입력하세요.', slot: 'newSlot', replies: [] }; // replies를 빈 배열로 초기화

@@ -7,13 +7,34 @@
   background-color: #b2c7d9;
 }
 
+/* --- 💡 수정된 부분: 헤더 스타일 변경 --- */
 .header {
-  padding: 15px;
+  padding: 10px 15px;
   font-weight: bold;
   background-color: #f6f6f6;
   color: #000;
-  text-align: center;
   border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* --- 💡 추가된 부분: 헤더 다시 시작 버튼 --- */
+.headerRestartButton {
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  background-color: #e9e9e9;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 15px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  position: absolute;
+  right: 15px;
+  top: 10px;
+}
+.headerRestartButton:hover {
+  background-color: #dcdcdc;
 }
 
 .history {
