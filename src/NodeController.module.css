@@ -1,18 +1,30 @@
 .controllerContainer {
-  padding: 15px;
+  padding: 0;
   background-color: #f8f9fa;
-  border-bottom: 1px solid #e0e0e0;
-  flex-shrink: 0;
   height: 100%;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
 
-.controllerContainer h3 {
+.mainControls, .advancedControls {
+  padding: 15px;
+}
+
+.mainControls h3, .advancedControls h3 {
   margin: 0 0 15px 0;
   color: #333;
   font-size: 1.1rem;
+}
+
+.separator {
+  border-bottom: 2px solid #e9ecef;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.advancedControls {
+  flex-shrink: 0;
 }
 
 .placeholder {
@@ -55,7 +67,6 @@
   cursor: not-allowed;
 }
 
-/* --- 💡 추가된 부분: Quick Replies 관련 스타일 --- */
 .repliesContainer {
   display: flex;
   flex-direction: column;
@@ -113,4 +124,100 @@
 
 .addReplyButton:hover {
   background-color: #f0f0f0;
+}
+
+.elementsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.elementControl {
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 8px;
+}
+
+.elementHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.elementHeader strong {
+  text-transform: capitalize;
+}
+
+.deleteElementButton {
+  background: none;
+  border: 1px solid #ddd;
+  color: #999;
+  cursor: pointer;
+  font-size: 1.2rem;
+  font-weight: bold;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.deleteElementButton:hover {
+  color: #e74c3c;
+  border-color: #e74c3c;
+}
+
+.elementDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.addElementButtons {
+  display: flex;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.addElementButtons button {
+  flex-grow: 1;
+  padding: 8px;
+  border: 1px dashed #ccc;
+  border-radius: 4px;
+  background-color: #fafafa;
+  cursor: pointer;
+  color: #555;
+}
+
+.addElementButtons button:hover {
+  background-color: #f0f0f0;
+}
+
+/* --- 💡 추가된 부분: 데이터 소스 선택 스타일 --- */
+.dataSourceSelector {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 8px;
+  background-color: #fff;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.dataSourceSelector label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: normal;
+  font-size: 0.9rem;
+  cursor: pointer;
 }

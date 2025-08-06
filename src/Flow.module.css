@@ -51,6 +51,11 @@
   background-color: #2ecc71; /* Green */
 }
 
+/* --- 💡 추가된 부분 --- */
+.formButton {
+  background-color: #9b59b6; /* Purple */
+}
+
 .mainContent {
   flex-grow: 1;
   position: relative;
@@ -71,7 +76,7 @@
   padding: 10px 20px;
   border-radius: 5px;
   border: 1px solid #ccc;
-  background-color: #7c7c7c;
+  background-color: #fff;
   cursor: pointer;
   font-weight: 500;
 }

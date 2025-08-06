@@ -20,6 +20,7 @@
 .headerText { background-color: #f39c12; } /* Orange */
 .headerSlotFilling { background-color: #3498db; } /* Blue */
 .headerConfirmation { background-color: #2ecc71; } /* Green */
+.headerForm { background-color: #9b59b6; } /* --- 💡 추가된 부분: Purple --- */
 
 .headerTextContent {
   font-size: 0.8rem;
@@ -115,4 +116,15 @@
 }
 .deleteReplyButton:hover {
   color: #e74c3c; /* Red */
+}
+
+/* --- 💡 추가된 부분 --- */
+.formElementsPlaceholder {
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  text-align: center;
+  color: #777;
+  font-style: italic;
+  font-size: 0.8rem;
 }

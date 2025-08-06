@@ -5,6 +5,7 @@ import 'reactflow/dist/style.css';
 import TextNode from './nodes/TextNode';
 import SlotFillingNode from './nodes/SlotFillingNode';
 import ConfirmationNode from './nodes/ConfirmationNode';
+import FormNode from './nodes/FormNode'; // --- 💡 추가된 부분
 import ChatbotSimulator from './ChatbotSimulator';
 import NodeController from './NodeController';
 import useStore from './store';
@@ -15,6 +16,7 @@ function Flow({ scenarioId, onBack }) {
     text: TextNode,
     slotFilling: SlotFillingNode,
     confirmation: ConfirmationNode,
+    form: FormNode, // --- 💡 추가된 부분
   }), []);
 
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, fetchScenario, saveScenario, addNode, setSelectedNodeId } = useStore();
@@ -36,7 +38,6 @@ function Flow({ scenarioId, onBack }) {
     setSelectedNodeId(null);
   };
 
-  // --- 💡 수정된 부분: 리사이저 드래그 로직 수정 ---
   const handleMainResize = (mouseDownEvent) => {
     mouseDownEvent.preventDefault();
     const startSize = rightPanelWidth;
@@ -87,6 +88,8 @@ function Flow({ scenarioId, onBack }) {
         <button onClick={() => addNode('text')} className={`${styles.sidebarButton} ${styles.textButton}`}>+ Text</button>
         <button onClick={() => addNode('slotFilling')} className={`${styles.sidebarButton} ${styles.slotButton}`}>+ Slot Filling</button>
         <button onClick={() => addNode('confirmation')} className={`${styles.sidebarButton} ${styles.confirmButton}`}>+ Confirmation</button>
+        {/* --- 💡 추가된 부분 --- */}
+        <button onClick={() => addNode('form')} className={`${styles.sidebarButton} ${styles.formButton}`}>+ Form</button>
       </div>
 
       <div className={styles.mainContent}>

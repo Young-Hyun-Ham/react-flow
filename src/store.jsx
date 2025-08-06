@@ -10,20 +10,19 @@ import { db } from './firebase';
 const useStore = create((set, get) => ({
   nodes: [],
   edges: [],
-  selectedNodeId: null, // --- 💡 추가된 부분: 선택된 노드 ID 상태
+  selectedNodeId: null,
 
   onNodesChange: (changes) => set({ nodes: applyNodeChanges(changes, get().nodes) }),
   onEdgesChange: (changes) => set({ edges: applyEdgeChanges(changes, get().edges) }),
   onConnect: (connection) => set({ edges: addEdge(connection, get().edges) }),
 
-  // --- 💡 추가된 부분: 선택된 노드 ID를 설정하는 액션 ---
   setSelectedNodeId: (nodeId) => set({ selectedNodeId: nodeId }),
 
   deleteNode: (nodeId) => {
     set((state) => ({
       nodes: state.nodes.filter((node) => node.id !== nodeId),
       edges: state.edges.filter((edge) => edge.source !== nodeId && edge.target !== nodeId),
-      selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId, // 삭제 시 선택 해제
+      selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId,
     }));
   },
 
@@ -54,6 +53,16 @@ const useStore = create((set, get) => ({
         break;
       case 'confirmation':
         newNode.data = { id: 'new_confirm', content: '확인 질문을 입력하세요.', replies: [{ display: '확인', value: 'confirm' }, { display: '취소', value: 'cancel' }] };
+        break;
+      case 'form':
+        // --- 💡 수정된 부분: Form 노드 초기 데이터 ---
+        newNode.data = { 
+          id: 'new_form', 
+          title: '새 양식', 
+          elements: [], 
+          dataSourceType: 'json', 
+          dataSource: '' 
+        };
         break;
       default:
         break;
@@ -93,6 +102,51 @@ const useStore = create((set, get) => ({
         if (node.id === nodeId) {
           const newReplies = node.data.replies.filter((_, i) => i !== index);
           return { ...node, data: { ...node.data, replies: newReplies } };
+        }
+        return node;
+      }),
+    }));
+  },
+  
+  addElement: (nodeId, elementType) => {
+    set((state) => ({
+      nodes: state.nodes.map((node) => {
+        if (node.id === nodeId && node.type === 'form') {
+          const newElement = { type: elementType, id: `${elementType}-${+new Date()}` };
+          if (elementType === 'grid') {
+            newElement.columns = 2;
+            newElement.items = [];
+          } else if (elementType === 'image') {
+            newElement.src = '';
+            newElement.alt = '';
+          }
+          const newElements = [...(node.data.elements || []), newElement];
+          return { ...node, data: { ...node.data, elements: newElements } };
+        }
+        return node;
+      }),
+    }));
+  },
+
+  updateElement: (nodeId, elementIndex, elementUpdate) => {
+    set((state) => ({
+      nodes: state.nodes.map((node) => {
+        if (node.id === nodeId && node.type === 'form') {
+          const newElements = [...node.data.elements];
+          newElements[elementIndex] = { ...newElements[elementIndex], ...elementUpdate };
+          return { ...node, data: { ...node.data, elements: newElements } };
+        }
+        return node;
+      }),
+    }));
+  },
+
+  deleteElement: (nodeId, elementIndex) => {
+    set((state) => ({
+      nodes: state.nodes.map((node) => {
+        if (node.id === nodeId && node.type === 'form') {
+          const newElements = node.data.elements.filter((_, i) => i !== elementIndex);
+          return { ...node, data: { ...node.data, elements: newElements } };
         }
         return node;
       }),
