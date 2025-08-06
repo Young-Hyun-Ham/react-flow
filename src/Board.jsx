@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { db, storage } from './firebase';
-import { collection, addDoc, query, onSnapshot, serverTimestamp, orderBy, doc, deleteDoc } from 'firebase/firestore';
+// --- 💡 수정된 부분: updateDoc import 추가 ---
+import { collection, addDoc, query, onSnapshot, serverTimestamp, orderBy, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import styles from './Board.module.css';
 
@@ -18,6 +19,9 @@ function Board({ user }) {
   const [newPostText, setNewPostText] = useState('');
   const [fileToUpload, setFileToUpload] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  // --- 💡 추가된 부분: 수정 관련 상태 ---
+  const [editingPostId, setEditingPostId] = useState(null);
+  const [editText, setEditText] = useState('');
 
   // Fetch posts from Firestore in real-time
   useEffect(() => {
@@ -52,7 +56,6 @@ function Board({ user }) {
     let fileName = '';
     let fileType = '';
 
-    // Upload file to Firebase Storage if it exists
     if (fileToUpload) {
       const storageRef = ref(storage, `uploads/${user.uid}/${Date.now()}_${fileToUpload.name}`);
       try {
@@ -68,7 +71,6 @@ function Board({ user }) {
       }
     }
 
-    // Add new post document to Firestore
     try {
       await addDoc(collection(db, 'posts'), {
         author: user.displayName,
@@ -81,7 +83,6 @@ function Board({ user }) {
         fileType,
       });
 
-      // Reset form state
       setNewPostText('');
       setFileToUpload(null);
       if(document.getElementById('fileInput')) {
@@ -117,6 +118,32 @@ function Board({ user }) {
     }
   };
 
+  // --- 💡 추가된 부분: 수정 관련 함수들 ---
+  const handleEditClick = (post) => {
+    setEditingPostId(post.id);
+    setEditText(post.text);
+  };
+
+  const handleUpdatePost = async (postId) => {
+    const postRef = doc(db, 'posts', postId);
+    try {
+      await updateDoc(postRef, {
+        text: editText
+      });
+      setEditingPostId(null);
+      setEditText('');
+    } catch (error) {
+      console.error("Error updating post: ", error);
+      alert("게시물 수정에 실패했습니다.");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingPostId(null);
+    setEditText('');
+  };
+
+
   return (
     <div className={styles.boardContainer}>
       <form className={styles.postForm} onSubmit={handlePostSubmit}>
@@ -146,13 +173,12 @@ function Board({ user }) {
       </form>
 
       {posts.length === 0 && !isLoading && <div className={styles.loading}>No posts yet. Be the first!</div>}
-      
+
       <div className={styles.postList}>
         {posts.map((post) => (
           <div key={post.id} className={styles.post}>
             <div className={styles.postHeader}>
               <div className={styles.authorSection}>
-                {/* --- 💡 수정된 부분: 프로필 사진을 img 태그로 표시 --- */}
                 <img src={post.authorPhotoURL} alt={post.author} className={styles.avatar} />
                 <div className={styles.authorInfo}>
                   <span className={styles.authorName}>{post.author || 'Anonymous'}</span>
@@ -162,23 +188,46 @@ function Board({ user }) {
                 </div>
               </div>
               {user && user.uid === post.authorId && (
-                <button onClick={() => handleDeletePost(post)} className={styles.deleteButton}>
-                  &times;
-                </button>
+                // --- 💡 수정된 부분: 수정/삭제 버튼 그룹 ---
+                <div className={styles.buttonGroup}>
+                   <button onClick={() => handleEditClick(post)} className={styles.editButton}>
+                    수정
+                  </button>
+                  <button onClick={() => handleDeletePost(post)} className={styles.deleteButton}>
+                    &times;
+                  </button>
+                </div>
               )}
             </div>
+            {/* --- 💡 수정된 부분: 수정 모드/일반 모드 조건부 렌더링 --- */}
             <div className={styles.postContent}>
-              {post.text && <p>{post.text}</p>}
-              {post.fileType === 'image' && (
-                <img src={post.fileUrl} alt="Post content" className={styles.postImage} />
-              )}
-              {post.fileType === 'file' && (
-                <div className={styles.postFile}>
-                  <FileIcon />
-                  <a href={post.fileUrl} target="_blank" rel="noopener noreferrer" className={styles.fileLink}>
-                    {post.fileName}
-                  </a>
+              {editingPostId === post.id ? (
+                <div className={styles.editForm}>
+                  <textarea
+                    className={styles.editTextarea}
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                  />
+                  <div className={styles.editActions}>
+                    <button onClick={() => handleUpdatePost(post.id)} className={styles.saveButton}>저장</button>
+                    <button onClick={handleCancelEdit} className={styles.cancelButton}>취소</button>
+                  </div>
                 </div>
+              ) : (
+                <>
+                  {post.text && <p>{post.text}</p>}
+                  {post.fileType === 'image' && (
+                    <img src={post.fileUrl} alt="Post content" className={styles.postImage} />
+                  )}
+                  {post.fileType === 'file' && (
+                    <div className={styles.postFile}>
+                      <FileIcon />
+                      <a href={post.fileUrl} target="_blank" rel="noopener noreferrer" className={styles.fileLink}>
+                        {post.fileName}
+                      </a>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

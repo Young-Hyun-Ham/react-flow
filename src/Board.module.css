@@ -102,12 +102,11 @@
   gap: 10px;
 }
 
-/* --- 💡 수정된 부분: img 태그에 적용될 스타일 --- */
 .avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  object-fit: cover; /* 이미지가 원 안에 꽉 차도록 설정 */
+  object-fit: cover;
 }
 
 .authorInfo {
@@ -163,6 +162,29 @@
   color: #606770;
 }
 
+/* --- 💡 수정 및 추가된 부분 --- */
+
+.buttonGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editButton {
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  background-color: transparent;
+  color: #606770;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.editButton:hover {
+  background-color: #f0f2f5;
+}
+
 .deleteButton {
   background: none;
   border: none;
@@ -176,5 +198,47 @@
 }
 
 .deleteButton:hover {
-  color: #e74c3c; /* Red */
+  color: #e74c3c;
+}
+
+.editForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.editTextarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 10px;
+  border: 1px solid #1877f2; /* 수정 중임을 나타내는 파란색 테두리 */
+  border-radius: 6px;
+  font-size: 1rem;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.editActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.saveButton, .cancelButton {
+  padding: 6px 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.saveButton {
+  background-color: #1877f2;
+  color: white;
+  border-color: #1877f2;
+}
+
+.cancelButton {
+  background-color: #e4e6eb;
+  color: #333;
 }
