@@ -1,6 +1,8 @@
 .simulator {
-  width: 380px;
-  flex-shrink: 0; /* 화면이 줄어들 때 시뮬레이터 너비 유지 */
+  /* width: 380px; <-- 💡 제거된 부분 */
+  width: 100%; /* --- 💡 추가된 부분 --- */
+  height: 100%; /* --- 💡 추가된 부분 --- */
+  flex-shrink: 0;
   border-left: 1px solid #e0e0e0;
   display: flex;
   flex-direction: column;

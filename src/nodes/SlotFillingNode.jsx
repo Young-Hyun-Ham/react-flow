@@ -3,7 +3,6 @@ import styles from './ChatNodes.module.css';
 import useStore from '../store';
 
 function SlotFillingNode({ id, data }) {
-  // --- 💡 수정된 부분: useStore를 각 액션마다 개별적으로 호출 ---
   const updateNodeData = useStore((state) => state.updateNodeData);
   const deleteNode = useStore((state) => state.deleteNode);
   const addReply = useStore((state) => state.addReply);
@@ -19,7 +18,8 @@ function SlotFillingNode({ id, data }) {
       </div>
       <div className={styles.nodeBody}>
         <div className={styles.section}>
-          <span className={styles.sectionTitle}>{data.id || 'ID'}</span>
+          {/* --- 💡 수정된 부분: ID 표시 제거 --- */}
+          <span className={styles.sectionTitle}>Question</span>
           <textarea
             className={styles.textInput}
             defaultValue={data.content}

@@ -10,15 +10,20 @@ import { db } from './firebase';
 const useStore = create((set, get) => ({
   nodes: [],
   edges: [],
+  selectedNodeId: null, // --- 💡 추가된 부분: 선택된 노드 ID 상태
 
   onNodesChange: (changes) => set({ nodes: applyNodeChanges(changes, get().nodes) }),
   onEdgesChange: (changes) => set({ edges: applyEdgeChanges(changes, get().edges) }),
   onConnect: (connection) => set({ edges: addEdge(connection, get().edges) }),
 
+  // --- 💡 추가된 부분: 선택된 노드 ID를 설정하는 액션 ---
+  setSelectedNodeId: (nodeId) => set({ selectedNodeId: nodeId }),
+
   deleteNode: (nodeId) => {
     set((state) => ({
       nodes: state.nodes.filter((node) => node.id !== nodeId),
       edges: state.edges.filter((edge) => edge.source !== nodeId && edge.target !== nodeId),
+      selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId, // 삭제 시 선택 해제
     }));
   },
 
@@ -42,11 +47,10 @@ const useStore = create((set, get) => ({
 
     switch (type) {
       case 'text':
-        // --- 💡 수정된 부분: replies를 빈 배열로 초기화 ---
         newNode.data = { id: 'new_text', content: '새 텍스트 메시지', replies: [] };
         break;
       case 'slotFilling':
-        newNode.data = { id: 'new_slot', content: '질문을 입력하세요.', slot: 'newSlot', replies: [] }; // replies를 빈 배열로 초기화
+        newNode.data = { id: 'new_slot', content: '질문을 입력하세요.', slot: 'newSlot', replies: [] };
         break;
       case 'confirmation':
         newNode.data = { id: 'new_confirm', content: '확인 질문을 입력하세요.', replies: [{ display: '확인', value: 'confirm' }, { display: '취소', value: 'cancel' }] };
@@ -58,7 +62,6 @@ const useStore = create((set, get) => ({
     set({ nodes: [...get().nodes, newNode] });
   },
 
-  // --- 💡 추가된 부분: Quick Reply 관련 액션 ---
   addReply: (nodeId) => {
     set((state) => ({
       nodes: state.nodes.map((node) => {
@@ -95,7 +98,6 @@ const useStore = create((set, get) => ({
       }),
     }));
   },
-  // --- 여기까지 ---
 
   fetchScenario: async (scenarioId) => {
     if (!scenarioId) return;
@@ -104,10 +106,10 @@ const useStore = create((set, get) => ({
       const docSnap = await getDoc(scenarioDocRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
-        set({ nodes: data.nodes || [], edges: data.edges || [] });
+        set({ nodes: data.nodes || [], edges: data.edges || [], selectedNodeId: null });
       } else {
         console.log(`No such document for scenario: ${scenarioId}!`);
-        set({ nodes: [], edges: [] });
+        set({ nodes: [], edges: [], selectedNodeId: null });
       }
     } catch (error) {
       console.error("Error fetching scenario:", error);

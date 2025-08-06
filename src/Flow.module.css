@@ -1,0 +1,119 @@
+.flowContainer {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  background-color: #f0f2f5;
+  overflow: hidden;
+}
+
+.leftSidebar {
+  width: 220px;
+  flex-shrink: 0;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-right: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.leftSidebar h3 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.sidebarButton {
+  padding: 12px;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  text-align: left;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.sidebarButton:hover {
+  opacity: 0.9;
+}
+
+.textButton {
+  background-color: #f39c12; /* Orange */
+}
+
+.slotButton {
+  background-color: #3498db; /* Blue */
+}
+
+.confirmButton {
+  background-color: #2ecc71; /* Green */
+}
+
+.mainContent {
+  flex-grow: 1;
+  position: relative;
+  height: 100%;
+  min-width: 300px;
+}
+
+.topRightControls {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  z-index: 10;
+  display: flex;
+  gap: 10px;
+}
+
+.controlButton {
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background-color: #7c7c7c;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.saveButton {
+  background-color: #3498db;
+  color: white;
+  border-color: #3498db;
+  font-weight: bold;
+}
+
+.rightContainer {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: row;
+}
+
+.resizerV, .resizerH {
+  background-color: #e0e0e0;
+  flex-shrink: 0;
+  transition: background-color 0.2s;
+}
+
+.resizerV {
+  width: 5px;
+  cursor: col-resize;
+}
+
+.resizerH {
+  width: 5px;
+  cursor: col-resize;
+}
+
+.resizerV:hover, .resizerH:hover {
+  background-color: #3498db;
+}
+
+.panel {
+  flex-shrink: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-width: 300px;
+  overflow: hidden;
+}

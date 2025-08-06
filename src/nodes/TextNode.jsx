@@ -3,7 +3,6 @@ import styles from './ChatNodes.module.css';
 import useStore from '../store';
 
 function TextNode({ id, data }) {
-  // --- 💡 수정된 부분: 필요한 액션을 모두 가져옵니다 ---
   const updateNodeData = useStore((state) => state.updateNodeData);
   const deleteNode = useStore((state) => state.deleteNode);
   const addReply = useStore((state) => state.addReply);
@@ -19,7 +18,8 @@ function TextNode({ id, data }) {
       </div>
       <div className={styles.nodeBody}>
         <div className={styles.section}>
-          <span className={styles.sectionTitle}>{data.id || 'ID'}</span>
+          {/* --- 💡 수정된 부분: ID 표시 제거 --- */}
+          <span className={styles.sectionTitle}>Content</span>
           <textarea
             className={styles.textInput}
             defaultValue={data.content}
@@ -27,7 +27,6 @@ function TextNode({ id, data }) {
             rows={3}
           />
         </div>
-        {/* --- 💡 수정된 부분: 빠른 답장 UI 추가 --- */}
         <div className={styles.section}>
           <span className={styles.sectionTitle}>Quick Replies:</span>
           {data.replies?.map((reply, index) => (

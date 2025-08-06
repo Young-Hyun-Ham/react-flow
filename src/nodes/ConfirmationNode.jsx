@@ -3,7 +3,6 @@ import styles from './ChatNodes.module.css';
 import useStore from '../store';
 
 function ConfirmationNode({ id, data }) {
-  // --- 💡 수정된 부분 ---
   const updateNodeData = useStore((state) => state.updateNodeData);
   const deleteNode = useStore((state) => state.deleteNode);
 
@@ -16,7 +15,8 @@ function ConfirmationNode({ id, data }) {
       </div>
       <div className={styles.nodeBody}>
         <div className={styles.section}>
-          <span className={styles.sectionTitle}>{data.id || 'ID'}</span>
+          {/* --- 💡 수정된 부분: ID 표시 제거 --- */}
+          <span className={styles.sectionTitle}>Confirmation Text</span>
           <textarea
             className={styles.textInput}
             defaultValue={data.content}
