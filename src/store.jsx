@@ -56,12 +56,12 @@ const useStore = create((set, get) => ({
         break;
       case 'form':
         // --- 💡 수정된 부분: Form 노드 초기 데이터 ---
-        newNode.data = { 
-          id: 'new_form', 
-          title: '새 양식', 
-          elements: [], 
-          dataSourceType: 'json', 
-          dataSource: '' 
+        newNode.data = {
+          id: 'new_form',
+          title: '새 양식',
+          elements: [],
+          dataSourceType: 'json',
+          dataSource: ''
         };
         break;
       default:
@@ -107,7 +107,7 @@ const useStore = create((set, get) => ({
       }),
     }));
   },
-  
+
   addElement: (nodeId, elementType) => {
     set((state) => ({
       nodes: state.nodes.map((node) => {

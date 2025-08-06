@@ -2,18 +2,18 @@ import useStore from './store';
 import styles from './NodeController.module.css';
 
 function NodeController() {
-  const { 
-    selectedNodeId, 
-    nodes, 
-    updateNodeData, 
-    addReply, 
-    updateReply, 
+  const {
+    selectedNodeId,
+    nodes,
+    updateNodeData,
+    addReply,
+    updateReply,
     deleteReply,
     addElement,
     updateElement,
     deleteElement
   } = useStore();
-  
+
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
   if (!selectedNode) {
@@ -36,15 +36,15 @@ function NodeController() {
       case 'image':
         return (
           <div className={styles.elementDetails}>
-            <input 
-              type="text" 
-              placeholder="Image URL" 
+            <input
+              type="text"
+              placeholder="Image URL"
               value={element.src || ''}
               onChange={(e) => updateElement(selectedNode.id, index, { src: e.target.value })}
             />
-            <input 
-              type="text" 
-              placeholder="Alt Text" 
+            <input
+              type="text"
+              placeholder="Alt Text"
               value={element.alt || ''}
               onChange={(e) => updateElement(selectedNode.id, index, { alt: e.target.value })}
             />
@@ -54,10 +54,10 @@ function NodeController() {
         return (
           <div className={styles.elementDetails}>
             <label>Columns: {element.columns}</label>
-            <input 
-              type="range" 
-              min="1" 
-              max="4" 
+            <input
+              type="range"
+              min="1"
+              max="4"
               value={element.columns || 2}
               onChange={(e) => updateElement(selectedNode.id, index, { columns: parseInt(e.target.value, 10) })}
             />
@@ -83,7 +83,7 @@ function NodeController() {
             />
           </div>
         )}
-        
+
         {type === 'slotFilling' && (
           <div className={styles.formGroup}>
             <label>Slot</label>
@@ -119,7 +119,7 @@ function NodeController() {
             </div>
           </div>
         )}
-        
+
         {type === 'form' && (
           <>
             <div className={styles.formGroup}>
