@@ -93,27 +93,21 @@
   align-items: center;
   gap: 10px;
   margin-bottom: 15px;
-  /* --- 💡 수정된 부분 --- */
   justify-content: space-between;
 }
 
-/* --- 💡 추가된 부분 --- */
 .authorSection {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
+/* --- 💡 수정된 부분: img 태그에 적용될 스타일 --- */
 .avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: #e4e6eb;
-  color: #333;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
+  object-fit: cover; /* 이미지가 원 안에 꽉 차도록 설정 */
 }
 
 .authorInfo {
@@ -169,7 +163,6 @@
   color: #606770;
 }
 
-/* --- 💡 추가된 부분: 삭제 버튼 스타일 --- */
 .deleteButton {
   background: none;
   border: none;

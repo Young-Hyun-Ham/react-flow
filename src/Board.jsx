@@ -13,7 +13,7 @@ const ImageIcon = () => (
 );
 
 
-function Board() {
+function Board({ user }) {
   const [posts, setPosts] = useState([]);
   const [newPostText, setNewPostText] = useState('');
   const [fileToUpload, setFileToUpload] = useState(null);
@@ -54,7 +54,7 @@ function Board() {
 
     // Upload file to Firebase Storage if it exists
     if (fileToUpload) {
-      const storageRef = ref(storage, `uploads/${Date.now()}_${fileToUpload.name}`);
+      const storageRef = ref(storage, `uploads/${user.uid}/${Date.now()}_${fileToUpload.name}`);
       try {
         const snapshot = await uploadBytes(storageRef, fileToUpload);
         fileUrl = await getDownloadURL(snapshot.ref);
@@ -71,7 +71,9 @@ function Board() {
     // Add new post document to Firestore
     try {
       await addDoc(collection(db, 'posts'), {
-        author: 'User', // In a real app, this would be the logged-in user's name
+        author: user.displayName,
+        authorId: user.uid,
+        authorPhotoURL: user.photoURL,
         text: newPostText,
         timestamp: serverTimestamp(),
         fileUrl,
@@ -93,21 +95,22 @@ function Board() {
     }
   };
 
-  // --- 💡 추가된 부분: 게시물 삭제 함수 ---
-  const handleDeletePost = async (postId, fileUrl) => {
+  const handleDeletePost = async (post) => {
+    if (post.authorId !== user.uid) {
+      alert("You can only delete your own posts.");
+      return;
+    }
+
     if (!window.confirm("정말로 이 게시물을 삭제하시겠습니까?")) {
       return;
     }
 
     try {
-      // 게시물에 첨부된 파일이 있으면 Storage에서 삭제
-      if (fileUrl) {
-        const fileRef = ref(storage, fileUrl);
+      if (post.fileUrl) {
+        const fileRef = ref(storage, post.fileUrl);
         await deleteObject(fileRef);
       }
-
-      // Firestore에서 게시물 문서 삭제
-      await deleteDoc(doc(db, 'posts', postId));
+      await deleteDoc(doc(db, 'posts', post.id));
     } catch (error) {
       console.error("Error deleting post: ", error);
       alert("게시물 삭제에 실패했습니다.");
@@ -149,7 +152,8 @@ function Board() {
           <div key={post.id} className={styles.post}>
             <div className={styles.postHeader}>
               <div className={styles.authorSection}>
-                <div className={styles.avatar}>{post.author ? post.author.charAt(0) : 'U'}</div>
+                {/* --- 💡 수정된 부분: 프로필 사진을 img 태그로 표시 --- */}
+                <img src={post.authorPhotoURL} alt={post.author} className={styles.avatar} />
                 <div className={styles.authorInfo}>
                   <span className={styles.authorName}>{post.author || 'Anonymous'}</span>
                   <span className={styles.timestamp}>
@@ -157,10 +161,11 @@ function Board() {
                   </span>
                 </div>
               </div>
-              {/* --- 💡 추가된 부분: 삭제 버튼 --- */}
-              <button onClick={() => handleDeletePost(post.id, post.fileUrl)} className={styles.deleteButton}>
-                &times;
-              </button>
+              {user && user.uid === post.authorId && (
+                <button onClick={() => handleDeletePost(post)} className={styles.deleteButton}>
+                  &times;
+                </button>
+              )}
             </div>
             <div className={styles.postContent}>
               {post.text && <p>{post.text}</p>}

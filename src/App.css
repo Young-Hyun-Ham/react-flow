@@ -28,11 +28,16 @@
   font-size: 1.5rem;
   color: #333;
   margin: 0;
+  flex-grow: 1; /* Take up available space */
+  text-align: left;
 }
 
 .app-header nav {
   display: flex;
   gap: 10px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .app-header nav button {
@@ -57,6 +62,37 @@
   overflow-y: auto; /* Allow scrolling for content */
   color: #1c1e21; 
   background-color: #f0f2f5;
+}
+
+/* --- 💡 추가된 부분: 사용자 프로필 및 로그아웃 버튼 스타일 --- */
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+
+.logout-button {
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  background-color: #e4e6eb;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.loading-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 1.5rem;
 }
 
 /* Overwrite ScenarioList's inline styles to fit the new layout */

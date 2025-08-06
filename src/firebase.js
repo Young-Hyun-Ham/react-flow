@@ -1,8 +1,9 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+// --- 💡 추가된 부분: Firebase Auth 모듈 가져오기 ---
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -12,12 +13,12 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Cloud Firestore and get a reference to the service
 export const db = getFirestore(app);
-
-// --- 💡 수정된 부분: 새로 만드신 Storage 버킷 주소를 명시합니다 ---
-// Initialize Cloud Storage with the new bucket URL
 export const storage = getStorage(app, "gs://react-flow-3e904.firebasestorage.app");
+
+// --- 💡 추가된 부분: Auth 인스턴스 및 Provider 내보내기 ---
+export const auth = getAuth(app);
+export const provider = new GoogleAuthProvider();
+export { signInWithPopup, signOut, onAuthStateChanged };
