@@ -3,7 +3,7 @@ import useStore from './store';
 import styles from './NodeController.module.css';
 
 function ElementEditor({ nodeId, element, index }) {
-  const { updateElement, deleteElement } = useStore();
+  const { updateElement, deleteElement, updateGridCell } = useStore();
 
   if (!element) {
     return <p className={styles.placeholder}>편집할 요소를 선택하세요.</p>;
@@ -32,6 +32,10 @@ function ElementEditor({ nodeId, element, index }) {
   const deleteOption = (optIndex) => {
     const newOptions = (element.options || []).filter((_, i) => i !== optIndex);
     handleUpdate('options', newOptions);
+  };
+
+  const handleGridCellChange = (rowIndex, colIndex, value) => {
+    updateGridCell(nodeId, index, rowIndex, colIndex, value);
   };
   
   const renderSharedControls = () => (
@@ -84,20 +88,37 @@ function ElementEditor({ nodeId, element, index }) {
     </>
   );
 
-  // --- 💡 수정된 부분: Grid 컨트롤 ---
   const renderGridControls = () => (
     <>
-        {renderSharedControls()}
-        <div className={styles.gridControls}>
-            <div className={styles.formGroup}>
-                <label>Rows</label>
-                <input type="number" min="1" max="10" value={element.rows || 2} onChange={(e) => handleUpdate('rows', parseInt(e.target.value, 10))} />
-            </div>
-            <div className={styles.formGroup}>
-                <label>Columns</label>
-                <input type="number" min="1" max="5" value={element.columns || 2} onChange={(e) => handleUpdate('columns', parseInt(e.target.value, 10))} />
-            </div>
+      {renderSharedControls()}
+      <div className={styles.gridControls}>
+        <div className={styles.formGroup}>
+          <label>Rows</label>
+          <input type="number" min="1" max="10" value={element.rows || 2} onChange={(e) => handleUpdate('rows', parseInt(e.target.value, 10))} />
         </div>
+        <div className={styles.formGroup}>
+          <label>Columns</label>
+          <input type="number" min="1" max="5" value={element.columns || 2} onChange={(e) => handleUpdate('columns', parseInt(e.target.value, 10))} />
+        </div>
+      </div>
+      <div className={styles.formGroup}>
+        <label>Grid Content</label>
+        <div className={styles.gridContentEditor} style={{ gridTemplateColumns: `repeat(${element.columns || 2}, 1fr)`}}>
+          {/* --- 💡 수정: 1차원 배열을 순회하며 Grid 렌더링 --- */}
+          {element.data?.map((cell, idx) => {
+            const rowIndex = Math.floor(idx / element.columns);
+            const colIndex = idx % element.columns;
+            return (
+              <textarea
+                key={idx}
+                value={cell}
+                onChange={(e) => handleGridCellChange(rowIndex, colIndex, e.target.value)}
+                className={styles.gridCellEditor}
+              />
+            );
+          })}
+        </div>
+      </div>
     </>
   );
 

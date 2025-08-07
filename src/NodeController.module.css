@@ -54,14 +54,14 @@
 
 .formGroup input,
 .formGroup textarea,
-.formGroup select { /* --- 💡 추가된 부분: select 스타일 --- */
+.formGroup select {
   width: 100%;
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 4px;
   box-sizing: border-box;
   font-size: 0.9rem;
-  background-color: #fff; /* 배경색 추가 */
+  background-color: #fff;
 }
 
 .formGroup input:disabled {
@@ -127,8 +127,6 @@
 .addReplyButton:hover {
   background-color: #f0f0f0;
 }
-
-/* --- 💡 추가/수정된 부분: Form Element 컨트롤러 스타일 --- */
 
 .elementTabs {
   display: flex;
@@ -225,4 +223,35 @@
   background-color: #3498db;
   color: white;
   border-color: #3498db;
+}
+
+.gridControls {
+    display: flex;
+    gap: 10px;
+}
+
+.gridControls .formGroup {
+    flex: 1;
+}
+
+/* --- 💡 수정된 부분: Grid 편집기 스타일 --- */
+.gridContentEditor {
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #f8f9fa;
+}
+
+.gridCellEditor {
+  width: 100%;
+  min-height: 50px;
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  resize: vertical;
+  font-size: 0.9rem;
+  background-color: #fff;
+  box-sizing: border-box; /* 너비 계산에 패딩과 테두리 포함 */
 }

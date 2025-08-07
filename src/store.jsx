@@ -111,7 +111,7 @@ const useStore = create((set, get) => ({
       }),
     }));
   },
-  
+
   addElement: (nodeId, elementType) => {
     set((state) => ({
       nodes: state.nodes.map((node) => {
@@ -126,9 +126,19 @@ const useStore = create((set, get) => ({
             case 'date':
               newElement = { id: newId, type: 'date', name: '', label: 'New Date' };
               break;
-            // --- 💡 수정된 부분: Grid 생성 시 name과 label 추가 ---
             case 'grid':
-              newElement = { id: newId, type: 'grid', name: '', label: 'New Grid', rows: 2, columns: 2, items: [] };
+              const rows = 2;
+              const columns = 2;
+              newElement = {
+                id: newId,
+                type: 'grid',
+                name: '',
+                label: 'New Grid',
+                rows: rows,
+                columns: columns,
+                // --- 💡 수정: 1차원 배열로 데이터 초기화 ---
+                data: Array(rows * columns).fill('')
+              };
               break;
             case 'checkbox':
               newElement = { id: newId, type: 'checkbox', name: '', label: 'New Checkbox', options: [] };
@@ -150,16 +160,42 @@ const useStore = create((set, get) => ({
 
   updateElement: (nodeId, elementIndex, elementUpdate) => {
     set((state) => ({
-      nodes: state.nodes.map((node) => {
-        if (node.id === nodeId && node.type === 'form') {
-          const newElements = [...node.data.elements];
-          newElements[elementIndex] = { ...newElements[elementIndex], ...elementUpdate };
-          return { ...node, data: { ...node.data, elements: newElements } };
-        }
-        return node;
-      }),
+        nodes: state.nodes.map((node) => {
+            if (node.id === nodeId && node.type === 'form') {
+                const newElements = [...node.data.elements];
+                const oldElement = newElements[elementIndex];
+                const newElement = { ...oldElement, ...elementUpdate };
+
+                // --- 💡 수정: Grid 크기 변경 시 1차원 배열 데이터 재구성 ---
+                if (
+                    newElement.type === 'grid' &&
+                    (oldElement.rows !== newElement.rows || oldElement.columns !== newElement.columns)
+                ) {
+                    const oldData = oldElement.data || [];
+                    const newRows = newElement.rows || 2;
+                    const newColumns = newElement.columns || 2;
+                    const newData = Array(newRows * newColumns).fill('');
+
+                    for (let r = 0; r < Math.min(oldElement.rows, newRows); r++) {
+                        for (let c = 0; c < Math.min(oldElement.columns, newColumns); c++) {
+                            const oldIndex = r * oldElement.columns + c;
+                            const newIndex = r * newColumns + c;
+                            if (oldData[oldIndex] !== undefined) {
+                                newData[newIndex] = oldData[oldIndex];
+                            }
+                        }
+                    }
+                    newElement.data = newData;
+                }
+
+                newElements[elementIndex] = newElement;
+                return { ...node, data: { ...node.data, elements: newElements } };
+            }
+            return node;
+        }),
     }));
-  },
+},
+
 
   deleteElement: (nodeId, elementIndex) => {
     set((state) => ({
@@ -167,6 +203,25 @@ const useStore = create((set, get) => ({
         if (node.id === nodeId && node.type === 'form') {
           const newElements = node.data.elements.filter((_, i) => i !== elementIndex);
           return { ...node, data: { ...node.data, elements: newElements } };
+        }
+        return node;
+      }),
+    }));
+  },
+
+  updateGridCell: (nodeId, elementIndex, rowIndex, colIndex, value) => {
+    set((state) => ({
+      nodes: state.nodes.map((node) => {
+        if (node.id === nodeId && node.type === 'form') {
+          const newElements = JSON.parse(JSON.stringify(node.data.elements));
+          const gridElement = newElements[elementIndex];
+
+          if (gridElement && gridElement.type === 'grid') {
+            // --- 💡 수정: 1차원 배열의 인덱스 계산 ---
+            const index = rowIndex * gridElement.columns + colIndex;
+            gridElement.data[index] = value;
+            return { ...node, data: { ...node.data, elements: newElements } };
+          }
         }
         return node;
       }),

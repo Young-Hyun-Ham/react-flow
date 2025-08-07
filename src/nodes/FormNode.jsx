@@ -27,18 +27,23 @@ function FormNode({ id, data }) {
             <input type="date" className={styles.previewInput} readOnly />
           </div>
         );
-      // --- 💡 수정된 부분: Grid 미리보기 ---
       case 'grid':
         return (
           <div key={element.id} className={styles.previewElement}>
             <label className={styles.previewLabel}>{element.label || 'Grid'}</label>
             <table className={styles.previewGridTable}>
               <tbody>
+                {/* --- 💡 수정: 1차원 배열 데이터를 표 형태로 렌더링 --- */}
                 {[...Array(element.rows || 2)].map((_, rowIndex) => (
                   <tr key={rowIndex}>
-                    {[...Array(element.columns || 2)].map((_, colIndex) => (
-                      <td key={colIndex}></td>
-                    ))}
+                    {[...Array(element.columns || 2)].map((_, colIndex) => {
+                      const cellIndex = rowIndex * (element.columns || 2) + colIndex;
+                      return (
+                        <td key={colIndex}>
+                          {element.data[cellIndex] || ''}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))}
               </tbody>
