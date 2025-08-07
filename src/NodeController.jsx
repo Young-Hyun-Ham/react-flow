@@ -16,7 +16,7 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
     const newValidation = { ...element.validation, [field]: value };
     onUpdate(index, { ...element, validation: newValidation });
   };
-  
+
   const handleOptionChange = (optIndex, optValue) => {
     const newOptions = [...(element.options || [])];
     newOptions[optIndex] = optValue;
@@ -32,7 +32,7 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
     const newOptions = (element.options || []).filter((_, i) => i !== optIndex);
     handleUpdate('options', newOptions);
   };
-  
+
   const renderSharedControls = () => (
     <>
       <div className={styles.formGroup}>
@@ -155,12 +155,11 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
 
 
 function NodeController() {
-  const { selectedNodeId, nodes, updateNodeData, addReply, updateReply, deleteReply } = useStore();
-  
+  const { selectedNodeId, nodes, updateNodeData } = useStore();
+
   const [localNode, setLocalNode] = useState(null);
   const [selectedElementId, setSelectedElementId] = useState(null);
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
-  // --- 💡 추가: 변경 여부 상태 ---
   const [isDirty, setIsDirty] = useState(false);
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
@@ -168,22 +167,20 @@ function NodeController() {
   useEffect(() => {
     if (selectedNode) {
       setLocalNode(JSON.parse(JSON.stringify(selectedNode)));
-      setIsDirty(false); // 새 노드 선택 시 초기화
+      setIsDirty(false);
     } else {
       setLocalNode(null);
     }
     setSelectedElementId(null);
   }, [selectedNode]);
-  
-  // --- 💡 추가: localNode 변경 시 isDirty 상태 업데이트 ---
+
   useEffect(() => {
     if (localNode && selectedNode) {
-      // JSON.stringify를 사용한 간단한 깊은 비교
       const hasChanged = JSON.stringify(localNode.data) !== JSON.stringify(selectedNode.data);
       setIsDirty(hasChanged);
     }
   }, [localNode, selectedNode]);
-  
+
   if (!localNode) {
     return (
       <div className={styles.controllerContainer}>
@@ -194,17 +191,50 @@ function NodeController() {
       </div>
     );
   }
-  
+
   const handleLocalDataChange = (key, value) => {
     setLocalNode(prev => ({
       ...prev,
       data: { ...prev.data, [key]: value },
     }));
   };
-  
+
   const handleSaveChanges = () => {
     updateNodeData(localNode.id, localNode.data);
-    setIsDirty(false); // 저장 후 초기화
+    setIsDirty(false);
+  };
+
+  const localAddReply = () => {
+    setLocalNode(prev => {
+        const newNode = { ...prev };
+        const nodeType = newNode.type;
+        const newReply = {
+            display: nodeType === 'branch' ? '새 조건' : (nodeType === 'fixedmenu' ? '새 메뉴' : '새 답장'),
+            value: `${nodeType === 'branch' ? 'cond' : (nodeType === 'fixedmenu' ? 'menu' : 'val')}_${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+        };
+        const newReplies = [...(newNode.data.replies || []), newReply];
+        newNode.data.replies = newReplies;
+        return newNode;
+    });
+  };
+
+  const localUpdateReply = (index, part, value) => {
+      setLocalNode(prev => {
+          const newNode = { ...prev };
+          const newReplies = [...newNode.data.replies];
+          newReplies[index] = { ...newReplies[index], [part]: value };
+          newNode.data.replies = newReplies;
+          return newNode;
+      });
+  };
+
+  const localDeleteReply = (index) => {
+      setLocalNode(prev => {
+          const newNode = { ...prev };
+          const newReplies = newNode.data.replies.filter((_, i) => i !== index);
+          newNode.data.replies = newReplies;
+          return newNode;
+      });
   };
 
   const localAddElement = (elementType) => {
@@ -277,7 +307,7 @@ function NodeController() {
         return newNode;
       });
   };
-  
+
   const localUpdateGridCell = (elementIndex, rowIndex, colIndex, value) => {
       setLocalNode(prev => {
         const newNode = { ...prev };
@@ -316,7 +346,7 @@ function NodeController() {
   };
 
   const renderFormControls = () => {
-    const { id, data } = localNode;
+    const { data } = localNode;
     const elementTabs = ['input', 'date', 'grid', 'checkbox', 'dropbox'];
 
     const elements = data.elements || [];
@@ -375,9 +405,9 @@ function NodeController() {
         </div>
         <div className={styles.separator} />
         {selectedElement && (
-            <ElementEditor 
-                element={selectedElement} 
-                index={selectedElementIndex} 
+            <ElementEditor
+                element={selectedElement}
+                index={selectedElementIndex}
                 onUpdate={localUpdateElement}
                 onDelete={localDeleteElement}
                 onGridCellChange={localUpdateGridCell}
@@ -388,47 +418,46 @@ function NodeController() {
   };
 
   const renderDefaultControls = () => {
-    const { id, type, data } = selectedNode;
-    const { updateReply, deleteReply, addReply } = useStore.getState();
+    const { type, data } = localNode;
     return (
       <>
         <div className={styles.formGroup}>
           <label>Content</label>
-          <textarea value={data.content || ''} onChange={(e) => updateNodeData(id, { content: e.target.value })} rows={4} />
+          <textarea value={data.content || ''} onChange={(e) => handleLocalDataChange('content', e.target.value)} rows={4} />
         </div>
 
         {type === 'api' && (
           <div className={styles.formGroup}>
             <label>Slot</label>
-            <input type="text" value={data.slot || ''} onChange={(e) => updateNodeData(id, { slot: e.target.value })} />
+            <input type="text" value={data.slot || ''} onChange={(e) => handleLocalDataChange('slot', e.target.value)} />
           </div>
         )}
 
-        {(type === 'message' || type === 'api' || type === 'branch') && (
+        {(type === 'message' || type === 'api' || type === 'branch' || type === 'fixedmenu') && (
           <div className={styles.formGroup}>
-            <label>{type === 'branch' ? 'Branches' : 'Quick Replies'}</label>
+            <label>{type === 'branch' ? 'Branches' : (type === 'fixedmenu' ? 'Menus' : 'Quick Replies')}</label>
             <div className={styles.repliesContainer}>
               {data.replies?.map((reply, index) => (
-                <div key={reply.value} className={styles.quickReply}>
+                <div key={reply.value || index} className={styles.quickReply}>
                   <input
                     className={styles.quickReplyInput}
                     value={reply.display}
-                    onChange={(e) => updateReply(id, index, 'display', e.target.value)}
+                    onChange={(e) => localUpdateReply(index, 'display', e.target.value)}
                     placeholder="표시될 텍스트"
                   />
-                  {type !== 'branch' && (
+                  {type !== 'branch' && type !== 'fixedmenu' && (
                     <input
                       className={styles.quickReplyInput}
                       value={reply.value}
-                      onChange={(e) => updateReply(id, index, 'value', e.target.value)}
+                      onChange={(e) => localUpdateReply(index, 'value', e.target.value)}
                       placeholder="실제 값"
                     />
                   )}
-                  <button onClick={() => deleteReply(id, index)} className={styles.deleteReplyButton}>×</button>
+                  <button onClick={() => localDeleteReply(index)} className={styles.deleteReplyButton}>×</button>
                 </div>
               ))}
-              <button onClick={() => addReply(id)} className={styles.addReplyButton}>
-                {type === 'branch' ? '+ Add Branch' : '+ Add Reply'}
+              <button onClick={() => localAddReply()} className={styles.addReplyButton}>
+                {type === 'branch' ? '+ Add Branch' : (type === 'fixedmenu' ? '+ Add Menu' : '+ Add Reply')}
               </button>
             </div>
           </div>
@@ -445,14 +474,11 @@ function NodeController() {
           {localNode.type === 'form' ? renderFormControls() : renderDefaultControls()}
         </div>
       </div>
-      {localNode.type === 'form' && (
-        <div className={styles.controllerActions}>
-          {/* --- 💡 수정: disabled 속성 추가 --- */}
-          <button onClick={handleSaveChanges} className={styles.saveNodeButton} disabled={!isDirty}>
-            Save Changes
-          </button>
-        </div>
-      )}
+      <div className={styles.controllerActions}>
+        <button onClick={handleSaveChanges} className={styles.saveNodeButton} disabled={!isDirty}>
+          Save Changes {isDirty && ' *'}
+        </button>
+      </div>
     </div>
   );
 }

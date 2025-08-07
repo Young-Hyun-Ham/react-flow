@@ -64,6 +64,9 @@ const useStore = create((set, get) => ({
           dataSource: ''
         };
         break;
+      case 'fixedmenu':
+        newNode.data = { id: 'new_fixedmenu', title: '고정 메뉴', replies: [{ display: '메뉴1', value: `menu_${Date.now()}` }, { display: '메뉴2', value: `menu_${Date.now() + 1}` }] };
+        break;
       default:
         break;
     }
@@ -77,9 +80,9 @@ const useStore = create((set, get) => ({
         if (node.id === nodeId) {
           const nodeType = node.type;
           const newReply = {
-            display: nodeType === 'branch' ? '새 조건' : '새 답장',
+            display: nodeType === 'branch' ? '새 조건' : (nodeType === 'fixedmenu' ? '새 메뉴' : '새 답장'),
             // --- 💡 수정: 고유 ID 생성 로직 변경 ---
-            value: `${nodeType === 'branch' ? 'cond' : 'val'}_${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+            value: `${nodeType === 'branch' ? 'cond' : (nodeType === 'fixedmenu' ? 'menu' : 'val')}_${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
           };
           const newReplies = [...(node.data.replies || []), newReply];
           return { ...node, data: { ...node.data, replies: newReplies } };
@@ -113,7 +116,7 @@ const useStore = create((set, get) => ({
       }),
     }));
   },
-  
+
   addElement: (nodeId, elementType) => {
     set((state) => ({
       nodes: state.nodes.map((node) => {
@@ -209,7 +212,7 @@ const useStore = create((set, get) => ({
       }),
     }));
   },
-  
+
   updateGridCell: (nodeId, elementIndex, rowIndex, colIndex, value) => {
     set((state) => ({
       nodes: state.nodes.map((node) => {
@@ -227,7 +230,7 @@ const useStore = create((set, get) => ({
       }),
     }));
   },
-  
+
   moveElement: (nodeId, startIndex, endIndex) => {
     set((state) => ({
       nodes: state.nodes.map((node) => {

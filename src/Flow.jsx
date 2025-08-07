@@ -6,6 +6,7 @@ import MessageNode from './nodes/MessageNode';
 import BranchNode from './nodes/BranchNode';
 import ApiNode from './nodes/ApiNode';
 import FormNode from './nodes/FormNode';
+import FixedMenuNode from './nodes/FixedMenuNode'; // 💡고정 메뉴 노드 import
 import ChatbotSimulator from './ChatbotSimulator';
 import NodeController from './NodeController';
 import useStore from './store';
@@ -17,6 +18,7 @@ const nodeTypes = {
   branch: BranchNode,
   api: ApiNode,
   form: FormNode,
+  fixedmenu: FixedMenuNode, // 💡고정 메뉴 노드 등록
 };
 
 function Flow({ scenarioId, onBack }) {
@@ -68,6 +70,7 @@ function Flow({ scenarioId, onBack }) {
         <button onClick={() => addNode('form')} className={`${styles.sidebarButton} ${styles.formButton}`}>+ Form</button>
         <button onClick={() => addNode('branch')} className={`${styles.sidebarButton} ${styles.branchButton}`}>+ 조건분기</button>
         <button onClick={() => addNode('api')} className={`${styles.sidebarButton} ${styles.apiButton}`}>+ API</button>
+        <button onClick={() => addNode('fixedmenu')} className={`${styles.sidebarButton} ${styles.fixedMenuButton}`}>+ 고정메뉴</button>
       </div>
 
       <div className={styles.mainContent}>
@@ -97,11 +100,11 @@ function Flow({ scenarioId, onBack }) {
       <div className={`${styles.controllerPanel} ${selectedNodeId ? styles.visible : ''}`}>
         <NodeController />
       </div>
-      
+
       <div className={`${styles.resizerV} ${isSimulatorVisible ? styles.visible : ''}`} onMouseDown={handleMainResize} />
-      
-      <div 
-        className={`${styles.rightContainer} ${isSimulatorVisible ? styles.visible : ''}`} 
+
+      <div
+        className={`${styles.rightContainer} ${isSimulatorVisible ? styles.visible : ''}`}
         style={{ '--right-panel-width': `${rightPanelWidth}px` }}
       >
         <div className={styles.panel}>

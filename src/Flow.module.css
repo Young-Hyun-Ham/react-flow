@@ -55,6 +55,10 @@
   background-color: #9b59b6;
 }
 
+.fixedMenuButton {
+  background-color: #e74c3c; /* 💡고정 메뉴 버튼 색상 추가 */
+}
+
 .mainContent {
   flex-grow: 1;
   position: relative;

@@ -36,6 +36,50 @@
   background-color: #dcdcdc;
 }
 
+/* --- 💡 수정된 고정 메뉴 스타일 시작 --- */
+.fixedMenuContainer {
+  padding: 15px 15px 10px;
+  flex-shrink: 0;
+}
+
+.fixedMenuTitle {
+  margin: 0 0 10px 0;
+  font-size: 0.9rem;
+  color: #333;
+  text-align: left;
+  padding : 5px;
+  background-color: white;
+  border-radius: 10px;
+}
+
+.fixedMenuButtons {
+  display: flex;
+  width: 100%;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.fixedMenuButton {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background-color: #ffeb33;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  width: 100%;
+}
+
+.fixedMenuButton:hover {
+  background-color: #ccba15;
+  border-color: #ccba15;
+}
+/* --- 💡 수정된 고정 메뉴 스타일 끝 --- */
+
+
 .history {
   flex-grow: 1;
   padding: 16px 10px;
@@ -185,12 +229,10 @@
   box-sizing: border-box;
 }
 
-/* --- 이전 disable 스타일 --- */
 .formInput:disabled, .branchButton:disabled, .formSubmitButton:disabled {
   background-color: #f0f2f5;
   cursor: not-allowed;
   opacity: 0.7;
-  /* --- 💡 추가: 그림자 효과 --- */
   box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
 }
 
@@ -228,7 +270,7 @@
 
 .formGridTable td {
   border: 1px solid #ccc;
-  padding: 6px; 
+  padding: 6px;
   text-align: center;
   font-size: 0.9rem;
 }
@@ -245,7 +287,6 @@
   outline: 1px solid #007aff;
 }
 
-/* --- 💡 수정된 부분: 조건분기 버튼 스타일 --- */
 .branchButtonsContainer {
   margin-top: 10px;
   background-color: #f0f0f0;

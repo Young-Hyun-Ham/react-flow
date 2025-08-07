@@ -24,6 +24,8 @@
 .headerApi { background-color: #3498db; }
 .headerBranch { background-color: #2ecc71; }
 .headerForm { background-color: #9b59b6; }
+.headerFixedMenu { background-color: #e74c3c; } /* 💡고정 메뉴 헤더 색상 추가 */
+
 
 .headerTextContent {
   font-size: 0.8rem;
@@ -240,7 +242,7 @@
   display: flex; /* flex 속성 추가 */
   align-items: center; /* 세로 중앙 정렬 */
   justify-content: space-between; /* 버튼과 핸들 간 간격 벌림 */
-  padding-right: 15px; 
+  padding-right: 15px;
 }
 
 .branchOptionButton {

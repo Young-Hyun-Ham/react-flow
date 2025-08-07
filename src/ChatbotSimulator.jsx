@@ -38,16 +38,51 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
   const [inputValue, setInputValue] = useState('');
   const [slots, setSlots] = useState({});
   const [formData, setFormData] = useState({});
+  const [fixedMenu, setFixedMenu] = useState(null);
 
   const currentNode = nodes.find(n => n.id === currentId);
 
   const addBotMessage = (nodeId) => {
     const node = nodes.find(n => n.id === nodeId);
     if (node) {
+      if (node.type === 'fixedmenu') {
+        setHistory([]); // 💡 채팅창 리셋
+        setFixedMenu({ nodeId: node.id, ...node.data });
+        setCurrentId(node.id); // 💡 현재 노드를 fixedmenu로 설정하고 대기
+        return;
+      }
       const isInteractive = node.type === 'form' || (node.type === 'branch' && node.data.replies?.length > 0);
       setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: isInteractive ? false : true, id: Date.now() }]);
     }
   };
+
+  const proceedToNextNode = (sourceHandleId, sourceNodeId = currentId) => {
+    if (!sourceNodeId) return;
+    let nextEdge;
+    if (sourceHandleId) {
+      nextEdge = edges.find(
+        (edge) => edge.source === sourceNodeId && edge.sourceHandle === sourceHandleId
+      );
+    } else {
+      nextEdge = edges.find((edge) => edge.source === sourceNodeId && !edge.sourceHandle);
+    }
+
+    if (nextEdge) {
+      const nextNode = nodes.find((node) => node.id === nextEdge.target);
+      if (nextNode) {
+        setCurrentId(nextNode.id);
+        setTimeout(() => addBotMessage(nextNode.id), 500);
+      }
+    } else {
+        if(currentNode?.type !== 'fixedmenu' && currentNode?.type !== 'branch') {
+            setTimeout(() => {
+                setHistory((prev) => [...prev, { type: 'bot', message: '대화가 종료되었습니다.' }]);
+                setCurrentId(null);
+            }, 500);
+        }
+    }
+  };
+
 
   const startSimulation = useCallback(() => {
     const edgeTargets = new Set(edges.map((edge) => edge.target));
@@ -56,11 +91,12 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
     if (startNode) {
       setSlots({});
       setFormData({});
+      setFixedMenu(null);
+      setHistory([]); // 💡 시작 시 무조건 기록 초기화
       setCurrentId(startNode.id);
-      
-      const isInteractive = startNode.type === 'form' || (startNode.type === 'branch' && startNode.data.replies?.length > 0);
-      setHistory([{ type: 'bot', nodeId: startNode.id, isCompleted: isInteractive ? false : true, id: Date.now() }]);
+      addBotMessage(startNode.id); // 💡 addBotMessage를 통해 일관되게 첫 노드 처리
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, edges]);
 
   useEffect(() => {
@@ -70,8 +106,7 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
 
   useEffect(() => {
     const node = nodes.find(n => n.id === currentId);
-
-    if (node && node.type === 'message') {
+    if (node && (node.type === 'message' || (node.type === 'api' && !node.data.replies?.length))) {
       const nextEdge = edges.find((edge) => edge.source === node.id && !edge.sourceHandle);
       if (nextEdge) {
         const nextNode = nodes.find((n) => n.id === nextEdge.target);
@@ -86,36 +121,11 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
     }
   }, [currentId, nodes, edges]);
 
+
   const completeCurrentInteraction = () => {
-    setHistory(prev => prev.map(item => 
+    setHistory(prev => prev.map(item =>
       (item.nodeId === currentId) ? { ...item, isCompleted: true } : item
     ));
-  };
-
-
-  const proceedToNextNode = (sourceHandleId) => {
-    if (!currentNode) return;
-    let nextEdge;
-    if (sourceHandleId) {
-      nextEdge = edges.find(
-        (edge) => edge.source === currentNode.id && edge.sourceHandle === sourceHandleId
-      );
-    } else {
-      nextEdge = edges.find((edge) => edge.source === currentNode.id && !edge.sourceHandle);
-    }
-
-    if (nextEdge) {
-      const nextNode = nodes.find((node) => node.id === nextEdge.target);
-      if (nextNode) {
-        setCurrentId(nextNode.id);
-        setTimeout(() => addBotMessage(nextNode.id), 500);
-      }
-    } else {
-      setTimeout(() => {
-        setHistory((prev) => [...prev, { type: 'bot', message: '대화가 종료되었습니다.' }]);
-        setCurrentId(null);
-      }, 500);
-    }
   };
 
   const handleTextInputSend = () => {
@@ -131,24 +141,26 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
     proceedToNextNode(null);
   };
 
-  const handleOptionClick = (answer) => {
-    if (!currentNode) return;
+  const handleOptionClick = (answer, sourceNodeId = currentId) => {
+    const sourceNode = nodes.find(n => n.id === sourceNodeId);
+    if (!sourceNode) return;
+
     setHistory((prev) => [...prev, { type: 'user', message: answer.display }]);
     completeCurrentInteraction();
 
-    const currentSlot = currentNode.data.slot;
-    if (currentSlot && currentNode.type === 'api') {
+    const currentSlot = sourceNode.data.slot;
+    if (currentSlot && sourceNode.type === 'api') {
       setSlots(prev => ({ ...prev, [currentSlot]: answer.value }));
     }
 
-    const sourceHandleId = currentNode.type === 'branch' ? answer.value : null;
-    proceedToNextNode(sourceHandleId);
+    const sourceHandleId = (sourceNode.type === 'branch' || sourceNode.type === 'fixedmenu') ? answer.value : null;
+    proceedToNextNode(sourceHandleId, sourceNodeId);
   };
 
   const handleFormInputChange = (elementName, value) => {
     setFormData(prev => ({ ...prev, [elementName]: value }));
   };
-  
+
   const handleFormMultiInputChange = (elementName, value, checked) => {
     setFormData(prev => {
       const existingValues = prev[elementName] || [];
@@ -169,7 +181,7 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
         }
       }
     }
-    
+
     completeCurrentInteraction();
     setSlots(prev => ({ ...prev, ...formData }));
     setFormData({});
@@ -179,8 +191,8 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
 
   const renderOptions = () => {
     if (!currentNode) { return (<button className={`${styles.optionButton} ${styles.restartButton}`} onClick={startSimulation}>대화 다시 시작하기</button>); }
-    
-    if (currentNode.type === 'branch') {
+
+    if (currentNode.type === 'branch' || currentNode.type === 'fixedmenu') {
       return null;
     }
 
@@ -213,13 +225,24 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
     <div className={styles.simulator}>
       <div className={styles.header}>
         <span>챗봇</span>
-        {/* --- 💡 수정: isVisible prop에 따라 버튼 렌더링 --- */}
         {isVisible && (
           <button className={styles.headerRestartButton} onClick={startSimulation}>
             다시 시작
           </button>
         )}
       </div>
+      {fixedMenu && (
+        <div className={styles.fixedMenuContainer}>
+          <p className={styles.fixedMenuTitle}>{fixedMenu.content}</p>
+          <div className={styles.fixedMenuButtons}>
+            {fixedMenu.replies?.map(reply => (
+              <button key={reply.value} className={styles.fixedMenuButton} onClick={() => handleOptionClick(reply, fixedMenu.nodeId)}>
+                {reply.display}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className={styles.history}>
         {history.map((item, index) => {
           if (item.type === 'bot' && item.nodeId) {
