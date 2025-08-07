@@ -1,15 +1,17 @@
+/* --- 💡 수정된 부분 --- */
 .controllerContainer {
   padding: 0;
   background-color: #f8f9fa;
   height: 100%;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  border-left: #c5c5c5 1px solid;
+  overflow: hidden; /* 자식 요소의 overflow를 제어하기 위해 추가 */
 }
 
-.mainControls, .advancedControls {
+.mainControls {
   padding: 15px;
+  flex-grow: 1; /* 남은 공간을 모두 차지하도록 설정 */
+  overflow-y: auto; /* 내용이 길어지면 스크롤 생성 */
 }
 
 .mainControls h3, .advancedControls h3 {
@@ -20,7 +22,7 @@
 
 .separator {
   border-bottom: 2px solid #e9ecef;
-  margin: 15px 0; /* 상하 여백 추가 */
+  margin: 15px 0;
   flex-shrink: 0;
 }
 
@@ -173,6 +175,19 @@
   transition: background-color 0.2s, border-color 0.2s;
 }
 
+.elementItemContent {
+    display: flex;
+    flex-direction: row;
+    flex-grow: 1;
+    gap : 10px;
+}
+
+.elementType {
+  font-size: 0.8rem;
+  color: #777;
+}
+
+
 .elementItem:hover {
   background-color: #f8f9fa;
 }
@@ -183,15 +198,8 @@
   font-weight: bold;
 }
 
-/* --- 💡 추가: 드래그 오버 스타일 --- */
 .elementItem.dragOver {
     border-top: 2px solid #3498db;
-}
-
-
-.elementItem span:last-child {
-  font-size: 0.8rem;
-  color: #777;
 }
 
 .elementEditor {
@@ -213,24 +221,28 @@
   margin-top: 20px;
 }
 
-.deleteElementButton, .saveElementButton {
-  padding: 6px 14px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
 .deleteElementButton {
   background-color: #e74c3c;
   color: white;
   border-color: #e74c3c;
 }
 
-.saveElementButton {
-  background-color: #3498db;
-  color: white;
-  border-color: #3498db;
+.elementDeleteButton {
+  background: none;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 1.5rem;
+  font-weight: bold;
+  padding: 0 5px;
+  margin-left: 10px;
+  line-height: 1;
 }
+
+.elementDeleteButton:hover {
+  color: #e74c3c;
+}
+
 
 .gridControls {
     display: flex;
@@ -259,5 +271,28 @@
   resize: vertical;
   font-size: 0.9rem;
   background-color: #fff;
-  box-sizing: border-box; /* 너비 계산에 패딩과 테두리 포함 */
+  box-sizing: border-box;
+}
+
+.controllerActions {
+    padding: 15px;
+    border-top: 2px solid #e9ecef;
+    background-color: #f8f9fa;
+    flex-shrink: 0;
+}
+
+.saveNodeButton {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    font-weight: bold;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.saveNodeButton:hover {
+    background-color: #2980b9;
 }

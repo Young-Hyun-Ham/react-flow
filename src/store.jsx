@@ -38,7 +38,8 @@ const useStore = create((set, get) => ({
 
   addNode: (type) => {
     const newNode = {
-      id: `${type}-${+new Date()}`,
+      // --- 💡 수정: 고유 ID 생성 로직 변경 ---
+      id: `${type}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       type,
       position: { x: 100, y: 100 },
       data: {},
@@ -52,7 +53,7 @@ const useStore = create((set, get) => ({
         newNode.data = { id: 'new_api', content: '질문을 입력하세요.', slot: 'newSlot', replies: [] };
         break;
       case 'branch':
-        newNode.data = { id: 'new_branch', content: '조건 분기 질문을 입력하세요.', replies: [{ display: '조건1', value: `cond_${+new Date()}` }, { display: '조건2', value: `cond_${+new Date() + 1}` }] };
+        newNode.data = { id: 'new_branch', content: '조건 분기 질문을 입력하세요.', replies: [{ display: '조건1', value: `cond_${Date.now()}` }, { display: '조건2', value: `cond_${Date.now() + 1}` }] };
         break;
       case 'form':
         newNode.data = {
@@ -77,7 +78,8 @@ const useStore = create((set, get) => ({
           const nodeType = node.type;
           const newReply = {
             display: nodeType === 'branch' ? '새 조건' : '새 답장',
-            value: `${nodeType === 'branch' ? 'cond' : 'val'}_${+new Date()}`
+            // --- 💡 수정: 고유 ID 생성 로직 변경 ---
+            value: `${nodeType === 'branch' ? 'cond' : 'val'}_${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
           };
           const newReplies = [...(node.data.replies || []), newReply];
           return { ...node, data: { ...node.data, replies: newReplies } };
@@ -117,7 +119,8 @@ const useStore = create((set, get) => ({
       nodes: state.nodes.map((node) => {
         if (node.id === nodeId && node.type === 'form') {
           let newElement;
-          const newId = `${elementType}-${+new Date()}`;
+          // --- 💡 수정: 고유 ID 생성 로직 변경 ---
+          const newId = `${elementType}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
           switch (elementType) {
             case 'input':
@@ -225,7 +228,6 @@ const useStore = create((set, get) => ({
     }));
   },
   
-  // --- 💡 추가: 드래그 앤 드롭으로 요소 순서 변경 ---
   moveElement: (nodeId, startIndex, endIndex) => {
     set((state) => ({
       nodes: state.nodes.map((node) => {

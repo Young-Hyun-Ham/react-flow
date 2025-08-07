@@ -2,22 +2,21 @@ import { useState, useEffect } from 'react';
 import useStore from './store';
 import styles from './NodeController.module.css';
 
-function ElementEditor({ nodeId, element, index }) {
-  const { updateElement, deleteElement, updateGridCell } = useStore();
-
+// ElementEditor는 이제 local state를 직접 수정하는 함수를 props로 받습니다.
+function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange }) {
   if (!element) {
     return <p className={styles.placeholder}>편집할 요소를 선택하세요.</p>;
   }
 
   const handleUpdate = (field, value) => {
-    updateElement(nodeId, index, { ...element, [field]: value });
+    onUpdate(index, { ...element, [field]: value });
   };
 
   const handleValidationUpdate = (field, value) => {
     const newValidation = { ...element.validation, [field]: value };
-    updateElement(nodeId, index, { ...element, validation: newValidation });
+    onUpdate(index, { ...element, validation: newValidation });
   };
-
+  
   const handleOptionChange = (optIndex, optValue) => {
     const newOptions = [...(element.options || [])];
     newOptions[optIndex] = optValue;
@@ -32,10 +31,6 @@ function ElementEditor({ nodeId, element, index }) {
   const deleteOption = (optIndex) => {
     const newOptions = (element.options || []).filter((_, i) => i !== optIndex);
     handleUpdate('options', newOptions);
-  };
-
-  const handleGridCellChange = (rowIndex, colIndex, value) => {
-    updateGridCell(nodeId, index, rowIndex, colIndex, value);
   };
   
   const renderSharedControls = () => (
@@ -111,7 +106,7 @@ function ElementEditor({ nodeId, element, index }) {
               <textarea
                 key={idx}
                 value={cell}
-                onChange={(e) => handleGridCellChange(rowIndex, colIndex, e.target.value)}
+                onChange={(e) => onGridCellChange(index, rowIndex, colIndex, e.target.value)}
                 className={styles.gridCellEditor}
               />
             );
@@ -152,8 +147,7 @@ function ElementEditor({ nodeId, element, index }) {
       {element.type === 'grid' && renderGridControls()}
       {(element.type === 'checkbox' || element.type === 'dropbox') && renderOptionsControls()}
       <div className={styles.editorActions}>
-        <button className={styles.deleteElementButton} onClick={() => deleteElement(nodeId, index)}>삭제</button>
-        <button className={styles.saveElementButton}>저장</button>
+        <button className={styles.deleteElementButton} onClick={() => onDelete(index)}>삭제</button>
       </div>
     </div>
   );
@@ -161,19 +155,36 @@ function ElementEditor({ nodeId, element, index }) {
 
 
 function NodeController() {
-  const { selectedNodeId, nodes, updateNodeData, addReply, updateReply, deleteReply, addElement, moveElement } = useStore();
+  const { selectedNodeId, nodes, updateNodeData, addReply, updateReply, deleteReply } = useStore();
+  
+  const [localNode, setLocalNode] = useState(null);
   const [selectedElementId, setSelectedElementId] = useState(null);
-  // --- 💡 추가: 드래그 상태 관리 ---
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
+  // --- 💡 추가: 변경 여부 상태 ---
+  const [isDirty, setIsDirty] = useState(false);
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
   useEffect(() => {
+    if (selectedNode) {
+      setLocalNode(JSON.parse(JSON.stringify(selectedNode)));
+      setIsDirty(false); // 새 노드 선택 시 초기화
+    } else {
+      setLocalNode(null);
+    }
     setSelectedElementId(null);
-  }, [selectedNodeId]);
-
-
-  if (!selectedNode) {
+  }, [selectedNode]);
+  
+  // --- 💡 추가: localNode 변경 시 isDirty 상태 업데이트 ---
+  useEffect(() => {
+    if (localNode && selectedNode) {
+      // JSON.stringify를 사용한 간단한 깊은 비교
+      const hasChanged = JSON.stringify(localNode.data) !== JSON.stringify(selectedNode.data);
+      setIsDirty(hasChanged);
+    }
+  }, [localNode, selectedNode]);
+  
+  if (!localNode) {
     return (
       <div className={styles.controllerContainer}>
         <div className={styles.mainControls}>
@@ -183,12 +194,104 @@ function NodeController() {
       </div>
     );
   }
-
-  const handleDataChange = (key, value) => {
-    updateNodeData(selectedNode.id, { [key]: value });
+  
+  const handleLocalDataChange = (key, value) => {
+    setLocalNode(prev => ({
+      ...prev,
+      data: { ...prev.data, [key]: value },
+    }));
+  };
+  
+  const handleSaveChanges = () => {
+    updateNodeData(localNode.id, localNode.data);
+    setIsDirty(false); // 저장 후 초기화
   };
 
-  // --- 💡 추가: 드래그 앤 드롭 핸들러 ---
+  const localAddElement = (elementType) => {
+    setLocalNode(prev => {
+        const newNode = { ...prev };
+        let newElement;
+        const newId = `${elementType}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
+        switch (elementType) {
+            case 'input':
+              newElement = { id: newId, type: 'input', name: '', label: 'New Input', placeholder: '', validation: { type: 'text' } };
+              break;
+            case 'date':
+              newElement = { id: newId, type: 'date', name: '', label: 'New Date' };
+              break;
+            case 'grid':
+              const rows = 2;
+              const columns = 2;
+              newElement = {
+                id: newId,
+                type: 'grid',
+                name: '',
+                label: 'New Grid',
+                rows: rows,
+                columns: columns,
+                data: Array(rows * columns).fill('')
+              };
+              break;
+            case 'checkbox':
+              newElement = { id: newId, type: 'checkbox', name: '', label: 'New Checkbox', options: [] };
+              break;
+            case 'dropbox':
+              newElement = { id: newId, type: 'dropbox', name: '', label: 'New Dropbox', options: [] };
+              break;
+            default:
+              newElement = { id: newId, type: elementType };
+          }
+
+        newNode.data.elements = [...(newNode.data.elements || []), newElement];
+        return newNode;
+    });
+  };
+
+  const localUpdateElement = (elementIndex, elementUpdate) => {
+    setLocalNode(prev => {
+      const newNode = { ...prev };
+      const newElements = [...newNode.data.elements];
+      newElements[elementIndex] = elementUpdate;
+      newNode.data.elements = newElements;
+      return newNode;
+    });
+  };
+
+  const localDeleteElement = (elementIndex) => {
+    setLocalNode(prev => {
+        const newNode = { ...prev };
+        newNode.data.elements = newNode.data.elements.filter((_, i) => i !== elementIndex);
+        return newNode;
+    });
+    setSelectedElementId(null);
+  };
+
+  const localMoveElement = (startIndex, endIndex) => {
+      setLocalNode(prev => {
+        const newNode = { ...prev };
+        const newElements = [...newNode.data.elements];
+        const [removed] = newElements.splice(startIndex, 1);
+        newElements.splice(endIndex, 0, removed);
+        newNode.data.elements = newElements;
+        return newNode;
+      });
+  };
+  
+  const localUpdateGridCell = (elementIndex, rowIndex, colIndex, value) => {
+      setLocalNode(prev => {
+        const newNode = { ...prev };
+        const newElements = JSON.parse(JSON.stringify(newNode.data.elements));
+        const gridElement = newElements[elementIndex];
+        if (gridElement && gridElement.type === 'grid') {
+            const index = rowIndex * gridElement.columns + colIndex;
+            gridElement.data[index] = value;
+            newNode.data.elements = newElements;
+        }
+        return newNode;
+      });
+  };
+
   const handleDragStart = (e, index) => {
     setDraggedItemIndex(index);
     e.dataTransfer.effectAllowed = 'move';
@@ -196,8 +299,7 @@ function NodeController() {
 
   const handleDragOver = (e, index) => {
     e.preventDefault();
-    const draggedOverItem = e.currentTarget;
-    draggedOverItem.classList.add(styles.dragOver);
+    e.currentTarget.classList.add(styles.dragOver);
   };
 
   const handleDragLeave = (e) => {
@@ -208,14 +310,13 @@ function NodeController() {
     e.preventDefault();
     e.currentTarget.classList.remove(styles.dragOver);
     if (draggedItemIndex !== null && draggedItemIndex !== index) {
-        moveElement(selectedNode.id, draggedItemIndex, index);
+        localMoveElement(draggedItemIndex, index);
     }
     setDraggedItemIndex(null);
   };
 
-
   const renderFormControls = () => {
-    const { id, data } = selectedNode;
+    const { id, data } = localNode;
     const elementTabs = ['input', 'date', 'grid', 'checkbox', 'dropbox'];
 
     const elements = data.elements || [];
@@ -226,13 +327,13 @@ function NodeController() {
       <>
         <div className={styles.formGroup}>
           <label>Form Title</label>
-          <input type="text" value={data.title || ''} onChange={(e) => handleDataChange('title', e.target.value)} />
+          <input type="text" value={data.title || ''} onChange={(e) => handleLocalDataChange('title', e.target.value)} />
         </div>
         <div className={styles.formGroup}>
           <label>Add Element</label>
           <div className={styles.elementTabs}>
             {elementTabs.map(type => (
-              <button key={type} onClick={() => addElement(id, type)}>{type}</button>
+              <button key={type} onClick={() => localAddElement(type)}>{type}</button>
             ))}
           </div>
         </div>
@@ -241,7 +342,6 @@ function NodeController() {
           <label>Elements List</label>
           <div className={styles.elementsContainer}>
             {elements.length > 0 ? (
-                // --- 💡 수정: 드래그 앤 드롭 이벤트 핸들러 추가 ---
               elements.map((el, index) => (
                 <div
                     key={el.id}
@@ -253,8 +353,19 @@ function NodeController() {
                     onDragLeave={handleDragLeave}
                     onDrop={(e) => handleDrop(e, index)}
                 >
-                  <span>{el.label || el.type}</span>
-                  <span>({el.type})</span>
+                  <div className={styles.elementItemContent}>
+                    <span>{el.label || el.type}</span>
+                    <span className={styles.elementType}>({el.type})</span>
+                  </div>
+                  <button
+                    className={styles.elementDeleteButton}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      localDeleteElement(index);
+                    }}
+                  >
+                    ×
+                  </button>
                 </div>
               ))
             ) : (
@@ -263,24 +374,33 @@ function NodeController() {
           </div>
         </div>
         <div className={styles.separator} />
-        <ElementEditor nodeId={id} element={selectedElement} index={selectedElementIndex} />
+        {selectedElement && (
+            <ElementEditor 
+                element={selectedElement} 
+                index={selectedElementIndex} 
+                onUpdate={localUpdateElement}
+                onDelete={localDeleteElement}
+                onGridCellChange={localUpdateGridCell}
+            />
+        )}
       </>
     );
   };
 
   const renderDefaultControls = () => {
     const { id, type, data } = selectedNode;
+    const { updateReply, deleteReply, addReply } = useStore.getState();
     return (
       <>
         <div className={styles.formGroup}>
           <label>Content</label>
-          <textarea value={data.content || ''} onChange={(e) => handleDataChange('content', e.target.value)} rows={4} />
+          <textarea value={data.content || ''} onChange={(e) => updateNodeData(id, { content: e.target.value })} rows={4} />
         </div>
 
         {type === 'api' && (
           <div className={styles.formGroup}>
             <label>Slot</label>
-            <input type="text" value={data.slot || ''} onChange={(e) => handleDataChange('slot', e.target.value)} />
+            <input type="text" value={data.slot || ''} onChange={(e) => updateNodeData(id, { slot: e.target.value })} />
           </div>
         )}
 
@@ -320,11 +440,19 @@ function NodeController() {
   return (
     <div className={styles.controllerContainer}>
       <div className={styles.mainControls}>
-        <h3>타입: {selectedNode.type}</h3>
+        <h3>타입: {localNode.type}</h3>
         <div className={styles.form}>
-          {selectedNode.type === 'form' ? renderFormControls() : renderDefaultControls()}
+          {localNode.type === 'form' ? renderFormControls() : renderDefaultControls()}
         </div>
       </div>
+      {localNode.type === 'form' && (
+        <div className={styles.controllerActions}>
+          {/* --- 💡 수정: disabled 속성 추가 --- */}
+          <button onClick={handleSaveChanges} className={styles.saveNodeButton} disabled={!isDirty}>
+            Save Changes
+          </button>
+        </div>
+      )}
     </div>
   );
 }

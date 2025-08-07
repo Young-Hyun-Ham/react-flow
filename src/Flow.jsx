@@ -11,18 +11,18 @@ import NodeController from './NodeController';
 import useStore from './store';
 import styles from './Flow.module.css';
 
-function Flow({ scenarioId, onBack }) {
-  const nodeTypes = useMemo(() => ({
-    message: MessageNode,
-    branch: BranchNode,
-    api: ApiNode,
-    form: FormNode,
-  }), []);
+// --- 💡 수정: nodeTypes를 컴포넌트 외부로 이동 ---
+const nodeTypes = {
+  message: MessageNode,
+  branch: BranchNode,
+  api: ApiNode,
+  form: FormNode,
+};
 
+function Flow({ scenarioId, onBack }) {
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, fetchScenario, saveScenario, addNode, selectedNodeId, setSelectedNodeId } = useStore();
 
   const [rightPanelWidth, setRightPanelWidth] = useState(400);
-  // --- 💡 수정: 초기 상태를 false로 변경 ---
   const [isSimulatorVisible, setIsSimulatorVisible] = useState(false);
 
   useEffect(() => {
@@ -72,12 +72,11 @@ function Flow({ scenarioId, onBack }) {
 
       <div className={styles.mainContent}>
         <div className={styles.topRightControls}>
-          {/* <button onClick={() => setIsSimulatorVisible(!isSimulatorVisible)} className={styles.controlButton}>
-            {isSimulatorVisible ? 'Sim OFF' : '🤖'}
-          </button> */}
           <button onClick={onBack} className={styles.controlButton}>목록으로</button>
           <button onClick={() => saveScenario(scenarioId)} className={`${styles.controlButton} ${styles.saveButton}`}>Save Scenario</button>
-          <div onClick={() => setIsSimulatorVisible(!isSimulatorVisible)} className={`${isSimulatorVisible ? styles.botButton : styles.botButtonHidden}`} >🤖</div>
+          <div onClick={() => setIsSimulatorVisible(!isSimulatorVisible)} className={!isSimulatorVisible ? styles.botButtonHidden : styles.botButton}>
+            🤖
+          </div>
         </div>
         <ReactFlow
           nodes={nodes}
@@ -98,11 +97,11 @@ function Flow({ scenarioId, onBack }) {
       <div className={`${styles.controllerPanel} ${selectedNodeId ? styles.visible : ''}`}>
         <NodeController />
       </div>
-
+      
       <div className={`${styles.resizerV} ${isSimulatorVisible ? styles.visible : ''}`} onMouseDown={handleMainResize} />
-
-      <div
-        className={`${styles.rightContainer} ${isSimulatorVisible ? styles.visible : ''}`}
+      
+      <div 
+        className={`${styles.rightContainer} ${isSimulatorVisible ? styles.visible : ''}`} 
         style={{ '--right-panel-width': `${rightPanelWidth}px` }}
       >
         <div className={styles.panel}>
