@@ -111,7 +111,7 @@ const useStore = create((set, get) => ({
       }),
     }));
   },
-
+  
   addElement: (nodeId, elementType) => {
     set((state) => ({
       nodes: state.nodes.map((node) => {
@@ -136,7 +136,6 @@ const useStore = create((set, get) => ({
                 label: 'New Grid',
                 rows: rows,
                 columns: columns,
-                // --- 💡 수정: 1차원 배열로 데이터 초기화 ---
                 data: Array(rows * columns).fill('')
               };
               break;
@@ -166,7 +165,6 @@ const useStore = create((set, get) => ({
                 const oldElement = newElements[elementIndex];
                 const newElement = { ...oldElement, ...elementUpdate };
 
-                // --- 💡 수정: Grid 크기 변경 시 1차원 배열 데이터 재구성 ---
                 if (
                     newElement.type === 'grid' &&
                     (oldElement.rows !== newElement.rows || oldElement.columns !== newElement.columns)
@@ -208,7 +206,7 @@ const useStore = create((set, get) => ({
       }),
     }));
   },
-
+  
   updateGridCell: (nodeId, elementIndex, rowIndex, colIndex, value) => {
     set((state) => ({
       nodes: state.nodes.map((node) => {
@@ -217,11 +215,25 @@ const useStore = create((set, get) => ({
           const gridElement = newElements[elementIndex];
 
           if (gridElement && gridElement.type === 'grid') {
-            // --- 💡 수정: 1차원 배열의 인덱스 계산 ---
             const index = rowIndex * gridElement.columns + colIndex;
             gridElement.data[index] = value;
             return { ...node, data: { ...node.data, elements: newElements } };
           }
+        }
+        return node;
+      }),
+    }));
+  },
+  
+  // --- 💡 추가: 드래그 앤 드롭으로 요소 순서 변경 ---
+  moveElement: (nodeId, startIndex, endIndex) => {
+    set((state) => ({
+      nodes: state.nodes.map((node) => {
+        if (node.id === nodeId && node.type === 'form') {
+          const newElements = [...node.data.elements];
+          const [removed] = newElements.splice(startIndex, 1);
+          newElements.splice(endIndex, 0, removed);
+          return { ...node, data: { ...node.data, elements: newElements } };
         }
         return node;
       }),

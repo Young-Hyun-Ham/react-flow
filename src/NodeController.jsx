@@ -104,7 +104,6 @@ function ElementEditor({ nodeId, element, index }) {
       <div className={styles.formGroup}>
         <label>Grid Content</label>
         <div className={styles.gridContentEditor} style={{ gridTemplateColumns: `repeat(${element.columns || 2}, 1fr)`}}>
-          {/* --- 💡 수정: 1차원 배열을 순회하며 Grid 렌더링 --- */}
           {element.data?.map((cell, idx) => {
             const rowIndex = Math.floor(idx / element.columns);
             const colIndex = idx % element.columns;
@@ -162,8 +161,10 @@ function ElementEditor({ nodeId, element, index }) {
 
 
 function NodeController() {
-  const { selectedNodeId, nodes, updateNodeData, addReply, updateReply, deleteReply, addElement } = useStore();
+  const { selectedNodeId, nodes, updateNodeData, addReply, updateReply, deleteReply, addElement, moveElement } = useStore();
   const [selectedElementId, setSelectedElementId] = useState(null);
+  // --- 💡 추가: 드래그 상태 관리 ---
+  const [draggedItemIndex, setDraggedItemIndex] = useState(null);
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
@@ -186,6 +187,32 @@ function NodeController() {
   const handleDataChange = (key, value) => {
     updateNodeData(selectedNode.id, { [key]: value });
   };
+
+  // --- 💡 추가: 드래그 앤 드롭 핸들러 ---
+  const handleDragStart = (e, index) => {
+    setDraggedItemIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    const draggedOverItem = e.currentTarget;
+    draggedOverItem.classList.add(styles.dragOver);
+  };
+
+  const handleDragLeave = (e) => {
+    e.currentTarget.classList.remove(styles.dragOver);
+  };
+
+  const handleDrop = (e, index) => {
+    e.preventDefault();
+    e.currentTarget.classList.remove(styles.dragOver);
+    if (draggedItemIndex !== null && draggedItemIndex !== index) {
+        moveElement(selectedNode.id, draggedItemIndex, index);
+    }
+    setDraggedItemIndex(null);
+  };
+
 
   const renderFormControls = () => {
     const { id, data } = selectedNode;
@@ -214,11 +241,17 @@ function NodeController() {
           <label>Elements List</label>
           <div className={styles.elementsContainer}>
             {elements.length > 0 ? (
-              elements.map(el => (
+                // --- 💡 수정: 드래그 앤 드롭 이벤트 핸들러 추가 ---
+              elements.map((el, index) => (
                 <div
-                  key={el.id}
-                  className={`${styles.elementItem} ${el.id === selectedElementId ? styles.selected : ''}`}
-                  onClick={() => setSelectedElementId(el.id)}
+                    key={el.id}
+                    className={`${styles.elementItem} ${el.id === selectedElementId ? styles.selected : ''}`}
+                    onClick={() => setSelectedElementId(el.id)}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, index)}
                 >
                   <span>{el.label || el.type}</span>
                   <span>({el.type})</span>

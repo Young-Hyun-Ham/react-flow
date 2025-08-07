@@ -182,6 +182,12 @@
   font-weight: bold;
 }
 
+/* --- 💡 추가: 드래그 오버 스타일 --- */
+.elementItem.dragOver {
+    border-top: 2px solid #3498db;
+}
+
+
 .elementItem span:last-child {
   font-size: 0.8rem;
   color: #777;
@@ -234,7 +240,6 @@
     flex: 1;
 }
 
-/* --- 💡 수정된 부분: Grid 편집기 스타일 --- */
 .gridContentEditor {
   display: grid;
   gap: 5px;
