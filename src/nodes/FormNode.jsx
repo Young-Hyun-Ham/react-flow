@@ -94,6 +94,7 @@ function FormNode({ id, data }) {
             className={`${styles.textInput} ${styles.formTitleInput}`}
             value={data.title}
             onChange={(e) => updateNodeData(id, { title: e.target.value })}
+            readOnly
             placeholder="Form Title"
           />
         </div>

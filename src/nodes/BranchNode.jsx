@@ -26,6 +26,7 @@ function BranchNode({ id, data }) {
             className={styles.textInput}
             value={data.content || ''}
             onChange={(e) => updateNodeData(id, { content: e.target.value })}
+            readOnly
             rows={4}
           />
         </div>
