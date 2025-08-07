@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'; // --- 💡 수정된 부분: useEffect import 추가 ---
+import { useState, useEffect } from 'react';
 import useStore from './store';
 import styles from './NodeController.module.css';
 
@@ -16,6 +16,22 @@ function ElementEditor({ nodeId, element, index }) {
   const handleValidationUpdate = (field, value) => {
     const newValidation = { ...element.validation, [field]: value };
     updateElement(nodeId, index, { ...element, validation: newValidation });
+  };
+
+  const handleOptionChange = (optIndex, optValue) => {
+    const newOptions = [...(element.options || [])];
+    newOptions[optIndex] = optValue;
+    handleUpdate('options', newOptions);
+  };
+
+  const addOption = () => {
+    const newOptions = [...(element.options || []), '새 옵션'];
+    handleUpdate('options', newOptions);
+  };
+
+  const deleteOption = (optIndex) => {
+    const newOptions = (element.options || []).filter((_, i) => i !== optIndex);
+    handleUpdate('options', newOptions);
   };
   
   const renderSharedControls = () => (
@@ -66,14 +82,55 @@ function ElementEditor({ nodeId, element, index }) {
         </select>
       </div>
     </>
-  )
+  );
+
+  // --- 💡 수정된 부분: Grid 컨트롤 ---
+  const renderGridControls = () => (
+    <>
+        {renderSharedControls()}
+        <div className={styles.gridControls}>
+            <div className={styles.formGroup}>
+                <label>Rows</label>
+                <input type="number" min="1" max="10" value={element.rows || 2} onChange={(e) => handleUpdate('rows', parseInt(e.target.value, 10))} />
+            </div>
+            <div className={styles.formGroup}>
+                <label>Columns</label>
+                <input type="number" min="1" max="5" value={element.columns || 2} onChange={(e) => handleUpdate('columns', parseInt(e.target.value, 10))} />
+            </div>
+        </div>
+    </>
+  );
+
+  const renderOptionsControls = () => (
+    <>
+      {renderSharedControls()}
+      <div className={styles.formGroup}>
+        <label>Options</label>
+        <div className={styles.repliesContainer}>
+          {(element.options || []).map((option, optIndex) => (
+            <div key={optIndex} className={styles.quickReply}>
+              <input
+                className={styles.quickReplyInput}
+                value={option}
+                onChange={(e) => handleOptionChange(optIndex, e.target.value)}
+                placeholder="옵션 값"
+              />
+              <button onClick={() => deleteOption(optIndex)} className={styles.deleteReplyButton}>×</button>
+            </div>
+          ))}
+          <button onClick={addOption} className={styles.addReplyButton}>+ Add Option</button>
+        </div>
+      </div>
+    </>
+  );
 
   return (
     <div className={styles.elementEditor}>
       <h4>Edit {element.type}</h4>
       {element.type === 'input' && renderInputControls()}
       {element.type === 'date' && renderDateControls()}
-      {/* TODO: Add controls for other element types (grid, etc.) */}
+      {element.type === 'grid' && renderGridControls()}
+      {(element.type === 'checkbox' || element.type === 'dropbox') && renderOptionsControls()}
       <div className={styles.editorActions}>
         <button className={styles.deleteElementButton} onClick={() => deleteElement(nodeId, index)}>삭제</button>
         <button className={styles.saveElementButton}>저장</button>

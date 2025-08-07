@@ -3,11 +3,34 @@ import styles from './ChatbotSimulator.module.css';
 
 const interpolateMessage = (message, slots) => {
   if (!message) return '';
-  // --- 💡 이 함수가 {key}를 slots[key]로 교체하는 핵심 역할을 합니다 ---
   return message.replace(/\{(\w+)\}/g, (match, key) => {
     return slots[key] || match;
   });
 };
+
+const validateInput = (value, validation) => {
+  if (!validation) return true;
+
+  switch (validation.type) {
+    case 'email':
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    case 'phone number':
+      return /^\d{2,3}-\d{3,4}-\d{4}$/.test(value);
+    case 'custom':
+      if (validation.regex) {
+        try {
+          return new RegExp(validation.regex).test(value);
+        } catch (e) {
+          console.error("Invalid regex:", validation.regex);
+          return false;
+        }
+      }
+      return true;
+    default:
+      return true;
+  }
+};
+
 
 function ChatbotSimulator({ nodes, edges }) {
   const [history, setHistory] = useState([]);
@@ -110,16 +133,31 @@ function ChatbotSimulator({ nodes, edges }) {
   const handleFormInputChange = (elementName, value) => {
     setFormData(prev => ({ ...prev, [elementName]: value }));
   };
+  
+  const handleFormMultiInputChange = (elementName, value, checked) => {
+    setFormData(prev => {
+      const existingValues = prev[elementName] || [];
+      const newValues = checked
+        ? [...existingValues, value]
+        : existingValues.filter(v => v !== value);
+      return { ...prev, [elementName]: newValues };
+    });
+  };
 
-  // --- 💡 수정된 부분: 폼 데이터를 slots에 병합 ---
   const handleFormSubmit = () => {
-    // 1. 현재 폼 데이터를 전역 slots에 병합
+    for (const element of currentNode.data.elements) {
+      if (element.type === 'input') {
+        const value = formData[element.name] || '';
+        if (!validateInput(value, element.validation)) {
+          alert(`'${element.label}' 입력값이 유효하지 않습니다.`);
+          return;
+        }
+      }
+    }
+
     setSlots(prev => ({ ...prev, ...formData }));
-    // 2. 다음 폼을 위해 formData 초기화
     setFormData({});
-    // 3. 사용자에게 제출 완료 메시지 표시
     setHistory(prev => [...prev, { type: 'user', message: "양식을 제출했습니다." }]);
-    // 4. 다음 노드로 진행
     proceedToNextNode(null);
   };
 
@@ -189,6 +227,46 @@ function ChatbotSimulator({ nodes, edges }) {
                             value={formData[el.name] || ''}
                             onChange={(e) => handleFormInputChange(el.name, e.target.value)}
                           />
+                        )}
+                        {el.type === 'checkbox' && el.options?.map(opt => (
+                          <div key={opt} className={styles.checkboxOption}>
+                            <input
+                              type="checkbox"
+                              id={`${el.id}-${opt}`}
+                              value={opt}
+                              checked={(formData[el.name] || []).includes(opt)}
+                              onChange={(e) => handleFormMultiInputChange(el.name, opt, e.target.checked)}
+                            />
+                            <label htmlFor={`${el.id}-${opt}`}>{opt}</label>
+                          </div>
+                        ))}
+                        {el.type === 'dropbox' && (
+                          <select
+                            className={styles.formInput}
+                            value={formData[el.name] || ''}
+                            onChange={(e) => handleFormInputChange(el.name, e.target.value)}
+                          >
+                            <option value="" disabled>선택...</option>
+                            {el.options?.map(opt => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        )}
+                        {/* --- 💡 추가: Grid 렌더링 --- */}
+                        {el.type === 'grid' && (
+                          <table className={styles.formGridTable}>
+                            <tbody>
+                              {[...Array(el.rows || 2)].map((_, rowIndex) => (
+                                <tr key={rowIndex}>
+                                  {[...Array(el.columns || 2)].map((_, colIndex) => (
+                                    <td key={colIndex}>
+                                      <input type="text" className={styles.gridInput} />
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         )}
                       </div>
                     ))}

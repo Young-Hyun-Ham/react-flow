@@ -6,7 +6,6 @@ function FormNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);
   const updateNodeData = useStore((state) => state.updateNodeData);
 
-  // --- 💡 추가된 부분: Form Element 미리보기 렌더링 함수 ---
   const renderElementPreview = (element) => {
     switch (element.type) {
       case 'input':
@@ -28,21 +27,47 @@ function FormNode({ id, data }) {
             <input type="date" className={styles.previewInput} readOnly />
           </div>
         );
+      // --- 💡 수정된 부분: Grid 미리보기 ---
       case 'grid':
-         return (
+        return (
           <div key={element.id} className={styles.previewElement}>
-            <label className={styles.previewLabel}>Grid ({element.columns || 2} columns)</label>
-            <div className={styles.previewGrid}>
-              {[...Array(element.columns || 2)].map((_, i) => <div key={i}>Item</div>)}
-            </div>
+            <label className={styles.previewLabel}>{element.label || 'Grid'}</label>
+            <table className={styles.previewGridTable}>
+              <tbody>
+                {[...Array(element.rows || 2)].map((_, rowIndex) => (
+                  <tr key={rowIndex}>
+                    {[...Array(element.columns || 2)].map((_, colIndex) => (
+                      <td key={colIndex}></td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         );
       case 'checkbox':
-      case 'dropbox':
-         return (
+        return (
           <div key={element.id} className={styles.previewElement}>
-            <label className={styles.previewLabel}>{element.label || element.type}</label>
-            <div className={styles.previewBox}>Options...</div>
+            <label className={styles.previewLabel}>{element.label || 'Checkbox'}</label>
+            <div className={styles.previewOptionsContainer}>
+              {(element.options && element.options.length > 0 ? element.options : ['옵션 1', '옵션 2']).map((opt, i) => (
+                <div key={i} className={styles.previewCheckbox}>
+                  <input type="checkbox" id={`${element.id}-${i}`} checked={false} readOnly />
+                  <label htmlFor={`${element.id}-${i}`}>{opt}</label>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      case 'dropbox':
+        return (
+          <div key={element.id} className={styles.previewElement}>
+            <label className={styles.previewLabel}>{element.label || 'Dropbox'}</label>
+            <select className={styles.previewInput} disabled>
+              {(element.options && element.options.length > 0 ? element.options : ['옵션 1', '옵션 2']).map((opt, i) => (
+                <option key={i}>{opt}</option>
+              ))}
+            </select>
           </div>
         );
       default:
@@ -59,7 +84,6 @@ function FormNode({ id, data }) {
         <button onClick={() => deleteNode(id)} className={styles.deleteButton}>🗑️</button>
       </div>
       <div className={styles.nodeBody}>
-        {/* --- 💡 수정된 부분: Form Title 입력 필드 --- */}
         <div className={styles.section}>
           <input
             className={`${styles.textInput} ${styles.formTitleInput}`}
@@ -68,7 +92,6 @@ function FormNode({ id, data }) {
             placeholder="Form Title"
           />
         </div>
-        {/* --- 💡 수정된 부분: Form 미리보기 영역 --- */}
         <div className={styles.formPreview}>
           {data.elements && data.elements.length > 0
             ? data.elements.map(renderElementPreview)

@@ -151,7 +151,7 @@
   width: 100%;
 }
 
-/* --- 💡 추가된 부분: Form 관련 스타일 --- */
+/* --- 💡 수정된 부분: Form 관련 스타일 --- */
 .formContainer {
   display: flex;
   flex-direction: column;
@@ -186,6 +186,12 @@
   box-sizing: border-box;
 }
 
+.checkboxOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .formSubmitButton {
   align-self: flex-end;
   padding: 8px 20px;
@@ -196,4 +202,27 @@
   font-weight: bold;
   cursor: pointer;
   margin-top: 10px;
+}
+
+/* --- 💡 추가된 부분: Grid 관련 스타일 --- */
+.formGridTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.formGridTable td {
+  border: 1px solid #ccc;
+  padding: 2px;
+}
+
+.gridInput {
+  width: 100%;
+  border: none;
+  padding: 6px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.gridInput:focus {
+  outline: 1px solid #007aff;
 }

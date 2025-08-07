@@ -7,7 +7,6 @@
   color: black;
 }
 
-/* --- 💡 추가된 부분: FormNode 너비 확장 --- */
 .formNodeWrapper {
   width: 320px;
 }
@@ -73,7 +72,6 @@
   resize: vertical;
 }
 
-/* --- 💡 추가된 부분: Form Title 입력 필드 스타일 --- */
 .formTitleInput {
   font-size: 1rem;
   font-weight: bold;
@@ -147,7 +145,6 @@
   font-size: 0.8rem;
 }
 
-/* --- 💡 추가된 부분: Form 미리보기 관련 스타일 --- */
 .formPreview {
   border: 1px solid #e0e0e0;
   border-radius: 6px;
@@ -179,21 +176,49 @@
   color: #333;
 }
 
+.previewInput:disabled {
+  background-color: #f8f9fa;
+  cursor: not-allowed;
+  color: #777;
+}
+
 .previewBox {
   color: #777;
 }
 
-.previewGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
-  gap: 6px;
-  text-align: center;
-  font-size: 0.8rem;
-  color: #555;
+.previewOptionsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 
-.previewGrid div {
-  padding: 10px 5px;
-  background-color: #e9ecef;
-  border-radius: 4px;
+.previewCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
+.previewCheckbox input {
+  margin: 0;
+  accent-color: #9b59b6;
+}
+
+.previewCheckbox label {
+  color: #333;
+}
+
+/* --- 💡 추가된 부분 --- */
+.previewGridTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.previewGridTable td {
+  border: 1px solid #ddd;
+  height: 30px;
 }

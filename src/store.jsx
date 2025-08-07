@@ -112,7 +112,6 @@ const useStore = create((set, get) => ({
     }));
   },
   
-  // --- 💡 수정된 부분: Form Element 추가 로직 확장 ---
   addElement: (nodeId, elementType) => {
     set((state) => ({
       nodes: state.nodes.map((node) => {
@@ -127,8 +126,9 @@ const useStore = create((set, get) => ({
             case 'date':
               newElement = { id: newId, type: 'date', name: '', label: 'New Date' };
               break;
+            // --- 💡 수정된 부분: Grid 생성 시 name과 label 추가 ---
             case 'grid':
-              newElement = { id: newId, type: 'grid', columns: 2, items: [] };
+              newElement = { id: newId, type: 'grid', name: '', label: 'New Grid', rows: 2, columns: 2, items: [] };
               break;
             case 'checkbox':
               newElement = { id: newId, type: 'checkbox', name: '', label: 'New Checkbox', options: [] };
