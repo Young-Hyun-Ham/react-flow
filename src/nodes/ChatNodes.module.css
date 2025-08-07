@@ -85,7 +85,6 @@
   border-bottom-color: #9b59b6;
 }
 
-
 .quickReply {
   display: flex;
   flex-direction: row;
@@ -217,7 +216,6 @@
   border-collapse: collapse;
 }
 
-/* --- 💡 수정: Grid 미리보기 셀 스타일 --- */
 .previewGridTable td {
   border: 1px solid #ddd;
   padding: 6px;
@@ -225,4 +223,34 @@
   text-align: center;
   white-space: pre-wrap;
   word-break: break-all;
+}
+
+.branchOptionsContainer {
+  background-color: #f0f0f0;
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.branchOption {
+  position: relative;
+  display: flex; /* flex 속성 추가 */
+  align-items: center; /* 세로 중앙 정렬 */
+  justify-content: space-between; /* 버튼과 핸들 간 간격 벌림 */
+  padding-right: 15px; 
+}
+
+.branchOptionButton {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  text-align: left; /* 텍스트 왼쪽 정렬 */
+  font-size: 0.85rem;
+  color: #333;
+  box-sizing: border-box;
 }

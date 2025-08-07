@@ -32,7 +32,7 @@ const validateInput = (value, validation) => {
 };
 
 
-function ChatbotSimulator({ nodes, edges }) {
+function ChatbotSimulator({ nodes, edges, isVisible }) {
   const [history, setHistory] = useState([]);
   const [currentId, setCurrentId] = useState(null);
   const [inputValue, setInputValue] = useState('');
@@ -40,6 +40,14 @@ function ChatbotSimulator({ nodes, edges }) {
   const [formData, setFormData] = useState({});
 
   const currentNode = nodes.find(n => n.id === currentId);
+
+  const addBotMessage = (nodeId) => {
+    const node = nodes.find(n => n.id === nodeId);
+    if (node) {
+      const isInteractive = node.type === 'form' || (node.type === 'branch' && node.data.replies?.length > 0);
+      setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: isInteractive ? false : true, id: Date.now() }]);
+    }
+  };
 
   const startSimulation = useCallback(() => {
     const edgeTargets = new Set(edges.map((edge) => edge.target));
@@ -49,7 +57,9 @@ function ChatbotSimulator({ nodes, edges }) {
       setSlots({});
       setFormData({});
       setCurrentId(startNode.id);
-      setHistory([{ type: 'bot', nodeId: startNode.id }]);
+      
+      const isInteractive = startNode.type === 'form' || (startNode.type === 'branch' && startNode.data.replies?.length > 0);
+      setHistory([{ type: 'bot', nodeId: startNode.id, isCompleted: isInteractive ? false : true, id: Date.now() }]);
     }
   }, [nodes, edges]);
 
@@ -68,13 +78,19 @@ function ChatbotSimulator({ nodes, edges }) {
         if (nextNode) {
           const timer = setTimeout(() => {
             setCurrentId(nextNode.id);
-            setHistory((prev) => [...prev, { type: 'bot', nodeId: nextNode.id }]);
+            addBotMessage(nextNode.id);
           }, 1000);
           return () => clearTimeout(timer);
         }
       }
     }
   }, [currentId, nodes, edges]);
+
+  const completeCurrentInteraction = () => {
+    setHistory(prev => prev.map(item => 
+      (item.nodeId === currentId) ? { ...item, isCompleted: true } : item
+    ));
+  };
 
 
   const proceedToNextNode = (sourceHandleId) => {
@@ -92,9 +108,7 @@ function ChatbotSimulator({ nodes, edges }) {
       const nextNode = nodes.find((node) => node.id === nextEdge.target);
       if (nextNode) {
         setCurrentId(nextNode.id);
-        setTimeout(() => {
-          setHistory((prev) => [...prev, { type: 'bot', nodeId: nextNode.id }]);
-        }, 500);
+        setTimeout(() => addBotMessage(nextNode.id), 500);
       }
     } else {
       setTimeout(() => {
@@ -120,6 +134,7 @@ function ChatbotSimulator({ nodes, edges }) {
   const handleOptionClick = (answer) => {
     if (!currentNode) return;
     setHistory((prev) => [...prev, { type: 'user', message: answer.display }]);
+    completeCurrentInteraction();
 
     const currentSlot = currentNode.data.slot;
     if (currentSlot && currentNode.type === 'api') {
@@ -154,7 +169,8 @@ function ChatbotSimulator({ nodes, edges }) {
         }
       }
     }
-
+    
+    completeCurrentInteraction();
     setSlots(prev => ({ ...prev, ...formData }));
     setFormData({});
     setHistory(prev => [...prev, { type: 'user', message: "양식을 제출했습니다." }]);
@@ -163,6 +179,11 @@ function ChatbotSimulator({ nodes, edges }) {
 
   const renderOptions = () => {
     if (!currentNode) { return (<button className={`${styles.optionButton} ${styles.restartButton}`} onClick={startSimulation}>대화 다시 시작하기</button>); }
+    
+    if (currentNode.type === 'branch') {
+      return null;
+    }
+
     if (currentNode.type === 'message') {
       if (edges.some(edge => edge.source === currentNode.id)) {
         return null;
@@ -192,9 +213,12 @@ function ChatbotSimulator({ nodes, edges }) {
     <div className={styles.simulator}>
       <div className={styles.header}>
         <span>챗봇</span>
-        <button className={styles.headerRestartButton} onClick={startSimulation}>
-          다시 시작
-        </button>
+        {/* --- 💡 수정: isVisible prop에 따라 버튼 렌더링 --- */}
+        {isVisible && (
+          <button className={styles.headerRestartButton} onClick={startSimulation}>
+            다시 시작
+          </button>
+        )}
       </div>
       <div className={styles.history}>
         {history.map((item, index) => {
@@ -204,7 +228,7 @@ function ChatbotSimulator({ nodes, edges }) {
 
             if (node.type === 'form') {
               return (
-                <div key={index} className={styles.messageRow}>
+                <div key={item.id || index} className={styles.messageRow}>
                   <div className={styles.avatar}>🤖</div>
                   <div className={`${styles.message} ${styles.botMessage} ${styles.formContainer}`}>
                     <h3>{node.data.title}</h3>
@@ -218,6 +242,7 @@ function ChatbotSimulator({ nodes, edges }) {
                             placeholder={el.placeholder}
                             value={formData[el.name] || ''}
                             onChange={(e) => handleFormInputChange(el.name, e.target.value)}
+                            disabled={item.isCompleted}
                           />
                         )}
                         {el.type === 'date' && (
@@ -226,6 +251,7 @@ function ChatbotSimulator({ nodes, edges }) {
                             className={styles.formInput}
                             value={formData[el.name] || ''}
                             onChange={(e) => handleFormInputChange(el.name, e.target.value)}
+                            disabled={item.isCompleted}
                           />
                         )}
                         {el.type === 'checkbox' && el.options?.map(opt => (
@@ -236,6 +262,7 @@ function ChatbotSimulator({ nodes, edges }) {
                               value={opt}
                               checked={(formData[el.name] || []).includes(opt)}
                               onChange={(e) => handleFormMultiInputChange(el.name, opt, e.target.checked)}
+                              disabled={item.isCompleted}
                             />
                             <label htmlFor={`${el.id}-${opt}`}>{opt}</label>
                           </div>
@@ -245,6 +272,7 @@ function ChatbotSimulator({ nodes, edges }) {
                             className={styles.formInput}
                             value={formData[el.name] || ''}
                             onChange={(e) => handleFormInputChange(el.name, e.target.value)}
+                            disabled={item.isCompleted}
                           >
                             <option value="" disabled>선택...</option>
                             {el.options?.map(opt => (
@@ -255,7 +283,6 @@ function ChatbotSimulator({ nodes, edges }) {
                         {el.type === 'grid' && (
                           <table className={styles.formGridTable}>
                             <tbody>
-                              {/* --- 💡 수정: 1차원 배열을 표 형태로 렌더링 --- */}
                               {[...Array(el.rows || 2)].map((_, rowIndex) => (
                                 <tr key={rowIndex}>
                                   {[...Array(el.columns || 2)].map((_, colIndex) => {
@@ -274,7 +301,7 @@ function ChatbotSimulator({ nodes, edges }) {
                         )}
                       </div>
                     ))}
-                    <button className={styles.formSubmitButton} onClick={handleFormSubmit}>제출</button>
+                    <button className={styles.formSubmitButton} onClick={handleFormSubmit} disabled={item.isCompleted}>제출</button>
                   </div>
                 </div>
               );
@@ -282,9 +309,25 @@ function ChatbotSimulator({ nodes, edges }) {
 
             const message = interpolateMessage(node.data.content || node.data.label, slots);
             return (
-              <div key={index} className={styles.messageRow}>
+              <div key={item.id || index} className={styles.messageRow}>
                 <div className={styles.avatar}>🤖</div>
-                <div className={`${styles.message} ${styles.botMessage}`}>{message}</div>
+                <div className={`${styles.message} ${styles.botMessage}`}>
+                  <div>{message}</div>
+                  {node.type === 'branch' && (
+                    <div className={styles.branchButtonsContainer}>
+                      {node.data.replies?.map((reply) => (
+                        <button
+                          key={reply.value}
+                          className={styles.branchButton}
+                          onClick={() => handleOptionClick(reply)}
+                          disabled={item.isCompleted}
+                        >
+                          {reply.display}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             );
           }
@@ -297,7 +340,7 @@ function ChatbotSimulator({ nodes, edges }) {
           }
           if (item.type === 'bot' && item.message) {
             return (
-                <div key={index} className={styles.messageRow}>
+                <div key={item.id || index} className={styles.messageRow}>
                   <div className={styles.avatar}>🤖</div>
                   <div className={`${styles.message} ${styles.botMessage}`}>{item.message}</div>
                 </div>

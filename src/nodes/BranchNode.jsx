@@ -1,13 +1,16 @@
 import { Handle, Position } from 'reactflow';
 import styles from './ChatNodes.module.css';
 import useStore from '../store';
+import { useEffect, useRef } from 'react';
 
 function BranchNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);
+  const updateNodeData = useStore((state) => state.updateNodeData);
+  const branchOptionRefs = useRef([]);
 
-  // 기본 핸들 높이와 각 항목의 높이를 기반으로 동적으로 핸들 위치 계산
-  const baseTop = 155; // 헤더와 content 영역의 대략적인 높이
-  const itemHeight = 45; // 각 reply 항목의 높이
+  useEffect(() => {
+    branchOptionRefs.current = branchOptionRefs.current.slice(0, data.replies?.length);
+  }, [data.replies]);
 
   return (
     <div className={styles.nodeWrapper}>
@@ -22,24 +25,26 @@ function BranchNode({ id, data }) {
           <textarea
             className={styles.textInput}
             value={data.content || ''}
-            readOnly
+            onChange={(e) => updateNodeData(id, { content: e.target.value })}
             rows={4}
           />
         </div>
         <div className={styles.section}>
           <span className={styles.sectionTitle}>Branches:</span>
-          {/* --- 💡 수정된 부분: key={index} -> key={reply.value} --- */}
-          {data.replies?.map((reply, index) => (
-            <div key={reply.value} className={styles.quickReply}>
-              <span>{reply.display}</span>
-              <Handle
-                type="source"
-                position={Position.Right}
-                id={reply.value}
-                style={{ top: `${baseTop + index * itemHeight}px`, background: '#555' }}
-              />
-            </div>
-          ))}
+          <div className={styles.branchOptionsContainer}>
+            {data.replies?.map((reply, index) => (
+              <div key={reply.value} className={styles.branchOption} ref={el => branchOptionRefs.current.push(el)}>
+                <span className={styles.branchOptionButton}>{reply.display}</span>
+                <Handle
+                  type="source"
+                  position={Position.Right}
+                  id={reply.value}
+                  // --- 💡 수정: Handle의 세로 위치를 부모 요소의 높이의 중앙으로 조정 ---
+                  style={{ top: '50%', transform: 'translateY(-50%)', right: '-25px', background: '#555' }}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

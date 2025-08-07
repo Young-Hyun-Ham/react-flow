@@ -21,7 +21,9 @@ function Flow({ scenarioId, onBack }) {
 
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, fetchScenario, saveScenario, addNode, selectedNodeId, setSelectedNodeId } = useStore();
 
-  const [rightPanelWidth, setRightPanelWidth] = useState(400); // 💡 시뮬레이터 기본 너비 조정
+  const [rightPanelWidth, setRightPanelWidth] = useState(400);
+  // --- 💡 수정: 초기 상태를 false로 변경 ---
+  const [isSimulatorVisible, setIsSimulatorVisible] = useState(false);
 
   useEffect(() => {
     if (scenarioId) {
@@ -44,7 +46,6 @@ function Flow({ scenarioId, onBack }) {
 
     const onMouseMove = (mouseMoveEvent) => {
       const newSize = startSize - (mouseMoveEvent.clientX - startPosition);
-      // 💡 리사이즈 최소/최대 너비 조정
       if (newSize > 350 && newSize < 1000) {
         setRightPanelWidth(newSize);
       }
@@ -71,8 +72,12 @@ function Flow({ scenarioId, onBack }) {
 
       <div className={styles.mainContent}>
         <div className={styles.topRightControls}>
+          {/* <button onClick={() => setIsSimulatorVisible(!isSimulatorVisible)} className={styles.controlButton}>
+            {isSimulatorVisible ? 'Sim OFF' : '🤖'}
+          </button> */}
           <button onClick={onBack} className={styles.controlButton}>목록으로</button>
           <button onClick={() => saveScenario(scenarioId)} className={`${styles.controlButton} ${styles.saveButton}`}>Save Scenario</button>
+          <div onClick={() => setIsSimulatorVisible(!isSimulatorVisible)} className={`${isSimulatorVisible ? styles.botButton : styles.botButtonHidden}`} >🤖</div>
         </div>
         <ReactFlow
           nodes={nodes}
@@ -90,16 +95,18 @@ function Flow({ scenarioId, onBack }) {
         </ReactFlow>
       </div>
 
-      {/* --- 💡 수정: 컨트롤러 위치 변경 --- */}
       <div className={`${styles.controllerPanel} ${selectedNodeId ? styles.visible : ''}`}>
         <NodeController />
       </div>
-      
-      <div className={styles.resizerV} onMouseDown={handleMainResize} />
-      
-      <div className={styles.rightContainer} style={{ width: `${rightPanelWidth}px` }}>
+
+      <div className={`${styles.resizerV} ${isSimulatorVisible ? styles.visible : ''}`} onMouseDown={handleMainResize} />
+
+      <div
+        className={`${styles.rightContainer} ${isSimulatorVisible ? styles.visible : ''}`}
+        style={{ '--right-panel-width': `${rightPanelWidth}px` }}
+      >
         <div className={styles.panel}>
-          <ChatbotSimulator nodes={nodes} edges={edges} />
+          <ChatbotSimulator nodes={nodes} edges={edges} isVisible={isSimulatorVisible} />
         </div>
       </div>
     </div>

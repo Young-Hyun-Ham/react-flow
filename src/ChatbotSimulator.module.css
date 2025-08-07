@@ -151,7 +151,6 @@
   width: 100%;
 }
 
-/* --- 💡 수정된 부분: Form 관련 스타일 --- */
 .formContainer {
   display: flex;
   flex-direction: column;
@@ -186,6 +185,24 @@
   box-sizing: border-box;
 }
 
+/* --- 이전 disable 스타일 --- */
+.formInput:disabled, .branchButton:disabled, .formSubmitButton:disabled {
+  background-color: #f0f2f5;
+  cursor: not-allowed;
+  opacity: 0.7;
+  /* --- 💡 추가: 그림자 효과 --- */
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.branchButton:disabled {
+  border-color: #dcdcdc;
+  color: #888;
+}
+
+.branchButton:disabled:hover {
+  background-color: #f0f2f5;
+}
+
 .checkboxOption {
   display: flex;
   align-items: center;
@@ -204,7 +221,6 @@
   margin-top: 10px;
 }
 
-/* --- 💡 추가된 부분: Grid 관련 스타일 --- */
 .formGridTable {
   width: 100%;
   border-collapse: collapse;
@@ -212,7 +228,9 @@
 
 .formGridTable td {
   border: 1px solid #ccc;
-  padding: 2px;
+  padding: 6px; 
+  text-align: center;
+  font-size: 0.9rem;
 }
 
 .gridInput {
@@ -225,4 +243,33 @@
 
 .gridInput:focus {
   outline: 1px solid #007aff;
+}
+
+/* --- 💡 수정된 부분: 조건분기 버튼 스타일 --- */
+.branchButtonsContainer {
+  margin-top: 10px;
+  background-color: #f0f0f0;
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.branchButton {
+  width: 100%;
+  padding: 8px 12px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  color: #333;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-align: center;
+  box-sizing: border-box;
+  transition: background-color 0.2s;
+}
+
+.branchButton:hover {
+  background-color: #f5f5f5;
 }

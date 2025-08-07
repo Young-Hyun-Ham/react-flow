@@ -87,7 +87,6 @@
   font-weight: bold;
 }
 
-/* --- 💡 수정: 컨트롤러 패널 스타일 --- */
 .controllerPanel {
   width: 0;
   overflow: hidden;
@@ -95,27 +94,38 @@
   background-color: #f8f9fa;
   flex-shrink: 0;
   height: 100%;
-  border-right: 1px solid transparent; /* 닫혔을 때 테두리 숨김 */
-  border-left : 1px solid transparent; /* 닫혔을 때 테두리 숨김 */
+  border-right: 1px solid transparent;
 }
 
 .controllerPanel.visible {
   width: 380px;
-  border-right-color: #e0e0e0; /* 열렸을 때 테두리 표시 */
-  border-left-color: #e0e0e0; /* 열렸을 때 테두리 표시 */
+  border-right-color: #e0e0e0;
 }
 
 .rightContainer {
   flex-shrink: 0;
   display: flex;
+  width: 0;
+  overflow: hidden;
+  transition: width 0.3s ease-in-out;
+}
+
+/* --- 💡 수정: CSS 변수를 사용하여 width 제어 --- */
+.rightContainer.visible {
+  width: var(--right-panel-width);
 }
 
 .resizerV {
   background-color: #e0e0e0;
   flex-shrink: 0;
-  transition: background-color 0.2s;
-  width: 5px;
+  /* --- 💡 수정: width 속성에만 transition 적용 --- */
+  transition: width 0.3s ease-in-out;
+  width: 0;
   cursor: col-resize;
+}
+
+.resizerV.visible {
+    width: 5px;
 }
 
 .resizerV:hover {
@@ -123,9 +133,42 @@
 }
 
 .panel {
-  width: 100%; /* --- 💡 수정: 너비를 100%로 설정 --- */
+  width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.botButton {
+  bottom: 15px;
+  right: 15px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-size: 1.5rem;
+  transition: background-color 0.2s, transform 0.2s;
+  border : 1px solid #ccc;
+}
+
+.botButtonHidden {
+  bottom: 15px;
+  right: 15px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: #919191;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-size: 1.0rem;
+  transition: background-color 0.2s, transform 0.2s;
 }
