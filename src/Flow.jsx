@@ -2,9 +2,9 @@ import { useMemo, useEffect, useState } from 'react';
 import ReactFlow, { Controls } from 'reactflow';
 import 'reactflow/dist/style.css';
 
-import MessageNode from './nodes/MessageNode'; // 💡 변경
-import BranchNode from './nodes/BranchNode'; // 💡 변경
-import ApiNode from './nodes/ApiNode'; // 💡 변경
+import MessageNode from './nodes/MessageNode';
+import BranchNode from './nodes/BranchNode';
+import ApiNode from './nodes/ApiNode';
 import FormNode from './nodes/FormNode';
 import ChatbotSimulator from './ChatbotSimulator';
 import NodeController from './NodeController';
@@ -13,16 +13,15 @@ import styles from './Flow.module.css';
 
 function Flow({ scenarioId, onBack }) {
   const nodeTypes = useMemo(() => ({
-    message: MessageNode, // 💡 변경
-    branch: BranchNode, // 💡 변경
-    api: ApiNode, // 💡 변경
+    message: MessageNode,
+    branch: BranchNode,
+    api: ApiNode,
     form: FormNode,
   }), []);
 
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, fetchScenario, saveScenario, addNode, setSelectedNodeId } = useStore();
+  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, fetchScenario, saveScenario, addNode, selectedNodeId, setSelectedNodeId } = useStore();
 
-  const [rightPanelWidth, setRightPanelWidth] = useState(760);
-  const [controllerWidth, setControllerWidth] = useState(380);
+  const [rightPanelWidth, setRightPanelWidth] = useState(400); // 💡 시뮬레이터 기본 너비 조정
 
   useEffect(() => {
     if (scenarioId) {
@@ -45,30 +44,9 @@ function Flow({ scenarioId, onBack }) {
 
     const onMouseMove = (mouseMoveEvent) => {
       const newSize = startSize - (mouseMoveEvent.clientX - startPosition);
-      if (newSize > 600 && newSize < 1200) {
+      // 💡 리사이즈 최소/최대 너비 조정
+      if (newSize > 350 && newSize < 1000) {
         setRightPanelWidth(newSize);
-      }
-    };
-
-    const onMouseUp = () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
-    };
-
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
-  };
-
-  const handleSideResize = (mouseDownEvent) => {
-    mouseDownEvent.preventDefault();
-    const startSize = controllerWidth;
-    const startPosition = mouseDownEvent.clientX;
-
-    const onMouseMove = (mouseMoveEvent) => {
-      const newSize = startSize + (mouseMoveEvent.clientX - startPosition);
-      const totalWidth = rightPanelWidth;
-      if (newSize > 300 && (totalWidth - newSize) > 300) {
-        setControllerWidth(newSize);
       }
     };
 
@@ -85,7 +63,6 @@ function Flow({ scenarioId, onBack }) {
     <div className={styles.flowContainer}>
       <div className={styles.leftSidebar}>
         <h3>노드 추가</h3>
-        {/* --- 💡 수정된 부분 --- */}
         <button onClick={() => addNode('message')} className={`${styles.sidebarButton} ${styles.messageButton}`}>+ Message</button>
         <button onClick={() => addNode('form')} className={`${styles.sidebarButton} ${styles.formButton}`}>+ Form</button>
         <button onClick={() => addNode('branch')} className={`${styles.sidebarButton} ${styles.branchButton}`}>+ 조건분기</button>
@@ -113,13 +90,15 @@ function Flow({ scenarioId, onBack }) {
         </ReactFlow>
       </div>
 
+      {/* --- 💡 수정: 컨트롤러 위치 변경 --- */}
+      <div className={`${styles.controllerPanel} ${selectedNodeId ? styles.visible : ''}`}>
+        <NodeController />
+      </div>
+      
       <div className={styles.resizerV} onMouseDown={handleMainResize} />
+      
       <div className={styles.rightContainer} style={{ width: `${rightPanelWidth}px` }}>
-        <div className={styles.panel} style={{ width: `${controllerWidth}px` }}>
-          <NodeController />
-        </div>
-        <div className={styles.resizerH} onMouseDown={handleSideResize} />
-        <div className={styles.panel} style={{ flex: 1 }}>
+        <div className={styles.panel}>
           <ChatbotSimulator nodes={nodes} edges={edges} />
         </div>
       </div>
