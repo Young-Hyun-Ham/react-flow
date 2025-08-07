@@ -252,17 +252,21 @@ function ChatbotSimulator({ nodes, edges }) {
                             ))}
                           </select>
                         )}
-                        {/* --- 💡 수정된 부분: 읽기 전용 Grid 렌더링 --- */}
                         {el.type === 'grid' && (
                           <table className={styles.formGridTable}>
                             <tbody>
-                              {(el.data || []).map((row, rowIndex) => (
+                              {/* --- 💡 수정: 1차원 배열을 표 형태로 렌더링 --- */}
+                              {[...Array(el.rows || 2)].map((_, rowIndex) => (
                                 <tr key={rowIndex}>
-                                  {row.map((cell, colIndex) => (
-                                    <td key={colIndex}>
-                                      {interpolateMessage(cell, slots)}
-                                    </td>
-                                  ))}
+                                  {[...Array(el.columns || 2)].map((_, colIndex) => {
+                                    const cellIndex = rowIndex * (el.columns || 2) + colIndex;
+                                    const cellData = el.data[cellIndex] || '';
+                                    return (
+                                      <td key={colIndex}>
+                                        {interpolateMessage(cellData, slots)}
+                                      </td>
+                                    );
+                                  })}
                                 </tr>
                               ))}
                             </tbody>
