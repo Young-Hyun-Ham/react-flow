@@ -25,6 +25,7 @@
 .headerBranch { background-color: #2ecc71; }
 .headerForm { background-color: #9b59b6; }
 .headerFixedMenu { background-color: #e74c3c; } /* 💡고정 메뉴 헤더 색상 추가 */
+.headerLink { background-color: #34495e; }
 
 
 .headerTextContent {

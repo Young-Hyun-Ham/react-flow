@@ -7,6 +7,7 @@ import BranchNode from './nodes/BranchNode';
 import ApiNode from './nodes/ApiNode';
 import FormNode from './nodes/FormNode';
 import FixedMenuNode from './nodes/FixedMenuNode'; // 💡고정 메뉴 노드 import
+import LinkNode from './nodes/LinkNode';
 import ChatbotSimulator from './ChatbotSimulator';
 import NodeController from './NodeController';
 import useStore from './store';
@@ -19,6 +20,7 @@ const nodeTypes = {
   api: ApiNode,
   form: FormNode,
   fixedmenu: FixedMenuNode, // 💡고정 메뉴 노드 등록
+  link: LinkNode,
 };
 
 function Flow({ scenarioId, onBack }) {
@@ -71,6 +73,7 @@ function Flow({ scenarioId, onBack }) {
         <button onClick={() => addNode('branch')} className={`${styles.sidebarButton} ${styles.branchButton}`}>+ 조건분기</button>
         <button onClick={() => addNode('api')} className={`${styles.sidebarButton} ${styles.apiButton}`}>+ API</button>
         <button onClick={() => addNode('fixedmenu')} className={`${styles.sidebarButton} ${styles.fixedMenuButton}`}>+ 고정메뉴</button>
+        <button onClick={() => addNode('link')} className={`${styles.sidebarButton} ${styles.linkButton}`}>+ 링크</button>
       </div>
 
       <div className={styles.mainContent}>

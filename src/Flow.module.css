@@ -59,6 +59,10 @@
   background-color: #e74c3c; /* 💡고정 메뉴 버튼 색상 추가 */
 }
 
+.linkButton {
+  background-color: #34495e;
+}
+
 .mainContent {
   flex-grow: 1;
   position: relative;

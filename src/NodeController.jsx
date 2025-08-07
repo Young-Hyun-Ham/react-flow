@@ -426,6 +426,13 @@ function NodeController() {
           <textarea value={data.content || ''} onChange={(e) => handleLocalDataChange('content', e.target.value)} rows={4} />
         </div>
 
+        {type === 'link' && (
+          <div className={styles.formGroup}>
+            <label>Display Text</label>
+            <input type="text" value={data.display || ''} onChange={(e) => handleLocalDataChange('display', e.target.value)} />
+          </div>
+        )}
+
         {type === 'api' && (
           <div className={styles.formGroup}>
             <label>Slot</label>

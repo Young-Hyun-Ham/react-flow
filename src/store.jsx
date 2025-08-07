@@ -67,6 +67,9 @@ const useStore = create((set, get) => ({
       case 'fixedmenu':
         newNode.data = { id: 'new_fixedmenu', title: '고정 메뉴', replies: [{ display: '메뉴1', value: `menu_${Date.now()}` }, { display: '메뉴2', value: `menu_${Date.now() + 1}` }] };
         break;
+      case 'link':
+        newNode.data = { id: 'new_link', content: 'https://', display: '링크' };
+        break;
       default:
         break;
     }

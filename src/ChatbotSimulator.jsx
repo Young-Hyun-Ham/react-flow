@@ -51,6 +51,16 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
         setCurrentId(node.id); // 💡 현재 노드를 fixedmenu로 설정하고 대기
         return;
       }
+
+      if (node.type === 'link') {
+        setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: true, id: Date.now() }]);
+        if (node.data.content) {
+            window.open(node.data.content, '_blank', 'noopener,noreferrer');
+        }
+        proceedToNextNode(null, nodeId); // 링크 처리 후 바로 다음 노드로 진행
+        return;
+      }
+
       const isInteractive = node.type === 'form' || (node.type === 'branch' && node.data.replies?.length > 0);
       setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: isInteractive ? false : true, id: Date.now() }]);
     }
@@ -248,6 +258,18 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
           if (item.type === 'bot' && item.nodeId) {
             const node = nodes.find(n => n.id === item.nodeId);
             if (!node) return null;
+
+            if (node.type === 'link') {
+              return (
+                <div key={item.id || index} className={styles.messageRow}>
+                  <div className={styles.avatar}>🤖</div>
+                  <div className={`${styles.message} ${styles.botMessage}`}>
+                    <span>링크를 새 탭에서 엽니다: </span>
+                    <a href={node.data.content} target="_blank" rel="noopener noreferrer">{node.data.display || node.data.content}</a>
+                  </div>
+                </div>
+              );
+            }
 
             if (node.type === 'form') {
               return (
