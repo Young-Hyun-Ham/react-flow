@@ -86,7 +86,7 @@ function FormNode({ id, data }) {
       <Handle type="target" position={Position.Left} />
       <div className={`${styles.nodeHeader} ${styles.headerForm}`}>
         <span className={styles.headerTextContent}>Form</span>
-        <button onClick={() => deleteNode(id)} className={styles.deleteButton}>🗑️</button>
+        <button onClick={() => deleteNode(id)} className={styles.deleteButton}>❌</button>
       </div>
       <div className={styles.nodeBody}>
         <div className={styles.section}>

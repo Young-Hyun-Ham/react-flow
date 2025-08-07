@@ -17,7 +17,7 @@ function BranchNode({ id, data }) {
       <Handle type="target" position={Position.Left} />
       <div className={`${styles.nodeHeader} ${styles.headerBranch}`}>
         <span className={styles.headerTextContent}>조건분기</span>
-        <button onClick={() => deleteNode(id)} className={styles.deleteButton}>🗑️</button>
+        <button onClick={() => deleteNode(id)} className={styles.deleteButton}>❌</button>
       </div>
       <div className={styles.nodeBody}>
         <div className={styles.section}>

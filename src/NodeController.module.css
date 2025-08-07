@@ -5,6 +5,7 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  border-left: #c5c5c5 1px solid;
 }
 
 .mainControls, .advancedControls {

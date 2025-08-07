@@ -13,7 +13,7 @@ function MessageNode({ id, data }) {
       <Handle type="target" position={Position.Left} />
       <div className={`${styles.nodeHeader} ${styles.headerMessage}`}>
         <span className={styles.headerTextContent}>Message</span>
-        <button onClick={() => deleteNode(id)} className={styles.deleteButton}>🗑️</button>
+        <button onClick={() => deleteNode(id)} className={styles.deleteButton}>❌</button>
       </div>
       <div className={styles.nodeBody}>
         <div className={styles.section}>
