@@ -1,12 +1,75 @@
-# React + Vite
+# 챗봇 시나리오 에디터 사용 설명서
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+이 문서는 챗봇 시나리오 에디터의 주요 기능과 사용법을 안내합니다.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 1. 시작하기
 
-## Expanding the ESLint configuration
+### 1.1 로그인
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- 구글 계정으로 로그인해야 서비스를 이용할 수 있습니다.
+- 허용된 이메일과 도메인(`cyberlogitec.com`, `wisenut.co.kr`)을 가진 사용자만 접근 가능합니다.
+
+### 1.2 메인 화면
+
+- **Flow Editor**: 챗봇의 대화 흐름을 시각적으로 만들고 편집하는 기본 작업 공간입니다.
+- **Board**: 사용자 간 소통을 돕는 간단한 게시판 기능을 제공합니다.
+
+---
+
+## 2. 시나리오 관리
+
+- 로그인 후 가장 먼저 시나리오 목록 화면이 나타납니다.
+- **새 시나리오 추가**: `+ 새 시나리오 추가` 버튼 클릭 후 이름 입력으로 새로운 대화 흐름 생성.
+- **시나리오 선택**: 목록에서 시나리오 이름 클릭 시 해당 시나리오 편집 화면으로 이동.
+- **시나리오 수정/삭제**: 각 항목 옆의 수정 버튼으로 이름 변경, 삭제 버튼으로 영구 제거.
+
+---
+
+## 3. Flow Editor 화면 구성
+
+- **노드 추가 패널 (좌측)**: 다양한 노드를 캔버스로 추가.
+- **캔버스 (중앙)**: 노드 배치 및 연결로 대화 흐름 구성.
+- **컨트롤러 패널 (우측)**: 노드 선택 시 활성화, 세부 내용 편집 가능.
+- **시뮬레이터 (우측)**: 🤖 아이콘 클릭 시 활성화, 시나리오 실시간 테스트.
+
+---
+
+## 4. 노드(Node) 종류 및 기능
+
+| 노드 종류   | 아이콘 색상 | 설명                                                                 |
+| ----------- | ----------- | -------------------------------------------------------------------- |
+| Message     | 주황색      | 챗봇이 사용자에게 보내는 기본 텍스트 메시지. 빠른 답장 버튼 추가 가능. |
+| Form        | 보라색      | 사용자의 정형화된 데이터 입력 양식 (예: 이름, 날짜, 체크박스 등).      |
+| 조건분기    | 초록색      | 답변에 따라 대화 흐름을 여러 갈래로 분기.                             |
+| API         | 파란색      | 입력값을 변수(Slot)에 저장하거나 외부 시스템 연동 시 사용.            |
+| 고정메뉴    | 빨간색      | 대화창 하단에 항상 노출되는 메뉴. 시나리오 시작점 가능.               |
+| 링크        | 남색        | 외부 웹사이트 링크 전달.                                             |
+
+---
+
+## 5. 시나리오 편집 및 테스트
+
+### 5.1 노드 편집
+
+- 캔버스에서 노드 클릭 → 우측 컨트롤러 패널에서 텍스트, 버튼, 양식 요소 등 수정.
+- 수정 후 컨트롤러 패널 하단의 `Save Changes` 버튼 클릭.
+
+### 5.2 노드 연결
+
+- 노드의 연결점(Handle)을 클릭 후 다른 노드로 드래그하여 연결.
+- 조건분기/고정메뉴 노드는 각 버튼(Branch/Menu)마다 별도 연결점 보유.
+
+### 5.3 노드 및 연결선 삭제/복제
+
+- **노드 삭제**: 노드 우측 상단의 ❌ 버튼 클릭.
+- **연결선 삭제**: 연결선 선택 후 `Backspace` 또는 `Delete` 키.
+- **노드 복제**: 노드 선택 후 좌측 패널 하단의 `+ Duplicate Node` 버튼 클릭.
+
+### 5.4 저장 및 테스트
+
+- **저장**: 우측 상단의 `Save Scenario` 버튼 클릭.
+- **테스트**: 🤖 아이콘 클릭으로 시뮬레이터 열어 시나리오 테스트.
+
+---
