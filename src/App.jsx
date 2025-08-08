@@ -13,24 +13,21 @@ function App() {
   const [view, setView] = useState('flow');
 
   useEffect(() => {
-    // --- 💡 추가된 부분: 허용할 구글 이메일 목록 ---
-    // const allowedEmails = ['cutiefunny@gmail.com', 'hyh8414@gmail.com'];
     const allowedEmails = ['cutiefunny@gmail.com', 'hyh8414@gmail.com', 'hmlee@cyberlogitec.com','hmlee@wisenut.co.kr','circlebell@wisenut.co.kr','jwjun@wisenut.co.kr'];
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      // 사용자가 로그인했고, 허용된 이메일 목록에 없는 경우
+      // 주석 처리된 이전 로직은 그대로 둡니다.
       // if (currentUser && !allowedEmails.includes(currentUser.email)) {
-      //   signOut(auth); // 강제로 로그아웃 처리
+      //   signOut(auth);
       //   alert("접근 권한이 없는 계정입니다.");
-      //   setUser(null); // 사용자 상태를 null로 설정
+      //   setUser(null);
       // } else {
-        // 허용된 사용자이거나 로그아웃 상태인 경우
         setUser(currentUser);
       // }
       setLoading(false);
     });
 
-    return () => unsubscribe(); // 컴포넌트 언마운트 시 구독 해제
+    return () => unsubscribe();
   }, []);
 
   const handleLogout = async () => {
@@ -48,6 +45,22 @@ function App() {
   const handleBackToList = () => {
     setSelectedScenario(null);
   };
+
+  // --- 💡 추가된 부분 ---
+  const handleViewChange = (targetView) => {
+    if (targetView === 'board') {
+      // Board 탭에 접근할 수 있는 이메일 목록
+      const boardAllowedEmails = ['cutiefunny@gmail.com', 'hyh8414@gmail.com', 'hmlee@cyberlogitec.com','hmlee@wisenut.co.kr','circlebell@wisenut.co.kr','jwjun@wisenut.co.kr'];
+      if (user && boardAllowedEmails.includes(user.email)) {
+        setView('board');
+      } else {
+        alert('이 게시판에 접근할 수 있는 권한이 없습니다.');
+      }
+    } else {
+      setView(targetView);
+    }
+  };
+  // --- 💡 추가된 부분 끝 ---
 
   const renderFlowView = () => {
     if (selectedScenario) {
@@ -69,12 +82,14 @@ function App() {
       <header className="app-header">
         <h1>Chatbot Flow & Board</h1>
         <nav>
-          <button onClick={() => setView('flow')} className={view === 'flow' ? 'active' : ''}>
+          {/* --- 💡 수정된 부분: onClick 핸들러 변경 --- */}
+          <button onClick={() => handleViewChange('flow')} className={view === 'flow' ? 'active' : ''}>
             Flow Editor
           </button>
-          <button onClick={() => setView('board')} className={view === 'board' ? 'active' : ''}>
+          <button onClick={() => handleViewChange('board')} className={view === 'board' ? 'active' : ''}>
             Board
           </button>
+          {/* --- 💡 수정된 부분 끝 --- */}
         </nav>
         <div className="user-profile">
           <img src={user.photoURL} alt={user.displayName} className="user-avatar" />
