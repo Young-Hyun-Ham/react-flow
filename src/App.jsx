@@ -13,21 +13,32 @@ function App() {
   const [view, setView] = useState('flow');
 
   useEffect(() => {
-    const allowedEmails = ['cutiefunny@gmail.com', 'hyh8414@gmail.com', 'hmlee@cyberlogitec.com','hmlee@wisenut.co.kr','circlebell@wisenut.co.kr','jwjun@wisenut.co.kr'];
-
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      // 주석 처리된 이전 로직은 그대로 둡니다.
-      // if (currentUser && !allowedEmails.includes(currentUser.email)) {
-      //   signOut(auth);
-      //   alert("접근 권한이 없는 계정입니다.");
-      //   setUser(null);
-      // } else {
-        setUser(currentUser);
-      // }
+      if (currentUser) {
+        // --- 💡 수정된 부분: 이메일 및 도메인 기반 접근 제어 ---
+        const allowedEmails = ['cutiefunny@gmail.com', 'hyh8414@gmail.com'];
+        const allowedDomains = ['cyberlogitec.com', 'wisenut.co.kr'];
+        
+        const userEmail = currentUser.email;
+        const userDomain = userEmail.split('@')[1];
+
+        const isAuthorized = allowedEmails.includes(userEmail) || allowedDomains.includes(userDomain);
+
+        if (isAuthorized) {
+          setUser(currentUser);
+        } else {
+          signOut(auth); // 권한 없는 사용자 강제 로그아웃
+          alert("접근 권한이 없는 계정입니다.");
+          setUser(null);
+        }
+        // --- 💡 수정된 부분 끝 ---
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => unsubscribe(); // 컴포넌트 언마운트 시 구독 해제
   }, []);
 
   const handleLogout = async () => {
@@ -46,21 +57,11 @@ function App() {
     setSelectedScenario(null);
   };
 
-  // --- 💡 추가된 부분 ---
+  // --- 💡 수정된 부분: Board 접근 제어 로직 제거 ---
   const handleViewChange = (targetView) => {
-    if (targetView === 'board') {
-      // Board 탭에 접근할 수 있는 이메일 목록
-      const boardAllowedEmails = ['cutiefunny@gmail.com', 'hyh8414@gmail.com', 'hmlee@cyberlogitec.com','hmlee@wisenut.co.kr','circlebell@wisenut.co.kr','jwjun@wisenut.co.kr'];
-      if (user && boardAllowedEmails.includes(user.email)) {
-        setView('board');
-      } else {
-        alert('이 게시판에 접근할 수 있는 권한이 없습니다.');
-      }
-    } else {
-      setView(targetView);
-    }
+    setView(targetView);
   };
-  // --- 💡 추가된 부분 끝 ---
+  // --- 💡 수정된 부분 끝 ---
 
   const renderFlowView = () => {
     if (selectedScenario) {
@@ -82,14 +83,12 @@ function App() {
       <header className="app-header">
         <h1>Chatbot Flow & Board</h1>
         <nav>
-          {/* --- 💡 수정된 부분: onClick 핸들러 변경 --- */}
           <button onClick={() => handleViewChange('flow')} className={view === 'flow' ? 'active' : ''}>
             Flow Editor
           </button>
           <button onClick={() => handleViewChange('board')} className={view === 'board' ? 'active' : ''}>
             Board
           </button>
-          {/* --- 💡 수정된 부분 끝 --- */}
         </nav>
         <div className="user-profile">
           <img src={user.photoURL} alt={user.displayName} className="user-avatar" />
