@@ -24,13 +24,38 @@
   color: #1c1e21;
 }
 
+/* --- 💡 추가된 부분 --- */
+.header-title-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-grow: 1;
+  text-align: left;
+}
+
 .app-header h1 {
   font-size: 1.5rem;
   color: #333;
   margin: 0;
-  flex-grow: 1; /* Take up available space */
-  text-align: left;
 }
+
+.help-button {
+  background-color: #e4e6eb;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0;
+}
+/* --- 💡 추가된 부분 끝 --- */
+
 
 .app-header nav {
   display: flex;
@@ -59,12 +84,11 @@
 
 .app-main {
   flex-grow: 1;
-  overflow-y: auto; /* Allow scrolling for content */
+  overflow-y: auto;
   color: #1c1e21; 
   background-color: #f0f2f5;
 }
 
-/* --- 💡 추가된 부분: 사용자 프로필 및 로그아웃 버튼 스타일 --- */
 .user-profile {
   display: flex;
   align-items: center;
@@ -95,7 +119,6 @@
   font-size: 1.5rem;
 }
 
-/* Overwrite ScenarioList's inline styles to fit the new layout */
 div[style*="padding: 40px"] {
   padding: 20px !important;
 }

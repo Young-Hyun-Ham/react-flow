@@ -4,6 +4,7 @@ import Flow from './Flow';
 import ScenarioList from './ScenarioList';
 import Board from './Board';
 import Login from './Login';
+import HelpModal from './HelpModal';
 import './App.css';
 
 function App() {
@@ -11,6 +12,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [selectedScenario, setSelectedScenario] = useState(null);
   const [view, setView] = useState('flow');
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -81,7 +83,10 @@ function App() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1>Chatbot Flow & Board</h1>
+        <div className="header-title-container">
+          <h1>Chatbot Flow & Board</h1>
+          <button className="help-button" onClick={() => setIsHelpModalOpen(true)}>?</button>
+        </div>
         <nav>
           <button onClick={() => handleViewChange('flow')} className={view === 'flow' ? 'active' : ''}>
             Flow Editor
@@ -99,6 +104,7 @@ function App() {
       <main className="app-main">
         {view === 'flow' ? renderFlowView() : <Board user={user} />}
       </main>
+      <HelpModal isOpen={isHelpModalOpen} onClose={() => setIsHelpModalOpen(false)} />
     </div>
   );
 }
