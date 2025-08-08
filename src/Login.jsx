@@ -18,7 +18,7 @@ function Login() {
       await signInWithPopup(auth, provider);
     } catch (error) {
       console.error("Error signing in with Google: ", error);
-      alert("로그인에 실패했습니다. 다시 시도해주세요.");
+      alert("Login failed. Please try again.");
     }
   };
 

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
-// 1. CSS 모듈을 import 합니다.
+// 1. Import CSS module
 import styles from './EditableNode.module.css';
 
 function EditableNode({ id, data }) {
@@ -22,12 +22,12 @@ function EditableNode({ id, data }) {
   }, [id, data]);
 
   return (
-    // 2. 인라인 style을 className으로 교체합니다.
+    // 2. Replace inline style with className
     <div className={styles.node}>
       <button
         onClick={onDeleteClick}
         className={styles.deleteButton}
-        title="삭제"
+        title="Delete"
       >
         ×
       </button>
@@ -43,7 +43,7 @@ function EditableNode({ id, data }) {
             onBlur={onBlur}
             onKeyDown={onKeyDown}
             autoFocus
-            className={styles.input} // input에도 className 적용
+            className={styles.input} // Apply className to input as well
           />
         ) : (
           <div>{data.label}</div>

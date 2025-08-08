@@ -9,7 +9,7 @@ function LinkNode({ id, data }) {
     <div className={styles.nodeWrapper}>
       <Handle type="target" position={Position.Left} />
       <div className={`${styles.nodeHeader} ${styles.headerLink}`}>
-        <span className={styles.headerTextContent}>링크</span>
+        <span className={styles.headerTextContent}>Link</span>
         <button onClick={() => deleteNode(id)} className={styles.deleteButton}>❌</button>
       </div>
       <div className={styles.nodeBody}>

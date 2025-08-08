@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { collection, getDocs, setDoc, doc, getDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
 
-// 간단한 스타일 객체
+// Simple style object
 const styles = {
   container: {
     padding: '40px',
@@ -75,23 +75,23 @@ function ScenarioList({ onSelect }) {
   }, []);
 
   const handleAddScenario = async () => {
-    const newScenarioName = prompt("새 시나리오의 이름을 입력하세요:");
+    const newScenarioName = prompt("Enter the name of the new scenario:");
     if (newScenarioName) {
       const newScenarioRef = doc(db, "scenarios", newScenarioName);
       try {
         await setDoc(newScenarioRef, { nodes: [], edges: [] });
         setScenarios(prev => [...prev, newScenarioName]);
-        alert(`'${newScenarioName}' 시나리오가 생성되었습니다.`);
+        alert(`Scenario '${newScenarioName}' has been created.`);
       } catch (error) {
         console.error("Error creating new scenario: ", error);
-        alert("시나리오 생성에 실패했습니다.");
+        alert("Failed to create scenario.");
       }
     }
   };
 
-  // --- 💡 추가된 부분: 시나리오 이름 변경 함수 ---
+  // --- 💡 Added part: Scenario rename function ---
   const handleRenameScenario = async (oldId) => {
-    const newId = prompt("새로운 시나리오 이름을 입력하세요:", oldId);
+    const newId = prompt("Enter the new scenario name:", oldId);
     if (newId && newId !== oldId) {
       const oldDocRef = doc(db, "scenarios", oldId);
       const newDocRef = doc(db, "scenarios", newId);
@@ -99,45 +99,45 @@ function ScenarioList({ onSelect }) {
       try {
         const oldDocSnap = await getDoc(oldDocRef);
         if (oldDocSnap.exists()) {
-          // batch write를 사용하여 여러 작업을 원자적으로 처리
+          // Use batch write to handle multiple operations atomically
           const batch = writeBatch(db);
-          batch.set(newDocRef, oldDocSnap.data()); // 새 문서 생성
-          batch.delete(oldDocRef); // 기존 문서 삭제
+          batch.set(newDocRef, oldDocSnap.data()); // Create new document
+          batch.delete(oldDocRef); // Delete existing document
           await batch.commit();
 
-          // 화면 상태 업데이트
+          // Update screen state
           setScenarios(prev => prev.map(id => (id === oldId ? newId : id)));
-          alert("시나리오 이름이 변경되었습니다.");
+          alert("Scenario name has been changed.");
         }
       } catch (error) {
         console.error("Error renaming scenario: ", error);
-        alert("이름 변경에 실패했습니다.");
+        alert("Failed to rename.");
       }
     }
   };
 
-  // --- 💡 추가된 부분: 시나리오 삭제 함수 ---
+  // --- 💡 Added part: Scenario delete function ---
   const handleDeleteScenario = async (idToDelete) => {
-    if (window.confirm(`'${idToDelete}' 시나리오를 정말 삭제하시겠습니까?`)) {
+    if (window.confirm(`Are you sure you want to delete the '${idToDelete}' scenario?`)) {
       const docRef = doc(db, "scenarios", idToDelete);
       try {
         await deleteDoc(docRef);
         setScenarios(prev => prev.filter(id => id !== idToDelete));
-        alert("시나리오가 삭제되었습니다.");
+        alert("Scenario has been deleted.");
       } catch (error) {
         console.error("Error deleting scenario: ", error);
-        alert("삭제에 실패했습니다.");
+        alert("Failed to delete.");
       }
     }
   };
 
   if (loading) {
-    return <div>로딩 중...</div>;
+    return <div>Loading...</div>;
   }
 
   return (
     <div style={styles.container}>
-      <h1 style={styles.title}>챗봇 시나리오 목록</h1>
+      <h1 style={styles.title}>Chatbot Scenario List</h1>
       <ul style={styles.list}>
         {scenarios.map(id => (
           <li key={id} style={styles.listItem}>
@@ -149,16 +149,16 @@ function ScenarioList({ onSelect }) {
             >
               {id}
             </span>
-            {/* --- 💡 추가된 부분: 수정 및 삭제 버튼 --- */}
+            {/* --- 💡 Added part: Edit and delete buttons --- */}
             <div style={styles.buttonGroup}>
-              <button onClick={() => handleRenameScenario(id)} style={styles.actionButton}>수정</button>
-              <button onClick={() => handleDeleteScenario(id)} style={{...styles.actionButton, color: 'red'}}>삭제</button>
+              <button onClick={() => handleRenameScenario(id)} style={styles.actionButton}>Edit</button>
+              <button onClick={() => handleDeleteScenario(id)} style={{...styles.actionButton, color: 'red'}}>Delete</button>
             </div>
           </li>
         ))}
       </ul>
       <button onClick={handleAddScenario} style={styles.button}>
-        + 새 시나리오 추가
+        + Add New Scenario
       </button>
     </div>
   );

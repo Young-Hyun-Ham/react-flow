@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import useStore from './store';
 import styles from './NodeController.module.css';
 
-// ElementEditor는 이제 local state를 직접 수정하는 함수를 props로 받습니다.
+// ElementEditor now receives functions that directly modify local state as props
 function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange }) {
   if (!element) {
-    return <p className={styles.placeholder}>편집할 요소를 선택하세요.</p>;
+    return <p className={styles.placeholder}>Please select an element to edit.</p>;
   }
 
   const handleUpdate = (field, value) => {
@@ -24,7 +24,7 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
   };
 
   const addOption = () => {
-    const newOptions = [...(element.options || []), '새 옵션'];
+    const newOptions = [...(element.options || []), 'New option'];
     handleUpdate('options', newOptions);
   };
 
@@ -128,7 +128,7 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
                 className={styles.quickReplyInput}
                 value={option}
                 onChange={(e) => handleOptionChange(optIndex, e.target.value)}
-                placeholder="옵션 값"
+                placeholder="Option value"
               />
               <button onClick={() => deleteOption(optIndex)} className={styles.deleteReplyButton}>×</button>
             </div>
@@ -147,7 +147,7 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
       {element.type === 'grid' && renderGridControls()}
       {(element.type === 'checkbox' || element.type === 'dropbox') && renderOptionsControls()}
       <div className={styles.editorActions}>
-        <button className={styles.deleteElementButton} onClick={() => onDelete(index)}>삭제</button>
+        <button className={styles.deleteElementButton} onClick={() => onDelete(index)}>Delete</button>
       </div>
     </div>
   );
@@ -185,8 +185,8 @@ function NodeController() {
     return (
       <div className={styles.controllerContainer}>
         <div className={styles.mainControls}>
-          <h3>컨트롤러</h3>
-          <p className={styles.placeholder}>수정할 노드를 선택하세요.</p>
+          <h3>Controller</h3>
+          <p className={styles.placeholder}>Please select a node to edit.</p>
         </div>
       </div>
     );
@@ -209,7 +209,7 @@ function NodeController() {
         const newNode = { ...prev };
         const nodeType = newNode.type;
         const newReply = {
-            display: nodeType === 'branch' ? '새 조건' : (nodeType === 'fixedmenu' ? '새 메뉴' : '새 답장'),
+            display: nodeType === 'branch' ? 'New condition' : (nodeType === 'fixedmenu' ? 'New menu' : 'New reply'),
             value: `${nodeType === 'branch' ? 'cond' : (nodeType === 'fixedmenu' ? 'menu' : 'val')}_${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
         };
         const newReplies = [...(newNode.data.replies || []), newReply];
@@ -399,7 +399,7 @@ function NodeController() {
                 </div>
               ))
             ) : (
-              <p className={styles.placeholder}>추가된 요소가 없습니다.</p>
+              <p className={styles.placeholder}>No elements added yet.</p>
             )}
           </div>
         </div>
@@ -450,14 +450,14 @@ function NodeController() {
                     className={styles.quickReplyInput}
                     value={reply.display}
                     onChange={(e) => localUpdateReply(index, 'display', e.target.value)}
-                    placeholder="표시될 텍스트"
+                    placeholder="Display text"
                   />
                   {type !== 'branch' && type !== 'fixedmenu' && (
                     <input
                       className={styles.quickReplyInput}
                       value={reply.value}
                       onChange={(e) => localUpdateReply(index, 'value', e.target.value)}
-                      placeholder="실제 값"
+                      placeholder="Actual value"
                     />
                   )}
                   <button onClick={() => localDeleteReply(index)} className={styles.deleteReplyButton}>×</button>
@@ -476,7 +476,7 @@ function NodeController() {
   return (
     <div className={styles.controllerContainer}>
       <div className={styles.mainControls}>
-        <h3>타입: {localNode.type}</h3>
+        <h3>Type: {localNode.type}</h3>
         <div className={styles.form}>
           {localNode.type === 'form' ? renderFormControls() : renderDefaultControls()}
         </div>

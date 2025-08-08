@@ -24,7 +24,7 @@
 .headerApi { background-color: #3498db; }
 .headerBranch { background-color: #2ecc71; }
 .headerForm { background-color: #9b59b6; }
-.headerFixedMenu { background-color: #e74c3c; } /* 💡고정 메뉴 헤더 색상 추가 */
+.headerFixedMenu { background-color: #e74c3c; } /* 💡Fixed menu header color added */
 .headerLink { background-color: #34495e; }
 
 
@@ -240,9 +240,9 @@
 
 .branchOption {
   position: relative;
-  display: flex; /* flex 속성 추가 */
-  align-items: center; /* 세로 중앙 정렬 */
-  justify-content: space-between; /* 버튼과 핸들 간 간격 벌림 */
+  display: flex; /* flex property added */
+  align-items: center; /* vertical center alignment */
+  justify-content: space-between; /* spacing between button and handle */
   padding-right: 15px;
 }
 
@@ -253,7 +253,7 @@
   background-color: #fff;
   border: 1px solid #ccc;
   border-radius: 20px;
-  text-align: left; /* 텍스트 왼쪽 정렬 */
+  text-align: left; /* text left alignment */
   font-size: 0.85rem;
   color: #333;
   box-sizing: border-box;

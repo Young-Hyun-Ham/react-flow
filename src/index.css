@@ -36,7 +36,7 @@ code {
     monospace;
 }
 
-/* --- 추가된 부분: React Flow 컨트롤 라이트 테마 --- */
+/* --- Added part: React Flow control light theme --- */
 .react-flow__controls-button {
   background-color: #f0f0f0 !important;
   color: #333 !important;

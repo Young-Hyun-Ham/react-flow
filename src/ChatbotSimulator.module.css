@@ -229,6 +229,11 @@
   box-sizing: border-box;
 }
 
+/* --- 💡 추가된 부분 --- */
+.formInput::placeholder {
+  color: #999;
+}
+
 .formInput:disabled, .branchButton:disabled, .formSubmitButton:disabled {
   background-color: #f0f2f5;
   cursor: not-allowed;

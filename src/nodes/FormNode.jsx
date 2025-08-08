@@ -33,7 +33,7 @@ function FormNode({ id, data }) {
             <label className={styles.previewLabel}>{element.label || 'Grid'}</label>
             <table className={styles.previewGridTable}>
               <tbody>
-                {/* --- 💡 수정: 1차원 배열 데이터를 표 형태로 렌더링 --- */}
+                {/* --- 💡 Modified: Render 1D array data as table format --- */}
                 {[...Array(element.rows || 2)].map((_, rowIndex) => (
                   <tr key={rowIndex}>
                     {[...Array(element.columns || 2)].map((_, colIndex) => {
@@ -55,7 +55,7 @@ function FormNode({ id, data }) {
           <div key={element.id} className={styles.previewElement}>
             <label className={styles.previewLabel}>{element.label || 'Checkbox'}</label>
             <div className={styles.previewOptionsContainer}>
-              {(element.options && element.options.length > 0 ? element.options : ['옵션 1', '옵션 2']).map((opt, i) => (
+              {(element.options && element.options.length > 0 ? element.options : ['Option 1', 'Option 2']).map((opt, i) => (
                 <div key={i} className={styles.previewCheckbox}>
                   <input type="checkbox" id={`${element.id}-${i}`} checked={false} readOnly />
                   <label htmlFor={`${element.id}-${i}`}>{opt}</label>
@@ -69,7 +69,7 @@ function FormNode({ id, data }) {
           <div key={element.id} className={styles.previewElement}>
             <label className={styles.previewLabel}>{element.label || 'Dropbox'}</label>
             <select className={styles.previewInput} disabled>
-              {(element.options && element.options.length > 0 ? element.options : ['옵션 1', '옵션 2']).map((opt, i) => (
+              {(element.options && element.options.length > 0 ? element.options : ['Option 1', 'Option 2']).map((opt, i) => (
                 <option key={i}>{opt}</option>
               ))}
             </select>

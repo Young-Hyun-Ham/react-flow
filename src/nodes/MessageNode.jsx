@@ -18,7 +18,7 @@ function MessageNode({ id, data }) {
       <div className={styles.nodeBody}>
         <div className={styles.section}>
           <span className={styles.sectionTitle}>Content</span>
-          {/* --- 💡 수정된 부분: readOnly 추가, onChange 제거 --- */}
+          {/* --- 💡 Modified part: readOnly added, onChange removed --- */}
           <textarea
             className={styles.textInput}
             value={data.content}
@@ -30,18 +30,18 @@ function MessageNode({ id, data }) {
           <span className={styles.sectionTitle}>Quick Replies:</span>
           {data.replies?.map((reply, index) => (
             <div key={reply.value} className={styles.quickReply}>
-              {/* Quick Replies는 컨트롤러에서만 수정하므로 readOnly로 변경 */}
+              {/* Quick Replies can only be modified in controller, so changed to readOnly */}
               <input
                 className={styles.quickReplyInput}
                 value={reply.display}
                 readOnly
-                placeholder="표시될 텍스트"
+                placeholder="Display text"
               />
               <input
                 className={styles.quickReplyInput}
                 value={reply.value}
                 readOnly
-                placeholder="실제 값"
+                placeholder="Actual value"
               />
             </div>
           ))}

@@ -23,7 +23,7 @@ const nodeTypes = {
 };
 
 function Flow({ scenarioId, onBack }) {
-  // --- 💡 수정된 부분: deleteSelectedEdges 추가 ---
+  // --- 💡 Modified part: deleteSelectedEdges added ---
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, fetchScenario, saveScenario, addNode, selectedNodeId, setSelectedNodeId, duplicateNode, deleteSelectedEdges } = useStore();
 
   const [rightPanelWidth, setRightPanelWidth] = useState(400);
@@ -70,28 +70,28 @@ function Flow({ scenarioId, onBack }) {
     }
   };
 
-  // --- 💡 추가된 부분 ---
+  // --- 💡 Added part ---
   const handleKeyDown = (event) => {
     if (event.key === 'Backspace' || event.key === 'Delete') {
       const isNodeSelected = nodes.some(node => node.selected);
-      // 노드가 선택되지 않았을 때만 연결선 삭제 로직 실행
+      // Only execute edge deletion logic when no node is selected
       if (!isNodeSelected) {
         deleteSelectedEdges();
       }
     }
   };
-  // --- 💡 추가된 부분 끝 ---
+  // --- 💡 Added part end ---
 
   return (
     <div className={styles.flowContainer}>
       <div className={styles.leftSidebar}>
-        <h3>노드 추가</h3>
+        <h3>Add Node</h3>
         <button onClick={() => addNode('message')} className={`${styles.sidebarButton} ${styles.messageButton}`}>+ Message</button>
         <button onClick={() => addNode('form')} className={`${styles.sidebarButton} ${styles.formButton}`}>+ Form</button>
-        <button onClick={() => addNode('branch')} className={`${styles.sidebarButton} ${styles.branchButton}`}>+ 조건분기</button>
+        <button onClick={() => addNode('branch')} className={`${styles.sidebarButton} ${styles.branchButton}`}>+ Condition Branch</button>
         <button onClick={() => addNode('api')} className={`${styles.sidebarButton} ${styles.apiButton}`}>+ API</button>
-        <button onClick={() => addNode('fixedmenu')} className={`${styles.sidebarButton} ${styles.fixedMenuButton}`}>+ 고정메뉴</button>
-        <button onClick={() => addNode('link')} className={`${styles.sidebarButton} ${styles.linkButton}`}>+ 링크</button>
+        <button onClick={() => addNode('fixedmenu')} className={`${styles.sidebarButton} ${styles.fixedMenuButton}`}>+ Fixed Menu</button>
+        <button onClick={() => addNode('link')} className={`${styles.sidebarButton} ${styles.linkButton}`}>+ Link</button>
 
         {selectedNodeId && (
           <>
@@ -105,7 +105,7 @@ function Flow({ scenarioId, onBack }) {
 
       <div className={styles.mainContent}>
         <div className={styles.topRightControls}>
-          <button onClick={onBack} className={styles.controlButton}>목록으로</button>
+          <button onClick={onBack} className={styles.controlButton}>Back to List</button>
           <button onClick={() => saveScenario(scenarioId)} className={`${styles.controlButton} ${styles.saveButton}`}>Save Scenario</button>
           <div onClick={() => setIsSimulatorVisible(!isSimulatorVisible)} className={!isSimulatorVisible ? styles.botButtonHidden : styles.botButton}>
             🤖
@@ -122,7 +122,7 @@ function Flow({ scenarioId, onBack }) {
           style={{ backgroundColor: '#ffffff' }}
           onNodeClick={handleNodeClick}
           onPaneClick={handlePaneClick}
-          // --- 💡 추가된 부분 ---
+          // --- 💡 Added part ---
           onKeyDown={handleKeyDown}
         >
           <Controls />

@@ -16,7 +16,7 @@ function BranchNode({ id, data }) {
     <div className={styles.nodeWrapper}>
       <Handle type="target" position={Position.Left} />
       <div className={`${styles.nodeHeader} ${styles.headerBranch}`}>
-        <span className={styles.headerTextContent}>조건분기</span>
+        <span className={styles.headerTextContent}>Condition Branch</span>
         <button onClick={() => deleteNode(id)} className={styles.deleteButton}>❌</button>
       </div>
       <div className={styles.nodeBody}>
@@ -40,7 +40,7 @@ function BranchNode({ id, data }) {
                   type="source"
                   position={Position.Right}
                   id={reply.value}
-                  // --- 💡 수정: Handle의 세로 위치를 부모 요소의 높이의 중앙으로 조정 ---
+                  // --- 💡 Modified: Adjust Handle's vertical position to center of parent element ---
                   style={{ top: '50%', transform: 'translateY(-50%)', right: '-25px', background: '#555' }}
                 />
               </div>

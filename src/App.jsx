@@ -17,7 +17,7 @@ function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
-        // --- 💡 수정된 부분: 이메일 및 도메인 기반 접근 제어 ---
+        // --- 💡 Modified part: Email and domain based access control ---
         const allowedEmails = ['cutiefunny@gmail.com', 'hyh8414@gmail.com'];
         const allowedDomains = ['cyberlogitec.com', 'wisenut.co.kr'];
         
@@ -29,18 +29,18 @@ function App() {
         if (isAuthorized) {
           setUser(currentUser);
         } else {
-          signOut(auth); // 권한 없는 사용자 강제 로그아웃
-          alert("접근 권한이 없는 계정입니다.");
+          signOut(auth); // Force logout unauthorized users
+          alert("Access denied. You don't have permission to access this account.");
           setUser(null);
         }
-        // --- 💡 수정된 부분 끝 ---
+        // --- 💡 Modified part end ---
       } else {
         setUser(null);
       }
       setLoading(false);
     });
 
-    return () => unsubscribe(); // 컴포넌트 언마운트 시 구독 해제
+    return () => unsubscribe(); // Unsubscribe when component unmounts
   }, []);
 
   const handleLogout = async () => {
@@ -59,11 +59,11 @@ function App() {
     setSelectedScenario(null);
   };
 
-  // --- 💡 수정된 부분: Board 접근 제어 로직 제거 ---
+  // --- 💡 Modified part: Board access control logic removed ---
   const handleViewChange = (targetView) => {
     setView(targetView);
   };
-  // --- 💡 수정된 부분 끝 ---
+  // --- 💡 Modified part end ---
 
   const renderFlowView = () => {
     if (selectedScenario) {

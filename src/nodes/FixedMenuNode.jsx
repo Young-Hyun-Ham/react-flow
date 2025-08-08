@@ -15,7 +15,7 @@ function FixedMenuNode({ id, data }) {
     <div className={styles.nodeWrapper}>
       <Handle type="target" position={Position.Left} />
       <div className={`${styles.nodeHeader} ${styles.headerFixedMenu}`}>
-        <span className={styles.headerTextContent}>고정메뉴</span>
+        <span className={styles.headerTextContent}>Fixed Menu</span>
         <button onClick={() => deleteNode(id)} className={styles.deleteButton}>❌</button>
       </div>
       <div className={styles.nodeBody}>

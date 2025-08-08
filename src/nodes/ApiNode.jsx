@@ -15,7 +15,7 @@ function ApiNode({ id, data }) {
       <div className={styles.nodeBody}>
         <div className={styles.section}>
           <span className={styles.sectionTitle}>Question</span>
-          {/* --- 💡 수정된 부분: readOnly 추가 --- */}
+          {/* --- 💡 Modified part: readOnly added --- */}
           <textarea
             className={styles.textInput}
             value={data.content}
@@ -25,7 +25,7 @@ function ApiNode({ id, data }) {
         </div>
         <div className={styles.section}>
           <span className={styles.sectionTitle}>Slot:</span>
-          {/* --- 💡 수정된 부분: readOnly 추가 --- */}
+          {/* --- 💡 Modified part: readOnly added --- */}
           <input
             className={styles.textInput}
             value={data.slot}
@@ -36,18 +36,18 @@ function ApiNode({ id, data }) {
           <span className={styles.sectionTitle}>Quick Replies:</span>
           {data.replies?.map((reply) => (
             <div key={reply.value} className={styles.quickReply}>
-               {/* Quick Replies는 컨트롤러에서만 수정하므로 readOnly로 변경 */}
+               {/* Quick Replies can only be modified in controller, so changed to readOnly */}
               <input
                 className={styles.quickReplyInput}
                 value={reply.display}
                 readOnly
-                placeholder="표시될 텍스트"
+                placeholder="Display text"
               />
               <input
                 className={styles.quickReplyInput}
                 value={reply.value}
                 readOnly
-                placeholder="실제 값"
+                placeholder="Actual value"
               />
             </div>
           ))}

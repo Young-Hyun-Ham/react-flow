@@ -86,7 +86,7 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
     } else {
         if(currentNode?.type !== 'fixedmenu' && currentNode?.type !== 'branch') {
             setTimeout(() => {
-                setHistory((prev) => [...prev, { type: 'bot', message: '대화가 종료되었습니다.' }]);
+                setHistory((prev) => [...prev, { type: 'bot', message: 'The conversation has ended.' }]);
                 setCurrentId(null);
             }, 500);
         }
@@ -186,7 +186,7 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
       if (element.type === 'input') {
         const value = formData[element.name] || '';
         if (!validateInput(value, element.validation)) {
-          alert(`'${element.label}' 입력값이 유효하지 않습니다.`);
+          alert(`'${element.label}' input is not valid.`);
           return;
         }
       }
@@ -195,12 +195,12 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
     completeCurrentInteraction();
     setSlots(prev => ({ ...prev, ...formData }));
     setFormData({});
-    setHistory(prev => [...prev, { type: 'user', message: "양식을 제출했습니다." }]);
+    setHistory(prev => [...prev, { type: 'user', message: "Form submitted." }]);
     proceedToNextNode(null);
   };
 
   const renderOptions = () => {
-    if (!currentNode) { return (<button className={`${styles.optionButton} ${styles.restartButton}`} onClick={startSimulation}>대화 다시 시작하기</button>); }
+    if (!currentNode) { return (<button className={`${styles.optionButton} ${styles.restartButton}`} onClick={startSimulation}>Restart Conversation</button>); }
 
     if (currentNode.type === 'branch' || currentNode.type === 'fixedmenu') {
       return null;
@@ -220,24 +220,24 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
     if (currentNode.type === 'api') {
       return (
         <div className={styles.inputArea}>
-          <input type="text" className={styles.textInput} value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleTextInputSend()} placeholder="메시지를 입력하세요..."/>
-          <button className={styles.sendButton} onClick={handleTextInputSend}>전송</button>
+          <input type="text" className={styles.textInput} value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleTextInputSend()} placeholder="Enter a message..."/>
+          <button className={styles.sendButton} onClick={handleTextInputSend}>Send</button>
         </div>
       );
     }
     if (currentNode.type === 'form') {
       return null;
     }
-    return (<button className={`${styles.optionButton} ${styles.restartButton}`} onClick={startSimulation}>대화 다시 시작하기</button>);
+    return (<button className={`${styles.optionButton} ${styles.restartButton}`} onClick={startSimulation}>Restart Conversation</button>);
   };
 
   return (
     <div className={styles.simulator}>
       <div className={styles.header}>
-        <span>챗봇</span>
+        <span>Chatbot</span>
         {isVisible && (
           <button className={styles.headerRestartButton} onClick={startSimulation}>
-            다시 시작
+            Restart
           </button>
         )}
       </div>
@@ -264,7 +264,7 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
                 <div key={item.id || index} className={styles.messageRow}>
                   <div className={styles.avatar}>🤖</div>
                   <div className={`${styles.message} ${styles.botMessage}`}>
-                    <span>링크를 새 탭에서 엽니다: </span>
+                    <span>Opening link in a new tab: </span>
                     <a href={node.data.content} target="_blank" rel="noopener noreferrer">{node.data.display || node.data.content}</a>
                   </div>
                 </div>
@@ -290,12 +290,20 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
                             disabled={item.isCompleted}
                           />
                         )}
+                        {/* --- 💡 수정된 부분: Date Input --- */}
                         {el.type === 'date' && (
                            <input
-                            type="date"
+                            type="text"
+                            placeholder="YYYY-MM-DD"
                             className={styles.formInput}
                             value={formData[el.name] || ''}
                             onChange={(e) => handleFormInputChange(el.name, e.target.value)}
+                            onFocus={(e) => (e.target.type = 'date')}
+                            onBlur={(e) => {
+                                if (!e.target.value) {
+                                    e.target.type = 'text';
+                                }
+                            }}
                             disabled={item.isCompleted}
                           />
                         )}
@@ -312,6 +320,7 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
                             <label htmlFor={`${el.id}-${opt}`}>{opt}</label>
                           </div>
                         ))}
+                        {/* --- 💡 수정된 부분: Dropbox (Select) --- */}
                         {el.type === 'dropbox' && (
                           <select
                             className={styles.formInput}
@@ -319,7 +328,7 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
                             onChange={(e) => handleFormInputChange(el.name, e.target.value)}
                             disabled={item.isCompleted}
                           >
-                            <option value="" disabled>선택...</option>
+                            <option value="" disabled>Select...</option>
                             {el.options?.map(opt => (
                               <option key={opt} value={opt}>{opt}</option>
                             ))}
@@ -346,7 +355,7 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
                         )}
                       </div>
                     ))}
-                    <button className={styles.formSubmitButton} onClick={handleFormSubmit} disabled={item.isCompleted}>제출</button>
+                    <button className={styles.formSubmitButton} onClick={handleFormSubmit} disabled={item.isCompleted}>Submit</button>
                   </div>
                 </div>
               );

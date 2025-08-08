@@ -1,5 +1,5 @@
 import { Handle, Position } from 'reactflow';
-import styles from './EditableNode.module.css'; // 기존 스타일 재활용
+import styles from './EditableNode.module.css'; // Reuse existing styles
 
 function TextMessageNode({ data }) {
   return (
