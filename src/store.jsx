@@ -26,6 +26,37 @@ const useStore = create((set, get) => ({
     }));
   },
 
+  // --- 💡 수정된 부분 ---
+  duplicateNode: (nodeId) => {
+    const { nodes } = get();
+    const originalNode = nodes.find((node) => node.id === nodeId);
+    if (!originalNode) return;
+
+    // 현재 노드들 중에서 가장 큰 zIndex 값을 찾습니다.
+    const maxZIndex = nodes.reduce((max, node) => Math.max(node.zIndex || 0, max), 0);
+
+    const newData = JSON.parse(JSON.stringify(originalNode.data));
+
+    const newNode = {
+      ...originalNode,
+      id: `${originalNode.type}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      position: {
+        x: originalNode.position.x + 50,
+        y: originalNode.position.y + 50,
+      },
+      data: newData,
+      selected: false,
+      // 새 노드의 zIndex를 가장 큰 값 + 1로 설정하여 항상 위에 오도록 합니다.
+      zIndex: maxZIndex + 1,
+    };
+
+    set({
+      nodes: [...nodes, newNode],
+    });
+    get().setSelectedNodeId(newNode.id);
+  },
+  // --- 💡 수정된 부분 끝 ---
+
   updateNodeData: (nodeId, dataUpdate) => {
     set((state) => ({
       nodes: state.nodes.map((node) =>
@@ -38,7 +69,6 @@ const useStore = create((set, get) => ({
 
   addNode: (type) => {
     const newNode = {
-      // --- 💡 수정: 고유 ID 생성 로직 변경 ---
       id: `${type}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       type,
       position: { x: 100, y: 100 },
@@ -84,7 +114,6 @@ const useStore = create((set, get) => ({
           const nodeType = node.type;
           const newReply = {
             display: nodeType === 'branch' ? '새 조건' : (nodeType === 'fixedmenu' ? '새 메뉴' : '새 답장'),
-            // --- 💡 수정: 고유 ID 생성 로직 변경 ---
             value: `${nodeType === 'branch' ? 'cond' : (nodeType === 'fixedmenu' ? 'menu' : 'val')}_${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
           };
           const newReplies = [...(node.data.replies || []), newReply];
@@ -125,7 +154,6 @@ const useStore = create((set, get) => ({
       nodes: state.nodes.map((node) => {
         if (node.id === nodeId && node.type === 'form') {
           let newElement;
-          // --- 💡 수정: 고유 ID 생성 로직 변경 ---
           const newId = `${elementType}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
           switch (elementType) {

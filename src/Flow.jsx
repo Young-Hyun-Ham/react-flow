@@ -6,25 +6,24 @@ import MessageNode from './nodes/MessageNode';
 import BranchNode from './nodes/BranchNode';
 import ApiNode from './nodes/ApiNode';
 import FormNode from './nodes/FormNode';
-import FixedMenuNode from './nodes/FixedMenuNode'; // 💡고정 메뉴 노드 import
+import FixedMenuNode from './nodes/FixedMenuNode';
 import LinkNode from './nodes/LinkNode';
 import ChatbotSimulator from './ChatbotSimulator';
 import NodeController from './NodeController';
 import useStore from './store';
 import styles from './Flow.module.css';
 
-// --- 💡 수정: nodeTypes를 컴포넌트 외부로 이동 ---
 const nodeTypes = {
   message: MessageNode,
   branch: BranchNode,
   api: ApiNode,
   form: FormNode,
-  fixedmenu: FixedMenuNode, // 💡고정 메뉴 노드 등록
+  fixedmenu: FixedMenuNode,
   link: LinkNode,
 };
 
 function Flow({ scenarioId, onBack }) {
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, fetchScenario, saveScenario, addNode, selectedNodeId, setSelectedNodeId } = useStore();
+  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, fetchScenario, saveScenario, addNode, selectedNodeId, setSelectedNodeId, duplicateNode } = useStore();
 
   const [rightPanelWidth, setRightPanelWidth] = useState(400);
   const [isSimulatorVisible, setIsSimulatorVisible] = useState(false);
@@ -64,6 +63,12 @@ function Flow({ scenarioId, onBack }) {
     window.addEventListener('mouseup', onMouseUp);
   };
 
+  const handleDuplicateNode = () => {
+    if (selectedNodeId) {
+      duplicateNode(selectedNodeId);
+    }
+  };
+
   return (
     <div className={styles.flowContainer}>
       <div className={styles.leftSidebar}>
@@ -74,6 +79,15 @@ function Flow({ scenarioId, onBack }) {
         <button onClick={() => addNode('api')} className={`${styles.sidebarButton} ${styles.apiButton}`}>+ API</button>
         <button onClick={() => addNode('fixedmenu')} className={`${styles.sidebarButton} ${styles.fixedMenuButton}`}>+ 고정메뉴</button>
         <button onClick={() => addNode('link')} className={`${styles.sidebarButton} ${styles.linkButton}`}>+ 링크</button>
+
+        {selectedNodeId && (
+          <>
+            <div className={styles.separator} />
+            <button onClick={handleDuplicateNode} className={`${styles.sidebarButton} ${styles.duplicateButton}`}>
+              + Duplicate Node
+            </button>
+          </>
+        )}
       </div>
 
       <div className={styles.mainContent}>
