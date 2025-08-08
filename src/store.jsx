@@ -25,16 +25,21 @@ const useStore = create((set, get) => ({
       selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId,
     }));
   },
+  
+  // --- 💡 추가된 부분 ---
+  deleteSelectedEdges: () => {
+    set((state) => ({
+      edges: state.edges.filter((edge) => !edge.selected),
+    }));
+  },
+  // --- 💡 추가된 부분 끝 ---
 
-  // --- 💡 수정된 부분 ---
   duplicateNode: (nodeId) => {
     const { nodes } = get();
     const originalNode = nodes.find((node) => node.id === nodeId);
     if (!originalNode) return;
 
-    // 현재 노드들 중에서 가장 큰 zIndex 값을 찾습니다.
     const maxZIndex = nodes.reduce((max, node) => Math.max(node.zIndex || 0, max), 0);
-
     const newData = JSON.parse(JSON.stringify(originalNode.data));
 
     const newNode = {
@@ -46,7 +51,6 @@ const useStore = create((set, get) => ({
       },
       data: newData,
       selected: false,
-      // 새 노드의 zIndex를 가장 큰 값 + 1로 설정하여 항상 위에 오도록 합니다.
       zIndex: maxZIndex + 1,
     };
 
@@ -55,7 +59,6 @@ const useStore = create((set, get) => ({
     });
     get().setSelectedNodeId(newNode.id);
   },
-  // --- 💡 수정된 부분 끝 ---
 
   updateNodeData: (nodeId, dataUpdate) => {
     set((state) => ({

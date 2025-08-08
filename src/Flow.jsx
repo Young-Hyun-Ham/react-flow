@@ -23,7 +23,8 @@ const nodeTypes = {
 };
 
 function Flow({ scenarioId, onBack }) {
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, fetchScenario, saveScenario, addNode, selectedNodeId, setSelectedNodeId, duplicateNode } = useStore();
+  // --- 💡 수정된 부분: deleteSelectedEdges 추가 ---
+  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, fetchScenario, saveScenario, addNode, selectedNodeId, setSelectedNodeId, duplicateNode, deleteSelectedEdges } = useStore();
 
   const [rightPanelWidth, setRightPanelWidth] = useState(400);
   const [isSimulatorVisible, setIsSimulatorVisible] = useState(false);
@@ -69,6 +70,18 @@ function Flow({ scenarioId, onBack }) {
     }
   };
 
+  // --- 💡 추가된 부분 ---
+  const handleKeyDown = (event) => {
+    if (event.key === 'Backspace' || event.key === 'Delete') {
+      const isNodeSelected = nodes.some(node => node.selected);
+      // 노드가 선택되지 않았을 때만 연결선 삭제 로직 실행
+      if (!isNodeSelected) {
+        deleteSelectedEdges();
+      }
+    }
+  };
+  // --- 💡 추가된 부분 끝 ---
+
   return (
     <div className={styles.flowContainer}>
       <div className={styles.leftSidebar}>
@@ -109,6 +122,8 @@ function Flow({ scenarioId, onBack }) {
           style={{ backgroundColor: '#ffffff' }}
           onNodeClick={handleNodeClick}
           onPaneClick={handlePaneClick}
+          // --- 💡 추가된 부분 ---
+          onKeyDown={handleKeyDown}
         >
           <Controls />
         </ReactFlow>
