@@ -1,6 +1,5 @@
 import styles from './HelpModal.module.css';
 
-// Component converted from manual content to JSX
 const HelpManual = () => (
   <>
     <h2>1. Getting Started</h2>
@@ -58,9 +57,14 @@ const HelpManual = () => (
           <td>Divides the conversation flow into multiple branches based on user responses.</td>
         </tr>
         <tr>
-          <td><strong>API</strong></td>
+          <td><strong>SlotFilling</strong></td>
           <td>Blue</td>
-          <td>Used to receive user input and store it in specific variables (Slots), or when integration with external systems is needed.</td>
+          <td>Used to receive user input and store it in specific variables (Slots).</td>
+        </tr>
+        <tr>
+          <td><strong>API</strong></td>
+          <td>Red</td>
+          <td>Calls an external API and displays the response to the user.</td>
         </tr>
         <tr>
           <td><strong>Fixed Menu</strong></td>

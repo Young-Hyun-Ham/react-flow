@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import styles from './ChatbotSimulator.module.css';
 
 const interpolateMessage = (message, slots) => {
@@ -39,8 +39,15 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
   const [slots, setSlots] = useState({});
   const [formData, setFormData] = useState({});
   const [fixedMenu, setFixedMenu] = useState(null);
+  const historyRef = useRef(null);
 
   const currentNode = nodes.find(n => n.id === currentId);
+
+  useEffect(() => {
+    if (historyRef.current) {
+      historyRef.current.scrollTop = historyRef.current.scrollHeight;
+    }
+  }, [history]);
 
   const addBotMessage = (nodeId) => {
     const node = nodes.find(n => n.id === nodeId);
@@ -48,7 +55,7 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
       // --- 💡 추가된 부분: 시연을 위한 특정 노드 로딩 처리 ---
       // Todo : 나중에 정리할 것
 
-      if (node.type === 'api' || node.id === 'branch-1754639034237-vsol31e') {
+      if (node.type === 'slotfilling' || node.id === 'branch-1754639034237-vsol31e') {
         const loadingId = Date.now();
         setHistory(prev => [...prev, { type: 'loading', id: loadingId }]);
         
@@ -78,7 +85,7 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
         return;
       }
 
-      const isInteractive = node.type === 'form' || (node.type === 'branch' && node.data.replies?.length > 0);
+      const isInteractive = node.type === 'form' || (node.type === 'branch' && node.data.replies?.length > 0) || node.type === 'api';
       setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: isInteractive ? false : true, id: Date.now() }]);
     }
   };
@@ -123,17 +130,15 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
       setCurrentId(startNode.id);
       addBotMessage(startNode.id);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, edges]);
 
   useEffect(() => {
     startSimulation();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [startSimulation]);
 
   useEffect(() => {
     const node = nodes.find(n => n.id === currentId);
-    if (node && (node.type === 'message' || (node.type === 'api' && !node.data.replies?.length))) {
+    if (node && (node.type === 'message' || (node.type === 'slotfilling' && !node.data.replies?.length))) {
       const nextEdge = edges.find((edge) => edge.source === node.id && !edge.sourceHandle);
       if (nextEdge) {
         const nextNode = nodes.find((n) => n.id === nextEdge.target);
@@ -176,7 +181,7 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
     completeCurrentInteraction();
 
     const currentSlot = sourceNode.data.slot;
-    if (currentSlot && sourceNode.type === 'api') {
+    if (currentSlot && sourceNode.type === 'slotfilling') {
       setSlots(prev => ({ ...prev, [currentSlot]: answer.value }));
     }
 
@@ -236,11 +241,12 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
           }
           break;
         case 'date':
-          const today = new Date();
-          const year = today.getFullYear();
-          const month = String(today.getMonth() + 1).padStart(2, '0');
-          const day = String(today.getDate()).padStart(2, '0');
-          defaultData[element.name] = `${year}-${month}-${day}`;
+          // const today = new Date();
+          // const year = today.getFullYear();
+          // const month = String(today.getMonth() + 1).padStart(2, '0');
+          // const day = String(today.getDate()).padStart(2, '0');
+          // defaultData[element.name] = `${year}-${month}-${day}`;
+          defaultData[element.name] = '2025-08-20';
           break;
         case 'checkbox':
           if (element.options?.length > 0) {
@@ -267,7 +273,7 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
       return null;
     }
 
-    if (currentNode.type === 'message') {
+    if (currentNode.type === 'message' || currentNode.type === 'api') {
       if (edges.some(edge => edge.source === currentNode.id)) {
         return null;
       }
@@ -278,7 +284,7 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
         <button key={answer.value} className={styles.optionButton} onClick={() => handleOptionClick(answer)}>{answer.display}</button>
       ));
     }
-    if (currentNode.type === 'api') {
+    if (currentNode.type === 'slotfilling') {
       return (
         <div className={styles.inputArea}>
           <input type="text" className={styles.textInput} value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleTextInputSend()} placeholder="Enter a message..."/>
@@ -314,7 +320,7 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
           </div>
         </div>
       )}
-      <div className={styles.history}>
+      <div className={styles.history} ref={historyRef}>
         {history.map((item, index) => {
           if (item.type === 'loading') {
             return (
@@ -322,7 +328,6 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
                 <div className={styles.avatar}>🤖</div>
                 <div className={`${styles.message} ${styles.botMessage}`}>
                   loading...
-                  {/* <img src="/images/Loading.gif" alt="Loading..." style={{ width: '80px', height: '60px' }} /> */}
                 </div>
               </div>
             );

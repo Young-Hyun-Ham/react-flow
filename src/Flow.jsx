@@ -4,6 +4,7 @@ import 'reactflow/dist/style.css';
 
 import MessageNode from './nodes/MessageNode';
 import BranchNode from './nodes/BranchNode';
+import SlotFillingNode from './nodes/SlotFillingNode';
 import ApiNode from './nodes/ApiNode';
 import FormNode from './nodes/FormNode';
 import FixedMenuNode from './nodes/FixedMenuNode';
@@ -16,6 +17,7 @@ import styles from './Flow.module.css';
 const nodeTypes = {
   message: MessageNode,
   branch: BranchNode,
+  slotfilling: SlotFillingNode,
   api: ApiNode,
   form: FormNode,
   fixedmenu: FixedMenuNode,
@@ -41,7 +43,6 @@ const getTextColorByBackgroundColor = (hexColor) => {
     return luma < 128 ? 'white' : 'black';
 }
 
-// --- 💡 수정된 부분: onBack prop 제거 ---
 function Flow({ scenarioId }) {
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, fetchScenario, saveScenario, addNode, selectedNodeId, setSelectedNodeId, duplicateNode, deleteSelectedEdges, nodeColors, setNodeColor } = useStore();
 
@@ -53,13 +54,10 @@ function Flow({ scenarioId }) {
     message: useRef(null),
     form: useRef(null),
     branch: useRef(null),
+    slotfilling: useRef(null),
     api: useRef(null),
     fixedmenu: useRef(null),
     link: useRef(null),
-  };
-
-  const handleColorSettingClick = (type) => {
-    colorInputRefs[type].current.click();
   };
 
   useEffect(() => {
@@ -116,6 +114,7 @@ function Flow({ scenarioId }) {
     { type: 'message', label: '+ Message' },
     { type: 'form', label: '+ Form' },
     { type: 'branch', label: '+ Condition Branch' },
+    { type: 'slotfilling', label: '+ SlotFilling' },
     { type: 'api', label: '+ API' },
     { type: 'fixedmenu', label: '+ Fixed Menu' },
     { type: 'link', label: '+ Link' },
@@ -171,7 +170,6 @@ function Flow({ scenarioId }) {
       </div>
 
       <div className={styles.mainContent}>
-        {/* --- 💡 수정된 부분: Back to List 버튼 제거 --- */}
         <div className={styles.topRightControls}>
           <button onClick={() => saveScenario(scenarioId)} className={`${styles.controlButton} ${styles.saveButton}`}>Save Scenario</button>
           <div onClick={() => setIsSimulatorVisible(!isSimulatorVisible)} className={!isSimulatorVisible ? styles.botButtonHidden : styles.botButton}>

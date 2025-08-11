@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import useStore from './store';
 import styles from './NodeController.module.css';
-// --- 💡 추가된 부분: Firebase Firestore 관련 모듈 import ---
 import { db } from './firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
@@ -150,8 +149,6 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange, o
       {element.type === 'grid' && renderGridControls()}
       {(element.type === 'checkbox' || element.type === 'dropbox') && renderOptionsControls()}
       <div className={styles.editorActions}>
-        {/* <button className={styles.saveDefaultElementButton} onClick={() => onSaveDefault(index)}>Save Default</button>
-        <button className={styles.defaultElementButton} onClick={() => onSetDefault(index)}>Set Default</button> */}
         <button className={styles.deleteElementButton} onClick={() => onDelete(index)}>Delete</button>
       </div>
     </div>
@@ -302,57 +299,6 @@ function NodeController() {
     setSelectedElementId(null);
   };
   
-  // --- 💡 수정된 부분: DB에서 기본값을 불러오도록 변경 ---
-  const localSetElementToDefault = async (elementIndex) => {
-    const currentElement = localNode.data.elements[elementIndex];
-    if (!currentElement) return;
-
-    try {
-        const docRef = doc(db, "settings", "formElementDefaults");
-        const docSnap = await getDoc(docRef);
-
-        let defaultData = {};
-        if (docSnap.exists()) {
-            const defaults = docSnap.data();
-            if (defaults[currentElement.type]) {
-                defaultData = defaults[currentElement.type];
-            }
-        }
-        
-        setLocalNode(prev => {
-            const newNode = { ...prev };
-            const newElements = [...newNode.data.elements];
-            newElements[elementIndex] = { ...currentElement, ...defaultData };
-            newNode.data.elements = newElements;
-            return newNode;
-        });
-    } catch (error) {
-        console.error("Error loading default from DB:", error);
-        alert("Failed to load default settings.");
-    }
-  };
-
-  // --- 💡 수정된 부분: DB에 기본값을 저장하도록 변경 ---
-  const localSaveElementAsDefault = async (elementIndex) => {
-    const currentElement = localNode.data.elements[elementIndex];
-    if (!currentElement) return;
-
-    if (window.confirm(`Set the current settings for '${currentElement.type}' as the new default?`)) {
-      try {
-        const docRef = doc(db, "settings", "formElementDefaults");
-        const { id, type, ...dataToSave } = currentElement;
-        
-        // setDoc with merge:true 옵션은 문서가 존재하면 필드를 업데이트하고, 없으면 새로 생성합니다.
-        await setDoc(docRef, { [type]: dataToSave }, { merge: true });
-        
-        alert(`Default settings for '${type}' have been saved.`);
-      } catch (error) {
-        console.error("Error saving default to DB:", error);
-        alert("Failed to save default settings.");
-      }
-    }
-  };
-
   const localMoveElement = (startIndex, endIndex) => {
       setLocalNode(prev => {
         const newNode = { ...prev };
@@ -468,13 +414,43 @@ function NodeController() {
                 onUpdate={localUpdateElement}
                 onDelete={localDeleteElement}
                 onGridCellChange={localUpdateGridCell}
-                onSetDefault={localSetElementToDefault}
-                onSaveDefault={localSaveElementAsDefault}
             />
         )}
       </>
     );
   };
+  
+  const renderApiControls = () => {
+    const { data } = localNode;
+    return (
+      <>
+        <div className={styles.formGroup}>
+          <label>Method</label>
+          <select value={data.method || 'GET'} onChange={(e) => handleLocalDataChange('method', e.target.value)}>
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="DELETE">DELETE</option>
+          </select>
+        </div>
+        <div className={styles.formGroup}>
+          <label>URL</label>
+          <textarea value={data.url || ''} onChange={(e) => handleLocalDataChange('url', e.target.value)} rows={3} />
+        </div>
+        <div className={styles.formGroup}>
+          <label>Headers (JSON)</label>
+          <textarea value={data.headers || ''} onChange={(e) => handleLocalDataChange('headers', e.target.value)} rows={4} />
+        </div>
+        {data.method !== 'GET' && (
+          <div className={styles.formGroup}>
+            <label>Body (JSON)</label>
+            <textarea value={data.body || ''} onChange={(e) => handleLocalDataChange('body', e.target.value)} rows={6} />
+          </div>
+        )}
+      </>
+    );
+  };
+
 
   const renderDefaultControls = () => {
     const { type, data } = localNode;
@@ -492,14 +468,14 @@ function NodeController() {
           </div>
         )}
 
-        {type === 'api' && (
+        {type === 'slotfilling' && (
           <div className={styles.formGroup}>
             <label>Slot</label>
             <input type="text" value={data.slot || ''} onChange={(e) => handleLocalDataChange('slot', e.target.value)} />
           </div>
         )}
 
-        {(type === 'message' || type === 'api' || type === 'branch' || type === 'fixedmenu') && (
+        {(type === 'message' || type === 'slotfilling' || type === 'branch' || type === 'fixedmenu') && (
           <div className={styles.formGroup}>
             <label>{type === 'branch' ? 'Branches' : (type === 'fixedmenu' ? 'Menus' : 'Quick Replies')}</label>
             <div className={styles.repliesContainer}>
@@ -532,12 +508,23 @@ function NodeController() {
     );
   }
 
+  const renderContent = () => {
+    switch(localNode.type) {
+      case 'form':
+        return renderFormControls();
+      case 'api':
+        return renderApiControls();
+      default:
+        return renderDefaultControls();
+    }
+  };
+
   return (
     <div className={styles.controllerContainer}>
       <div className={styles.mainControls}>
         <h3>Type: {localNode.type}</h3>
         <div className={styles.form}>
-          {localNode.type === 'form' ? renderFormControls() : renderDefaultControls()}
+          {renderContent()}
         </div>
       </div>
       <div className={styles.controllerActions}>

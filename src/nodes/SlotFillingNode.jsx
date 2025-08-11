@@ -13,39 +13,59 @@ const getTextColorByBackgroundColor = (hexColor) => {
     return luma < 128 ? 'white' : 'black';
 }
 
-function ApiNode({ id, data }) {
+function SlotFillingNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);
-  const nodeColor = useStore((state) => state.nodeColors.api);
+  const nodeColor = useStore((state) => state.nodeColors.slotfilling);
   const textColor = getTextColorByBackgroundColor(nodeColor);
 
   return (
     <div className={styles.nodeWrapper}>
       <Handle type="target" position={Position.Left} />
       <div className={styles.nodeHeader} style={{ backgroundColor: nodeColor, color: textColor }}>
-        <span className={styles.headerTextContent}>API</span>
+        <span className={styles.headerTextContent}>SlotFilling</span>
+        {/* --- 💡 수정된 부분: onClick 핸들러에 e.stopPropagation() 추가 --- */}
         <button onClick={(e) => { e.stopPropagation(); deleteNode(id); }} className={styles.deleteButton}>❌</button>
       </div>
       <div className={styles.nodeBody}>
         <div className={styles.section}>
-          <span className={styles.sectionTitle}>Method</span>
+          <span className={styles.sectionTitle}>Question</span>
+          <textarea
+            className={styles.textInput}
+            value={data.content}
+            readOnly
+            rows={2}
+          />
+        </div>
+        <div className={styles.section}>
+          <span className={styles.sectionTitle}>Slot:</span>
           <input
             className={styles.textInput}
-            value={data.method || 'GET'}
+            value={data.slot}
             readOnly
           />
         </div>
         <div className={styles.section}>
-          <span className={styles.sectionTitle}>URL</span>
-          <textarea
-            className={styles.textInput}
-            value={data.url}
-            readOnly
-            rows={2}
-          />
+          <span className={styles.sectionTitle}>Quick Replies:</span>
+          {data.replies?.map((reply) => (
+            <div key={reply.value} className={styles.quickReply}>
+               <input
+                className={styles.quickReplyInput}
+                value={reply.display}
+                readOnly
+                placeholder="Display text"
+              />
+              <input
+                className={styles.quickReplyInput}
+                value={reply.value}
+                readOnly
+                placeholder="Actual value"
+              />
+            </div>
+          ))}
         </div>
       </div>
       <Handle type="source" position={Position.Right} />
     </div>
   );
 }
-export default ApiNode;
+export default SlotFillingNode;

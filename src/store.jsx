@@ -4,16 +4,15 @@ import {
   applyNodeChanges,
   applyEdgeChanges,
 } from 'reactflow';
-// --- 💡 수정된 부분: Firestore 관련 모듈 추가 ---
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from './firebase';
 
-// 기본 색상 값은 그대로 유지됩니다.
 const defaultColors = {
   message: '#f39c12',
   form: '#9b59b6',
   branch: '#2ecc71',
-  api: '#3498db',
+  slotfilling: '#3498db',
+  api: '#e74c3c',
   fixedmenu: '#e74c3c',
   link: '#34495e',
 };
@@ -22,20 +21,16 @@ const useStore = create((set, get) => ({
   nodes: [],
   edges: [],
   selectedNodeId: null,
-  // --- 💡 수정된 부분: localStorage 로직을 DB 통신으로 변경 ---
-  nodeColors: defaultColors, // 초기 상태는 기본 색상으로 시작
+  nodeColors: defaultColors,
 
-  // DB에서 색상 설정을 비동기적으로 불러오는 함수
   fetchNodeColors: async () => {
     const docRef = doc(db, "settings", "nodeColors");
     try {
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const dbColors = docSnap.data();
-        // DB 설정과 기본 설정을 합쳐, 추후 새 노드 타입이 추가되어도 오류 방지
         set({ nodeColors: { ...defaultColors, ...dbColors } });
       } else {
-        // DB에 설정이 없으면 기본값으로 문서를 생성
         await setDoc(docRef, defaultColors);
       }
     } catch (error) {
@@ -43,13 +38,12 @@ const useStore = create((set, get) => ({
     }
   },
 
-  // 색상 변경 시 DB에 비동기적으로 저장하는 함수
   setNodeColor: async (type, color) => {
     const newColors = { ...get().nodeColors, [type]: color };
-    set({ nodeColors: newColors }); // UI에 즉시 반영 (Optimistic Update)
+    set({ nodeColors: newColors });
     try {
       const docRef = doc(db, "settings", "nodeColors");
-      await setDoc(docRef, newColors); // 변경된 전체 색상 객체를 DB에 저장
+      await setDoc(docRef, newColors);
     } catch (error) {
       console.error("Failed to save node colors to DB", error);
     }
@@ -123,8 +117,11 @@ const useStore = create((set, get) => ({
       case 'message':
         newNode.data = { id: 'new_message', content: 'New text message', replies: [] };
         break;
-            case 'api':
-        newNode.data = { id: 'new_api', content: 'Enter your question.', slot: 'newSlot', replies: [] };
+      case 'slotfilling':
+        newNode.data = { id: 'new_slotfilling', content: 'Enter your question.', slot: 'newSlot', replies: [] };
+        break;
+      case 'api':
+        newNode.data = { id: 'new_api', method: 'GET', url: '', headers: '{}', body: '{}' };
         break;
       case 'branch':
         newNode.data = { id: 'new_branch', content: 'Enter your conditional branch question.', replies: [{ display: 'Condition 1', value: `cond_${Date.now()}` }, { display: 'Condition 2', value: `cond_${Date.now() + 1}` }] };
@@ -141,7 +138,7 @@ const useStore = create((set, get) => ({
       case 'fixedmenu':
         newNode.data = { id: 'new_fixedmenu', title: 'Fixed Menu', replies: [{ display: 'Menu 1', value: `menu_${Date.now()}` }, { display: 'Menu 2', value: `menu_${Date.now() + 1}` }] };
         break;
-            case 'link':
+      case 'link':
         newNode.data = { id: 'new_link', content: 'https://', display: 'Link' };
         break;
       default:
