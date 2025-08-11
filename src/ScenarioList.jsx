@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { collection, getDocs, setDoc, doc, getDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+// --- 💡 수정된 부분: Firebase 관련 모듈 import 정리 ---
+import { collection, getDocs, doc, getDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
 
-// Simple style object
 const styles = {
   container: {
     padding: '40px',
@@ -53,59 +53,48 @@ const styles = {
   }
 };
 
-function ScenarioList({ onSelect }) {
-  const [scenarios, setScenarios] = useState([]);
+// --- 💡 수정된 부분: App.jsx로부터 props를 전달받도록 변경 ---
+function ScenarioList({ onSelect, onAddScenario, scenarios, setScenarios }) {
   const [loading, setLoading] = useState(true);
 
-  const fetchScenarios = async () => {
-    try {
-      const scenariosCollection = collection(db, 'scenarios');
-      const querySnapshot = await getDocs(scenariosCollection);
-      const scenarioIds = querySnapshot.docs.map(doc => doc.id);
-      setScenarios(scenarioIds);
-    } catch (error) {
-      console.error("Error fetching scenarios: ", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchScenarios();
-  }, []);
-
-  const handleAddScenario = async () => {
-    const newScenarioName = prompt("Enter the name of the new scenario:");
-    if (newScenarioName) {
-      const newScenarioRef = doc(db, "scenarios", newScenarioName);
+    const fetchScenarios = async () => {
       try {
-        await setDoc(newScenarioRef, { nodes: [], edges: [] });
-        setScenarios(prev => [...prev, newScenarioName]);
-        alert(`Scenario '${newScenarioName}' has been created.`);
+        const scenariosCollection = collection(db, 'scenarios');
+        const querySnapshot = await getDocs(scenariosCollection);
+        const scenarioIds = querySnapshot.docs.map(doc => doc.id);
+        setScenarios(scenarioIds);
       } catch (error) {
-        console.error("Error creating new scenario: ", error);
-        alert("Failed to create scenario.");
+        console.error("Error fetching scenarios: ", error);
+      } finally {
+        setLoading(false);
       }
-    }
-  };
+    };
 
-  // --- 💡 Added part: Scenario rename function ---
+    fetchScenarios();
+  }, [setScenarios]);
+
+
+  // --- 💡 수정된 부분: 시나리오 추가 함수 삭제 (App.jsx로 이동) ---
+
   const handleRenameScenario = async (oldId) => {
     const newId = prompt("Enter the new scenario name:", oldId);
     if (newId && newId !== oldId) {
+      if (scenarios.includes(newId)) {
+        alert("A scenario with that name already exists. Please choose a different name.");
+        return;
+      }
       const oldDocRef = doc(db, "scenarios", oldId);
       const newDocRef = doc(db, "scenarios", newId);
 
       try {
         const oldDocSnap = await getDoc(oldDocRef);
         if (oldDocSnap.exists()) {
-          // Use batch write to handle multiple operations atomically
           const batch = writeBatch(db);
-          batch.set(newDocRef, oldDocSnap.data()); // Create new document
-          batch.delete(oldDocRef); // Delete existing document
+          batch.set(newDocRef, oldDocSnap.data());
+          batch.delete(oldDocRef);
           await batch.commit();
 
-          // Update screen state
           setScenarios(prev => prev.map(id => (id === oldId ? newId : id)));
           alert("Scenario name has been changed.");
         }
@@ -116,7 +105,6 @@ function ScenarioList({ onSelect }) {
     }
   };
 
-  // --- 💡 Added part: Scenario delete function ---
   const handleDeleteScenario = async (idToDelete) => {
     if (window.confirm(`Are you sure you want to delete the '${idToDelete}' scenario?`)) {
       const docRef = doc(db, "scenarios", idToDelete);
@@ -149,7 +137,6 @@ function ScenarioList({ onSelect }) {
             >
               {id}
             </span>
-            {/* --- 💡 Added part: Edit and delete buttons --- */}
             <div style={styles.buttonGroup}>
               <button onClick={() => handleRenameScenario(id)} style={styles.actionButton}>Edit</button>
               <button onClick={() => handleDeleteScenario(id)} style={{...styles.actionButton, color: 'red'}}>Delete</button>
@@ -157,7 +144,8 @@ function ScenarioList({ onSelect }) {
           </li>
         ))}
       </ul>
-      <button onClick={handleAddScenario} style={styles.button}>
+      {/* --- 💡 수정된 부분: onClick 이벤트에 onAddScenario prop 사용 --- */}
+      <button onClick={onAddScenario} style={styles.button}>
         + Add New Scenario
       </button>
     </div>

@@ -22,7 +22,6 @@ const nodeTypes = {
   link: LinkNode,
 };
 
-// --- 💡 추가된 부분: 설정 SVG 아이콘 ---
 const SettingsIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -42,13 +41,26 @@ const getTextColorByBackgroundColor = (hexColor) => {
     return luma < 128 ? 'white' : 'black';
 }
 
-function Flow({ scenarioId, onBack }) {
+// --- 💡 수정된 부분: onBack prop 제거 ---
+function Flow({ scenarioId }) {
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, fetchScenario, saveScenario, addNode, selectedNodeId, setSelectedNodeId, duplicateNode, deleteSelectedEdges, nodeColors, setNodeColor } = useStore();
 
   const [rightPanelWidth, setRightPanelWidth] = useState(400);
   const [isSimulatorVisible, setIsSimulatorVisible] = useState(false);
-  // --- 💡 추가된 부분: 색상 설정 패널 표시 여부 상태 ---
   const [isColorSettingsVisible, setIsColorSettingsVisible] = useState(false);
+  
+  const colorInputRefs = {
+    message: useRef(null),
+    form: useRef(null),
+    branch: useRef(null),
+    api: useRef(null),
+    fixedmenu: useRef(null),
+    link: useRef(null),
+  };
+
+  const handleColorSettingClick = (type) => {
+    colorInputRefs[type].current.click();
+  };
 
   useEffect(() => {
     if (scenarioId) {
@@ -112,7 +124,6 @@ function Flow({ scenarioId, onBack }) {
   return (
     <div className={styles.flowContainer}>
       <div className={styles.leftSidebar}>
-        {/* --- 💡 수정된 부분: 헤더 구조 변경 --- */}
         <div className={styles.sidebarHeader}>
             <h3>Add Node</h3>
             <span className={styles.globalColorSettingButton} onClick={() => setIsColorSettingsVisible(!isColorSettingsVisible)}>
@@ -120,7 +131,6 @@ function Flow({ scenarioId, onBack }) {
             </span>
         </div>
 
-        {/* --- 💡 수정된 부분: 색상 설정 패널 조건부 렌더링 --- */}
         {isColorSettingsVisible && (
             <div className={styles.colorSettingsPanel}>
                 {nodeButtons.map(({ type, label }) => (
@@ -161,8 +171,8 @@ function Flow({ scenarioId, onBack }) {
       </div>
 
       <div className={styles.mainContent}>
+        {/* --- 💡 수정된 부분: Back to List 버튼 제거 --- */}
         <div className={styles.topRightControls}>
-          <button onClick={onBack} className={styles.controlButton}>Back to List</button>
           <button onClick={() => saveScenario(scenarioId)} className={`${styles.controlButton} ${styles.saveButton}`}>Save Scenario</button>
           <div onClick={() => setIsSimulatorVisible(!isSimulatorVisible)} className={!isSimulatorVisible ? styles.botButtonHidden : styles.botButton}>
             🤖

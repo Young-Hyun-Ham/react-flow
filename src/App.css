@@ -24,7 +24,6 @@
   color: #1c1e21;
 }
 
-/* --- 💡 추가된 부분 --- */
 .header-title-container {
   display: flex;
   align-items: center;
@@ -54,8 +53,6 @@
   cursor: pointer;
   padding: 0;
 }
-/* --- 💡 추가된 부분 끝 --- */
-
 
 .app-header nav {
   display: flex;
@@ -82,11 +79,28 @@
   border-radius: 6px 6px 0 0;
 }
 
+/* --- 💡 수정된 부분: disabled 상태의 버튼 스타일 추가 --- */
+.app-header nav button:disabled {
+  color: #bdc1c6;
+  cursor: not-allowed;
+}
+
+
 .app-main {
   flex-grow: 1;
   overflow-y: auto;
   color: #1c1e21; 
   background-color: #f0f2f5;
+  position: relative; /* 자식 요소의 높이 기준을 위해 추가 */
+}
+
+/* --- 💡 추가된 부분: 뷰 컨테이너와 히든 클래스 --- */
+.view-container {
+  height: 100%;
+}
+
+.hidden {
+  display: none;
 }
 
 .user-profile {
