@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import useStore from './store';
 import styles from './NodeController.module.css';
+// --- 💡 추가된 부분: Firebase Firestore 관련 모듈 import ---
+import { db } from './firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
-// --- 💡 수정된 부분: onSetDefault prop 추가 ---
-function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange, onSetDefault }) {
+
+function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange, onSetDefault, onSaveDefault }) {
   if (!element) {
     return <p className={styles.placeholder}>Please select an element to edit.</p>;
   }
@@ -146,9 +149,9 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange, o
       {element.type === 'date' && renderDateControls()}
       {element.type === 'grid' && renderGridControls()}
       {(element.type === 'checkbox' || element.type === 'dropbox') && renderOptionsControls()}
-      {/* --- 💡 수정된 부분: 버튼 그룹 추가 --- */}
       <div className={styles.editorActions}>
-        <button className={styles.defaultElementButton} onClick={() => onSetDefault(index)}>Default</button>
+        <button className={styles.saveDefaultElementButton} onClick={() => onSaveDefault(index)}>Save Default</button>
+        <button className={styles.defaultElementButton} onClick={() => onSetDefault(index)}>Set Default</button>
         <button className={styles.deleteElementButton} onClick={() => onDelete(index)}>Delete</button>
       </div>
     </div>
@@ -299,39 +302,55 @@ function NodeController() {
     setSelectedElementId(null);
   };
   
-  // --- 💡 추가된 부분: Element를 기본값으로 설정하는 함수 ---
-  const localSetElementToDefault = (elementIndex) => {
-    setLocalNode(prev => {
-      const newNode = { ...prev };
-      const newElements = [...newNode.data.elements];
-      const currentElement = newElements[elementIndex];
-      
-      let defaultData = {};
-      switch (currentElement.type) {
-        case 'input':
-          defaultData = { name: 'input_default', label: 'Default Input', placeholder: 'Enter text here', validation: { type: 'text' } };
-          break;
-        case 'date':
-          defaultData = { name: 'date_default', label: 'Default Date' };
-          break;
-        case 'grid':
-          defaultData = { name: 'grid_default', label: 'Default Grid', rows: 2, columns: 2, data: ['', '', '', ''] };
-          break;
-        case 'checkbox':
-          defaultData = { name: 'checkbox_default', label: 'Default Checkbox', options: ['Default 1', 'Default 2'] };
-          break;
-        case 'dropbox':
-          defaultData = { name: 'dropbox_default', label: 'Default Dropbox', options: ['Default A', 'Default B'] };
-          break;
-        default:
-          break;
+  // --- 💡 수정된 부분: DB에서 기본값을 불러오도록 변경 ---
+  const localSetElementToDefault = async (elementIndex) => {
+    const currentElement = localNode.data.elements[elementIndex];
+    if (!currentElement) return;
+
+    try {
+        const docRef = doc(db, "settings", "formElementDefaults");
+        const docSnap = await getDoc(docRef);
+
+        let defaultData = {};
+        if (docSnap.exists()) {
+            const defaults = docSnap.data();
+            if (defaults[currentElement.type]) {
+                defaultData = defaults[currentElement.type];
+            }
+        }
+        
+        setLocalNode(prev => {
+            const newNode = { ...prev };
+            const newElements = [...newNode.data.elements];
+            newElements[elementIndex] = { ...currentElement, ...defaultData };
+            newNode.data.elements = newElements;
+            return newNode;
+        });
+    } catch (error) {
+        console.error("Error loading default from DB:", error);
+        alert("Failed to load default settings.");
+    }
+  };
+
+  // --- 💡 수정된 부분: DB에 기본값을 저장하도록 변경 ---
+  const localSaveElementAsDefault = async (elementIndex) => {
+    const currentElement = localNode.data.elements[elementIndex];
+    if (!currentElement) return;
+
+    if (window.confirm(`Set the current settings for '${currentElement.type}' as the new default?`)) {
+      try {
+        const docRef = doc(db, "settings", "formElementDefaults");
+        const { id, type, ...dataToSave } = currentElement;
+        
+        // setDoc with merge:true 옵션은 문서가 존재하면 필드를 업데이트하고, 없으면 새로 생성합니다.
+        await setDoc(docRef, { [type]: dataToSave }, { merge: true });
+        
+        alert(`Default settings for '${type}' have been saved.`);
+      } catch (error) {
+        console.error("Error saving default to DB:", error);
+        alert("Failed to save default settings.");
       }
-      
-      // id와 type은 유지한 채 나머지 데이터만 기본값으로 덮어쓰기
-      newElements[elementIndex] = { ...currentElement, ...defaultData };
-      newNode.data.elements = newElements;
-      return newNode;
-    });
+    }
   };
 
   const localMoveElement = (startIndex, endIndex) => {
@@ -449,7 +468,8 @@ function NodeController() {
                 onUpdate={localUpdateElement}
                 onDelete={localDeleteElement}
                 onGridCellChange={localUpdateGridCell}
-                onSetDefault={localSetElementToDefault} // --- 💡 추가된 부분 ---
+                onSetDefault={localSetElementToDefault}
+                onSaveDefault={localSaveElementAsDefault}
             />
         )}
       </>

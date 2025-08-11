@@ -4,10 +4,11 @@ import {
   applyNodeChanges,
   applyEdgeChanges,
 } from 'reactflow';
+// --- 💡 수정된 부분: Firestore 관련 모듈 추가 ---
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from './firebase';
 
-// --- 💡 추가된 부분: 기본 색상 및 localStorage 관련 로직 ---
+// 기본 색상 값은 그대로 유지됩니다.
 const defaultColors = {
   message: '#f39c12',
   form: '#9b59b6',
@@ -17,36 +18,41 @@ const defaultColors = {
   link: '#34495e',
 };
 
-const getInitialColors = () => {
-  try {
-    const savedColors = localStorage.getItem('nodeColors');
-    if (savedColors) {
-      // 저장된 설정과 기본 설정을 합쳐 새로운 노드 타입이 추가되어도 오류가 없도록 함
-      return { ...defaultColors, ...JSON.parse(savedColors) };
-    }
-  } catch (error) {
-    console.error("Failed to parse node colors from localStorage", error);
-  }
-  return defaultColors;
-};
-
-
 const useStore = create((set, get) => ({
   nodes: [],
   edges: [],
   selectedNodeId: null,
-  // --- 💡 추가된 부분: nodeColors 상태와 setColor 액션 ---
-  nodeColors: getInitialColors(),
-  setNodeColor: (type, color) => {
-    set(state => {
-      const newColors = { ...state.nodeColors, [type]: color };
-      try {
-        localStorage.setItem('nodeColors', JSON.stringify(newColors));
-      } catch (error) {
-        console.error("Failed to save node colors to localStorage", error);
+  // --- 💡 수정된 부분: localStorage 로직을 DB 통신으로 변경 ---
+  nodeColors: defaultColors, // 초기 상태는 기본 색상으로 시작
+
+  // DB에서 색상 설정을 비동기적으로 불러오는 함수
+  fetchNodeColors: async () => {
+    const docRef = doc(db, "settings", "nodeColors");
+    try {
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const dbColors = docSnap.data();
+        // DB 설정과 기본 설정을 합쳐, 추후 새 노드 타입이 추가되어도 오류 방지
+        set({ nodeColors: { ...defaultColors, ...dbColors } });
+      } else {
+        // DB에 설정이 없으면 기본값으로 문서를 생성
+        await setDoc(docRef, defaultColors);
       }
-      return { nodeColors: newColors };
-    });
+    } catch (error) {
+      console.error("Failed to fetch node colors from DB", error);
+    }
+  },
+
+  // 색상 변경 시 DB에 비동기적으로 저장하는 함수
+  setNodeColor: async (type, color) => {
+    const newColors = { ...get().nodeColors, [type]: color };
+    set({ nodeColors: newColors }); // UI에 즉시 반영 (Optimistic Update)
+    try {
+      const docRef = doc(db, "settings", "nodeColors");
+      await setDoc(docRef, newColors); // 변경된 전체 색상 객체를 DB에 저장
+    } catch (error) {
+      console.error("Failed to save node colors to DB", error);
+    }
   },
 
   onNodesChange: (changes) => set({ nodes: applyNodeChanges(changes, get().nodes) }),
@@ -113,31 +119,30 @@ const useStore = create((set, get) => ({
       data: {},
     };
 
-    // --- 💡 수정된 부분: 노드 생성 시 개별 color 속성 제거 ---
     switch (type) {
       case 'message':
-        newNode.data = { id: 'new_message', content: 'New text message', replies: [] };
+        newNode.data = { id: 'new_message', content: '새 텍스트 메시지', replies: [] };
         break;
       case 'api':
-        newNode.data = { id: 'new_api', content: 'Enter your question.', slot: 'newSlot', replies: [] };
+        newNode.data = { id: 'new_api', content: '질문을 입력하세요.', slot: 'newSlot', replies: [] };
         break;
       case 'branch':
-        newNode.data = { id: 'new_branch', content: 'Enter your branch condition question.', replies: [{ display: 'Condition 1', value: `cond_${Date.now()}` }, { display: 'Condition 2', value: `cond_${Date.now() + 1}` }] };
+        newNode.data = { id: 'new_branch', content: '조건 분기 질문을 입력하세요.', replies: [{ display: '조건1', value: `cond_${Date.now()}` }, { display: '조건2', value: `cond_${Date.now() + 1}` }] };
         break;
       case 'form':
         newNode.data = {
           id: 'new_form',
-          title: 'New Form',
+          title: '새 양식',
           elements: [],
           dataSourceType: 'json',
           dataSource: ''
         };
         break;
       case 'fixedmenu':
-        newNode.data = { id: 'new_fixedmenu', title: 'Fixed Menu', replies: [{ display: 'Menu 1', value: `menu_${Date.now()}` }, { display: 'Menu 2', value: `menu_${Date.now() + 1}` }] };
+        newNode.data = { id: 'new_fixedmenu', title: '고정 메뉴', replies: [{ display: '메뉴1', value: `menu_${Date.now()}` }, { display: '메뉴2', value: `menu_${Date.now() + 1}` }] };
         break;
       case 'link':
-        newNode.data = { id: 'new_link', content: 'https://', display: 'link' };
+        newNode.data = { id: 'new_link', content: 'https://', display: '링크' };
         break;
       default:
         break;
@@ -334,17 +339,17 @@ const useStore = create((set, get) => ({
 
   saveScenario: async (scenarioId) => {
     if (!scenarioId) {
-      alert('No scenario selected to save.');
+      alert('저장할 시나리오가 선택되지 않았습니다.');
       return;
     }
     const scenarioDocRef = doc(db, "scenarios", scenarioId);
     try {
       const { nodes, edges } = get();
       await setDoc(scenarioDocRef, { nodes, edges });
-      alert(`Scenario '${scenarioId}' has been saved!`);
+      alert(`'${scenarioId}' 시나리오가 저장되었습니다!`);
     } catch (error) {
       console.error("Error saving scenario:", error);
-      alert('Failed to save.');
+      alert('저장에 실패했습니다.');
     }
   },
 }));

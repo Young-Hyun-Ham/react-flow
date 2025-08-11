@@ -6,7 +6,8 @@ import ScenarioList from './ScenarioList';
 import Board from './Board';
 import Login from './Login';
 import HelpModal from './HelpModal';
-import NewScenarioModal from './NewScenarioModal'; // --- 💡 추가된 부분 ---
+import NewScenarioModal from './NewScenarioModal';
+import useStore from './store'; // --- 💡 추가된 부분 ---
 import './App.css';
 
 function App() {
@@ -16,8 +17,9 @@ function App() {
   const [view, setView] = useState('list');
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [scenarios, setScenarios] = useState([]);
-  // --- 💡 추가된 부분: 새 시나리오 모달 상태 ---
   const [isNewScenarioModalOpen, setIsNewScenarioModalOpen] = useState(false);
+  // --- 💡 추가된 부분: zustand 스토어에서 fetchNodeColors 액션 가져오기 ---
+  const fetchNodeColors = useStore((state) => state.fetchNodeColors);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -32,6 +34,8 @@ function App() {
 
         if (isAuthorized) {
           setUser(currentUser);
+          // --- 💡 추가된 부분: 인증된 사용자일 경우 DB에서 색상 설정 불러오기 ---
+          fetchNodeColors();
         } else {
           signOut(auth);
           alert("Access denied. You don't have permission to access this account.");
@@ -44,7 +48,7 @@ function App() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [fetchNodeColors]); // 의존성 배열에 fetchNodeColors 추가
 
   const handleLogout = async () => {
     try {
@@ -59,12 +63,10 @@ function App() {
     setView('flow');
   };
   
-  // --- 💡 수정된 부분: prompt 대신 모달을 열도록 변경 ---
   const handleAddNewScenario = () => {
     setIsNewScenarioModalOpen(true);
   };
 
-  // --- 💡 추가된 부분: 모달에서 'Create' 버튼 클릭 시 실행될 함수 ---
   const handleCreateScenario = async (newScenarioName) => {
     if (scenarios.includes(newScenarioName)) {
       alert("A scenario with that name already exists. Please choose a different name.");
@@ -77,12 +79,13 @@ function App() {
       setScenarios(prev => [...prev, newScenarioName]);
       setSelectedScenario(newScenarioName);
       setView('flow');
-      setIsNewScenarioModalOpen(false); // 모달 닫기
+      setIsNewScenarioModalOpen(false);
     } catch (error) {
       console.error("Error creating new scenario: ", error);
       alert("Failed to create scenario.");
     }
   };
+
 
   const handleViewChange = (targetView) => {
     if (targetView === 'flow') {
@@ -152,7 +155,6 @@ function App() {
         </div>
       </main>
       <HelpModal isOpen={isHelpModalOpen} onClose={() => setIsHelpModalOpen(false)} />
-      {/* --- 💡 추가된 부분: 모달 컴포넌트 렌더링 --- */}
       <NewScenarioModal 
         isOpen={isNewScenarioModalOpen}
         onClose={() => setIsNewScenarioModalOpen(false)}
