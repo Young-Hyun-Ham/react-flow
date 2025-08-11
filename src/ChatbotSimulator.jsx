@@ -276,7 +276,7 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
               <div key={item.id} className={styles.messageRow}>
                 <div className={styles.avatar}>🤖</div>
                 <div className={`${styles.message} ${styles.botMessage}`}>
-                  <img src="/images/Loading.gif" alt="Loading..." style={{ width: '40px', height: '30px' }} />
+                  <img src="/images/Loading.gif" alt="Loading..." style={{ width: '80px', height: '60px' }} />
                 </div>
               </div>
             );
