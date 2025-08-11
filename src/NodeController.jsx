@@ -288,10 +288,11 @@ function NodeController() {
     });
   };
 
+  // --- 💡 수정된 부분: 잘못된 변수명 'index'를 'elementIndex'로 수정 ---
   const localDeleteElement = (elementIndex) => {
     setLocalNode(prev => {
         const newNode = { ...prev };
-        newNode.data.elements = newNode.data.elements.filter((_, i) => i !== index);
+        newNode.data.elements = newNode.data.elements.filter((_, i) => i !== elementIndex);
         return newNode;
     });
     setSelectedElementId(null);
@@ -477,7 +478,6 @@ function NodeController() {
     <div className={styles.controllerContainer}>
       <div className={styles.mainControls}>
         <h3>Type: {localNode.type}</h3>
-        {/* --- 💡 수정된 부분: 색상 변경 UI 삭제 --- */}
         <div className={styles.form}>
           {localNode.type === 'form' ? renderFormControls() : renderDefaultControls()}
         </div>
