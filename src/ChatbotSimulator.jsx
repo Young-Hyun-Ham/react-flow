@@ -45,7 +45,10 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
   const addBotMessage = (nodeId) => {
     const node = nodes.find(n => n.id === nodeId);
     if (node) {
-      if (node.type === 'api') {
+      // --- 💡 추가된 부분: 시연을 위한 특정 노드 로딩 처리 ---
+      // Todo : 나중에 정리할 것
+
+      if (node.type === 'api' || node.id === 'branch-1754639034237-vsol31e') {
         const loadingId = Date.now();
         setHistory(prev => [...prev, { type: 'loading', id: loadingId }]);
         
@@ -213,7 +216,6 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
     proceedToNextNode(null);
   };
   
-  // --- 💡 추가된 부분: Form 노드의 Default 버튼 핸들러 ---
   const handleFormDefault = () => {
     if (!currentNode || currentNode.type !== 'form') return;
 
@@ -423,7 +425,6 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
                         )}
                       </div>
                     ))}
-                    {/* --- 💡 수정된 부분: Default 버튼 추가 --- */}
                     <div className={styles.formButtonContainer}>
                       <button className={styles.formDefaultButton} onClick={handleFormDefault} disabled={item.isCompleted}>
                         Default
