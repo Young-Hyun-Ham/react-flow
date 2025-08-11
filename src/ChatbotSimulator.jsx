@@ -45,7 +45,6 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
   const addBotMessage = (nodeId) => {
     const node = nodes.find(n => n.id === nodeId);
     if (node) {
-      // --- 💡 수정된 부분: API 노드 타입에 대한 로딩 처리 ---
       if (node.type === 'api') {
         const loadingId = Date.now();
         setHistory(prev => [...prev, { type: 'loading', id: loadingId }]);
@@ -213,6 +212,51 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
     setHistory(prev => [...prev, { type: 'user', message: "Form submitted." }]);
     proceedToNextNode(null);
   };
+  
+  // --- 💡 추가된 부분: Form 노드의 Default 버튼 핸들러 ---
+  const handleFormDefault = () => {
+    if (!currentNode || currentNode.type !== 'form') return;
+
+    const defaultData = {};
+    currentNode.data.elements.forEach(element => {
+      if (!element.name) return;
+
+      switch (element.type) {
+        case 'input':
+          if (element.validation?.type === 'email') {
+            defaultData[element.name] = 'test@example.com';
+          } else if (element.validation?.type === 'phone number') {
+            defaultData[element.name] = '010-1234-5678';
+          } else if (element.label === 'Estimated Cargo Weight(kg)') {
+            defaultData[element.name] = '1000';
+          } else {
+            defaultData[element.name] = `1`;
+          }
+          break;
+        case 'date':
+          const today = new Date();
+          const year = today.getFullYear();
+          const month = String(today.getMonth() + 1).padStart(2, '0');
+          const day = String(today.getDate()).padStart(2, '0');
+          defaultData[element.name] = `${year}-${month}-${day}`;
+          break;
+        case 'checkbox':
+          if (element.options?.length > 0) {
+            defaultData[element.name] = [element.options[0]];
+          }
+          break;
+        case 'dropbox':
+          if (element.options?.length > 0) {
+            defaultData[element.name] = element.options[0];
+          }
+          break;
+        default:
+          break;
+      }
+    });
+    setFormData(defaultData);
+  };
+
 
   const renderOptions = () => {
     if (!currentNode) { return (<button className={`${styles.optionButton} ${styles.restartButton}`} onClick={startSimulation}>Restart Conversation</button>); }
@@ -270,7 +314,6 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
       )}
       <div className={styles.history}>
         {history.map((item, index) => {
-          // --- 💡 추가된 부분: 로딩 상태 렌더링 ---
           if (item.type === 'loading') {
             return (
               <div key={item.id} className={styles.messageRow}>
@@ -380,7 +423,15 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
                         )}
                       </div>
                     ))}
-                    <button className={styles.formSubmitButton} onClick={handleFormSubmit} disabled={item.isCompleted}>Submit</button>
+                    {/* --- 💡 수정된 부분: Default 버튼 추가 --- */}
+                    <div className={styles.formButtonContainer}>
+                      <button className={styles.formDefaultButton} onClick={handleFormDefault} disabled={item.isCompleted}>
+                        Default
+                      </button>
+                      <button className={styles.formSubmitButton} onClick={handleFormSubmit} disabled={item.isCompleted}>
+                        Submit
+                      </button>
+                    </div>
                   </div>
                 </div>
               );

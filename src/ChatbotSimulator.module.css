@@ -241,6 +241,12 @@
   box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
 }
 
+.formButtonContainer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .branchButton:disabled {
   border-color: #dcdcdc;
   color: #888;
@@ -260,6 +266,18 @@
   align-self: flex-end;
   padding: 8px 20px;
   background-color: #007aff;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.formDefaultButton {
+  align-self: flex-end;
+  padding: 8px 20px;
+  background-color: #afafaf;
   color: white;
   border: none;
   border-radius: 20px;

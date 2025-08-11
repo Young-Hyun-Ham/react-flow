@@ -150,8 +150,8 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange, o
       {element.type === 'grid' && renderGridControls()}
       {(element.type === 'checkbox' || element.type === 'dropbox') && renderOptionsControls()}
       <div className={styles.editorActions}>
-        <button className={styles.saveDefaultElementButton} onClick={() => onSaveDefault(index)}>Save Default</button>
-        <button className={styles.defaultElementButton} onClick={() => onSetDefault(index)}>Set Default</button>
+        {/* <button className={styles.saveDefaultElementButton} onClick={() => onSaveDefault(index)}>Save Default</button>
+        <button className={styles.defaultElementButton} onClick={() => onSetDefault(index)}>Set Default</button> */}
         <button className={styles.deleteElementButton} onClick={() => onDelete(index)}>Delete</button>
       </div>
     </div>
