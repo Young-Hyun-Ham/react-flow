@@ -55,7 +55,7 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
       // --- 💡 추가된 부분: 시연을 위한 특정 노드 로딩 처리 ---
       // Todo : 나중에 정리할 것
 
-      if (node.type === 'slotfilling' || node.id === 'branch-1754639034237-vsol31e') {
+      if (node.id === 'branch-1754639034237-vsol31e') {
         const loadingId = Date.now();
         setHistory(prev => [...prev, { type: 'loading', id: loadingId }]);
         
