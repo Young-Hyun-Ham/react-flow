@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import useStore from './store';
 import styles from './NodeController.module.css';
 
-// ... (ElementEditor 컴포넌트는 변경 없음) ...
-function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange }) {
+// --- 💡 수정된 부분: onSetDefault prop 추가 ---
+function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange, onSetDefault }) {
   if (!element) {
     return <p className={styles.placeholder}>Please select an element to edit.</p>;
   }
@@ -100,8 +100,8 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
         <label>Grid Content</label>
         <div className={styles.gridContentEditor} style={{ gridTemplateColumns: `repeat(${element.columns || 2}, 1fr)`}}>
           {element.data?.map((cell, idx) => {
-            const rowIndex = Math.floor(idx / element.columns);
-            const colIndex = idx % element.columns;
+            const rowIndex = Math.floor(idx / (element.columns || 2));
+            const colIndex = idx % (element.columns || 2);
             return (
               <textarea
                 key={idx}
@@ -146,7 +146,9 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
       {element.type === 'date' && renderDateControls()}
       {element.type === 'grid' && renderGridControls()}
       {(element.type === 'checkbox' || element.type === 'dropbox') && renderOptionsControls()}
+      {/* --- 💡 수정된 부분: 버튼 그룹 추가 --- */}
       <div className={styles.editorActions}>
+        <button className={styles.defaultElementButton} onClick={() => onSetDefault(index)}>Default</button>
         <button className={styles.deleteElementButton} onClick={() => onDelete(index)}>Delete</button>
       </div>
     </div>
@@ -288,7 +290,6 @@ function NodeController() {
     });
   };
 
-  // --- 💡 수정된 부분: 잘못된 변수명 'index'를 'elementIndex'로 수정 ---
   const localDeleteElement = (elementIndex) => {
     setLocalNode(prev => {
         const newNode = { ...prev };
@@ -296,6 +297,41 @@ function NodeController() {
         return newNode;
     });
     setSelectedElementId(null);
+  };
+  
+  // --- 💡 추가된 부분: Element를 기본값으로 설정하는 함수 ---
+  const localSetElementToDefault = (elementIndex) => {
+    setLocalNode(prev => {
+      const newNode = { ...prev };
+      const newElements = [...newNode.data.elements];
+      const currentElement = newElements[elementIndex];
+      
+      let defaultData = {};
+      switch (currentElement.type) {
+        case 'input':
+          defaultData = { name: 'input_default', label: 'Default Input', placeholder: 'Enter text here', validation: { type: 'text' } };
+          break;
+        case 'date':
+          defaultData = { name: 'date_default', label: 'Default Date' };
+          break;
+        case 'grid':
+          defaultData = { name: 'grid_default', label: 'Default Grid', rows: 2, columns: 2, data: ['', '', '', ''] };
+          break;
+        case 'checkbox':
+          defaultData = { name: 'checkbox_default', label: 'Default Checkbox', options: ['Default 1', 'Default 2'] };
+          break;
+        case 'dropbox':
+          defaultData = { name: 'dropbox_default', label: 'Default Dropbox', options: ['Default A', 'Default B'] };
+          break;
+        default:
+          break;
+      }
+      
+      // id와 type은 유지한 채 나머지 데이터만 기본값으로 덮어쓰기
+      newElements[elementIndex] = { ...currentElement, ...defaultData };
+      newNode.data.elements = newElements;
+      return newNode;
+    });
   };
 
   const localMoveElement = (startIndex, endIndex) => {
@@ -315,7 +351,8 @@ function NodeController() {
         const newElements = JSON.parse(JSON.stringify(newNode.data.elements));
         const gridElement = newElements[elementIndex];
         if (gridElement && gridElement.type === 'grid') {
-            const index = rowIndex * gridElement.columns + colIndex;
+            const gridColumns = gridElement.columns || 2;
+            const index = rowIndex * gridColumns + colIndex;
             gridElement.data[index] = value;
             newNode.data.elements = newElements;
         }
@@ -412,6 +449,7 @@ function NodeController() {
                 onUpdate={localUpdateElement}
                 onDelete={localDeleteElement}
                 onGridCellChange={localUpdateGridCell}
+                onSetDefault={localSetElementToDefault} // --- 💡 추가된 부분 ---
             />
         )}
       </>
