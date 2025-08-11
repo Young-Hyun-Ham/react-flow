@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import useStore from './store';
 import styles from './NodeController.module.css';
 
-// ElementEditor now receives functions that directly modify local state as props
+// ... (ElementEditor 컴포넌트는 변경 없음) ...
 function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange }) {
   if (!element) {
     return <p className={styles.placeholder}>Please select an element to edit.</p>;
@@ -291,7 +291,7 @@ function NodeController() {
   const localDeleteElement = (elementIndex) => {
     setLocalNode(prev => {
         const newNode = { ...prev };
-        newNode.data.elements = newNode.data.elements.filter((_, i) => i !== elementIndex);
+        newNode.data.elements = newNode.data.elements.filter((_, i) => i !== index);
         return newNode;
     });
     setSelectedElementId(null);
@@ -477,6 +477,7 @@ function NodeController() {
     <div className={styles.controllerContainer}>
       <div className={styles.mainControls}>
         <h3>Type: {localNode.type}</h3>
+        {/* --- 💡 수정된 부분: 색상 변경 UI 삭제 --- */}
         <div className={styles.form}>
           {localNode.type === 'form' ? renderFormControls() : renderDefaultControls()}
         </div>

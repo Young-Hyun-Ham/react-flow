@@ -7,10 +7,47 @@ import {
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from './firebase';
 
+// --- 💡 추가된 부분: 기본 색상 및 localStorage 관련 로직 ---
+const defaultColors = {
+  message: '#f39c12',
+  form: '#9b59b6',
+  branch: '#2ecc71',
+  api: '#3498db',
+  fixedmenu: '#e74c3c',
+  link: '#34495e',
+};
+
+const getInitialColors = () => {
+  try {
+    const savedColors = localStorage.getItem('nodeColors');
+    if (savedColors) {
+      // 저장된 설정과 기본 설정을 합쳐 새로운 노드 타입이 추가되어도 오류가 없도록 함
+      return { ...defaultColors, ...JSON.parse(savedColors) };
+    }
+  } catch (error) {
+    console.error("Failed to parse node colors from localStorage", error);
+  }
+  return defaultColors;
+};
+
+
 const useStore = create((set, get) => ({
   nodes: [],
   edges: [],
   selectedNodeId: null,
+  // --- 💡 추가된 부분: nodeColors 상태와 setColor 액션 ---
+  nodeColors: getInitialColors(),
+  setNodeColor: (type, color) => {
+    set(state => {
+      const newColors = { ...state.nodeColors, [type]: color };
+      try {
+        localStorage.setItem('nodeColors', JSON.stringify(newColors));
+      } catch (error) {
+        console.error("Failed to save node colors to localStorage", error);
+      }
+      return { nodeColors: newColors };
+    });
+  },
 
   onNodesChange: (changes) => set({ nodes: applyNodeChanges(changes, get().nodes) }),
   onEdgesChange: (changes) => set({ edges: applyEdgeChanges(changes, get().edges) }),
@@ -26,13 +63,11 @@ const useStore = create((set, get) => ({
     }));
   },
   
-  // --- 💡 추가된 부분 ---
   deleteSelectedEdges: () => {
     set((state) => ({
       edges: state.edges.filter((edge) => !edge.selected),
     }));
   },
-  // --- 💡 추가된 부분 끝 ---
 
   duplicateNode: (nodeId) => {
     const { nodes } = get();
@@ -78,6 +113,7 @@ const useStore = create((set, get) => ({
       data: {},
     };
 
+    // --- 💡 수정된 부분: 노드 생성 시 개별 color 속성 제거 ---
     switch (type) {
       case 'message':
         newNode.data = { id: 'new_message', content: '새 텍스트 메시지', replies: [] };

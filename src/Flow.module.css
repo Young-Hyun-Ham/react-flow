@@ -17,17 +17,69 @@
   gap: 10px;
 }
 
-.leftSidebar h3 {
-  margin: 0 0 10px 0;
+/* --- 💡 추가된 부분: 사이드바 헤더 스타일 --- */
+.sidebarHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px; /* h3의 기존 margin-bottom과 유사하게 조정 */
+}
+
+.sidebarHeader h3 {
+  margin: 0;
   color: #333;
   font-size: 1.1rem;
 }
 
+/* --- 💡 추가된 부분: 전역 색상 설정 버튼 스타일 --- */
+.globalColorSettingButton {
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.globalColorSettingButton:hover {
+  background-color: #e0e0e0;
+}
+
+/* --- 💡 추가된 부분: 색상 설정 패널 스타일 --- */
+.colorSettingsPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  margin-bottom: 5px;
+  background-color: #fff;
+}
+
+.colorSettingItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.colorSettingItem input[type="color"] {
+  width: 40px;
+  height: 24px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 2px;
+  cursor: pointer;
+  background-color: transparent; /* iOS에서 배경색이 적용되는 문제 방지 */
+}
+
 .sidebarButton {
+  width: 100%;
   padding: 12px;
   border: none;
   border-radius: 5px;
-  color: white;
   text-align: left;
   font-size: 0.9rem;
   font-weight: bold;
@@ -39,32 +91,9 @@
   opacity: 0.9;
 }
 
-.messageButton {
-  background-color: #f39c12;
-}
-
-.apiButton {
-  background-color: #3498db;
-}
-
-.branchButton {
-  background-color: #2ecc71;
-}
-
-.formButton {
-  background-color: #9b59b6;
-}
-
-.fixedMenuButton {
-  background-color: #e74c3c;
-}
-
-.linkButton {
-  background-color: #34495e;
-}
-
 .duplicateButton {
   background-color: #7f8c8d;
+  width: 100%;
 }
 
 .separator {

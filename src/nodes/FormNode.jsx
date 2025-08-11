@@ -2,9 +2,22 @@ import { Handle, Position } from 'reactflow';
 import styles from './ChatNodes.module.css';
 import useStore from '../store';
 
+const getTextColorByBackgroundColor = (hexColor) => {
+    if (!hexColor) return 'white';
+    const c = hexColor.substring(1);
+    const rgb = parseInt(c, 16);
+    const r = (rgb >> 16) & 0xff;
+    const g = (rgb >>  8) & 0xff;
+    const b = (rgb >>  0) & 0xff;
+    const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    return luma < 128 ? 'white' : 'black';
+}
+
 function FormNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);
   const updateNodeData = useStore((state) => state.updateNodeData);
+  const nodeColor = useStore((state) => state.nodeColors.form);
+  const textColor = getTextColorByBackgroundColor(nodeColor);
 
   const renderElementPreview = (element) => {
     switch (element.type) {
@@ -24,13 +37,7 @@ function FormNode({ id, data }) {
         return (
            <div key={element.id} className={styles.previewElement}>
             <label className={styles.previewLabel}>{element.label || 'Date'}</label>
-            {/* --- 💡 수정된 부분: type을 "text"로 바꾸고 placeholder 추가 --- */}
-            <input 
-              type="text" 
-              className={styles.previewInput} 
-              placeholder="YYYY-MM-DD" 
-              readOnly 
-            />
+            <input type="text" className={styles.previewInput} placeholder="YYYY-MM-DD" readOnly />
           </div>
         );
       case 'grid':
@@ -39,7 +46,6 @@ function FormNode({ id, data }) {
             <label className={styles.previewLabel}>{element.label || 'Grid'}</label>
             <table className={styles.previewGridTable}>
               <tbody>
-                {/* --- 💡 Modified: Render 1D array data as table format --- */}
                 {[...Array(element.rows || 2)].map((_, rowIndex) => (
                   <tr key={rowIndex}>
                     {[...Array(element.columns || 2)].map((_, colIndex) => {
@@ -90,9 +96,10 @@ function FormNode({ id, data }) {
   return (
     <div className={`${styles.nodeWrapper} ${styles.formNodeWrapper}`}>
       <Handle type="target" position={Position.Left} />
-      <div className={`${styles.nodeHeader} ${styles.headerForm}`}>
+      <div className={styles.nodeHeader} style={{ backgroundColor: nodeColor, color: textColor }}>
         <span className={styles.headerTextContent}>Form</span>
-        <button onClick={() => deleteNode(id)} className={styles.deleteButton}>❌</button>
+        {/* --- 💡 수정된 부분: onClick 핸들러에 e.stopPropagation() 추가 --- */}
+        <button onClick={(e) => { e.stopPropagation(); deleteNode(id); }} className={styles.deleteButton}>❌</button>
       </div>
       <div className={styles.nodeBody}>
         <div className={styles.section}>

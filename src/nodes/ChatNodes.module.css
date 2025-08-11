@@ -20,12 +20,13 @@
   border-top-right-radius: 8px;
   color: white;
 }
-.headerMessage { background-color: #f39c12; }
+/* --- 💡 수정된 부분: 배경색 클래스 제거 --- */
+/* .headerMessage { background-color: #f39c12; }
 .headerApi { background-color: #3498db; }
 .headerBranch { background-color: #2ecc71; }
 .headerForm { background-color: #9b59b6; }
-.headerFixedMenu { background-color: #e74c3c; } /* 💡Fixed menu header color added */
-.headerLink { background-color: #34495e; }
+.headerFixedMenu { background-color: #e74c3c; }
+.headerLink { background-color: #34495e; } */
 
 
 .headerTextContent {
