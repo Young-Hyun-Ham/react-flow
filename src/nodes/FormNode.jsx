@@ -24,7 +24,13 @@ function FormNode({ id, data }) {
         return (
            <div key={element.id} className={styles.previewElement}>
             <label className={styles.previewLabel}>{element.label || 'Date'}</label>
-            <input type="date" className={styles.previewInput} readOnly />
+            {/* --- 💡 수정된 부분: type을 "text"로 바꾸고 placeholder 추가 --- */}
+            <input 
+              type="text" 
+              className={styles.previewInput} 
+              placeholder="YYYY-MM-DD" 
+              readOnly 
+            />
           </div>
         );
       case 'grid':

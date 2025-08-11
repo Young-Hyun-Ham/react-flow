@@ -290,7 +290,7 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
                             disabled={item.isCompleted}
                           />
                         )}
-                        {/* --- 💡 수정된 부분: Date Input --- */}
+                        {/* --- 💡 수정된 부분: onFocus/onBlur 로직 다시 적용 --- */}
                         {el.type === 'date' && (
                            <input
                             type="text"
@@ -298,7 +298,7 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
                             className={styles.formInput}
                             value={formData[el.name] || ''}
                             onChange={(e) => handleFormInputChange(el.name, e.target.value)}
-                            onFocus={(e) => (e.target.type = 'date')}
+                            onFocus={(e) => (e.target.type = 'date') }
                             onBlur={(e) => {
                                 if (!e.target.value) {
                                     e.target.type = 'text';
@@ -320,7 +320,6 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
                             <label htmlFor={`${el.id}-${opt}`}>{opt}</label>
                           </div>
                         ))}
-                        {/* --- 💡 수정된 부분: Dropbox (Select) --- */}
                         {el.type === 'dropbox' && (
                           <select
                             className={styles.formInput}
