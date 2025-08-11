@@ -121,28 +121,28 @@ const useStore = create((set, get) => ({
 
     switch (type) {
       case 'message':
-        newNode.data = { id: 'new_message', content: '새 텍스트 메시지', replies: [] };
+        newNode.data = { id: 'new_message', content: 'New text message', replies: [] };
         break;
-      case 'api':
-        newNode.data = { id: 'new_api', content: '질문을 입력하세요.', slot: 'newSlot', replies: [] };
+            case 'api':
+        newNode.data = { id: 'new_api', content: 'Enter your question.', slot: 'newSlot', replies: [] };
         break;
       case 'branch':
-        newNode.data = { id: 'new_branch', content: '조건 분기 질문을 입력하세요.', replies: [{ display: '조건1', value: `cond_${Date.now()}` }, { display: '조건2', value: `cond_${Date.now() + 1}` }] };
+        newNode.data = { id: 'new_branch', content: 'Enter your conditional branch question.', replies: [{ display: 'Condition 1', value: `cond_${Date.now()}` }, { display: 'Condition 2', value: `cond_${Date.now() + 1}` }] };
         break;
       case 'form':
         newNode.data = {
           id: 'new_form',
-          title: '새 양식',
+          title: 'new form',
           elements: [],
           dataSourceType: 'json',
           dataSource: ''
         };
         break;
       case 'fixedmenu':
-        newNode.data = { id: 'new_fixedmenu', title: '고정 메뉴', replies: [{ display: '메뉴1', value: `menu_${Date.now()}` }, { display: '메뉴2', value: `menu_${Date.now() + 1}` }] };
+        newNode.data = { id: 'new_fixedmenu', title: 'Fixed Menu', replies: [{ display: 'Menu 1', value: `menu_${Date.now()}` }, { display: 'Menu 2', value: `menu_${Date.now() + 1}` }] };
         break;
-      case 'link':
-        newNode.data = { id: 'new_link', content: 'https://', display: '링크' };
+            case 'link':
+        newNode.data = { id: 'new_link', content: 'https://', display: 'Link' };
         break;
       default:
         break;
@@ -156,10 +156,10 @@ const useStore = create((set, get) => ({
       nodes: state.nodes.map((node) => {
         if (node.id === nodeId) {
           const nodeType = node.type;
-          const newReply = {
-            display: nodeType === 'branch' ? '새 조건' : (nodeType === 'fixedmenu' ? '새 메뉴' : '새 답장'),
+            const newReply = {
+            display: nodeType === 'branch' ? 'New Condition' : (nodeType === 'fixedmenu' ? 'New Menu' : 'New Reply'),
             value: `${nodeType === 'branch' ? 'cond' : (nodeType === 'fixedmenu' ? 'menu' : 'val')}_${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-          };
+            };
           const newReplies = [...(node.data.replies || []), newReply];
           return { ...node, data: { ...node.data, replies: newReplies } };
         }
@@ -339,17 +339,17 @@ const useStore = create((set, get) => ({
 
   saveScenario: async (scenarioId) => {
     if (!scenarioId) {
-      alert('저장할 시나리오가 선택되지 않았습니다.');
+      alert('No scenario selected to save.');
       return;
     }
     const scenarioDocRef = doc(db, "scenarios", scenarioId);
     try {
       const { nodes, edges } = get();
       await setDoc(scenarioDocRef, { nodes, edges });
-      alert(`'${scenarioId}' 시나리오가 저장되었습니다!`);
+      alert(`Scenario '${scenarioId}' has been saved!`);
     } catch (error) {
       console.error("Error saving scenario:", error);
-      alert('저장에 실패했습니다.');
+      alert('Failed to save.');
     }
   },
 }));
