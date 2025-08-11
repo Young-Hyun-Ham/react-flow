@@ -45,10 +45,25 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
   const addBotMessage = (nodeId) => {
     const node = nodes.find(n => n.id === nodeId);
     if (node) {
+      // --- 💡 수정된 부분: API 노드 타입에 대한 로딩 처리 ---
+      if (node.type === 'api') {
+        const loadingId = Date.now();
+        setHistory(prev => [...prev, { type: 'loading', id: loadingId }]);
+        
+        setTimeout(() => {
+          setHistory(prev => prev.map(item => 
+            item.id === loadingId 
+              ? { type: 'bot', nodeId, isCompleted: node.data.replies?.length > 0 ? false : true, id: loadingId }
+              : item
+          ));
+        }, 2000);
+        return;
+      }
+      
       if (node.type === 'fixedmenu') {
-        setHistory([]); // 💡 채팅창 리셋
+        setHistory([]);
         setFixedMenu({ nodeId: node.id, ...node.data });
-        setCurrentId(node.id); // 💡 현재 노드를 fixedmenu로 설정하고 대기
+        setCurrentId(node.id);
         return;
       }
 
@@ -57,7 +72,7 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
         if (node.data.content) {
             window.open(node.data.content, '_blank', 'noopener,noreferrer');
         }
-        proceedToNextNode(null, nodeId); // 링크 처리 후 바로 다음 노드로 진행
+        proceedToNextNode(null, nodeId);
         return;
       }
 
@@ -102,9 +117,9 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
       setSlots({});
       setFormData({});
       setFixedMenu(null);
-      setHistory([]); // 💡 시작 시 무조건 기록 초기화
+      setHistory([]);
       setCurrentId(startNode.id);
-      addBotMessage(startNode.id); // 💡 addBotMessage를 통해 일관되게 첫 노드 처리
+      addBotMessage(startNode.id);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, edges]);
@@ -255,6 +270,18 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
       )}
       <div className={styles.history}>
         {history.map((item, index) => {
+          // --- 💡 추가된 부분: 로딩 상태 렌더링 ---
+          if (item.type === 'loading') {
+            return (
+              <div key={item.id} className={styles.messageRow}>
+                <div className={styles.avatar}>🤖</div>
+                <div className={`${styles.message} ${styles.botMessage}`}>
+                  <img src="/images/Loading.gif" alt="Loading..." style={{ width: '40px', height: '30px' }} />
+                </div>
+              </div>
+            );
+          }
+
           if (item.type === 'bot' && item.nodeId) {
             const node = nodes.find(n => n.id === item.nodeId);
             if (!node) return null;
@@ -290,7 +317,6 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
                             disabled={item.isCompleted}
                           />
                         )}
-                        {/* --- 💡 수정된 부분: onFocus/onBlur 로직 다시 적용 --- */}
                         {el.type === 'date' && (
                            <input
                             type="text"
@@ -298,7 +324,7 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
                             className={styles.formInput}
                             value={formData[el.name] || ''}
                             onChange={(e) => handleFormInputChange(el.name, e.target.value)}
-                            onFocus={(e) => (e.target.type = 'date') }
+                            onFocus={(e) => (e.target.type = 'date')}
                             onBlur={(e) => {
                                 if (!e.target.value) {
                                     e.target.type = 'text';
