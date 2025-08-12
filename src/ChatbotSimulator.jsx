@@ -341,41 +341,41 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
   };
 
   const renderOptions = () => {
-    if (!currentNode) { return (<button className={`${styles.optionButton} ${styles.restartButton}`} onClick={startSimulation}>Restart Conversation</button>); }
-
-    if (currentNode.type === 'branch' || currentNode.type === 'fixedmenu' || currentNode.type === 'api') {
-      return null;
+    if (!currentNode) { 
+      return (<button className={`${styles.optionButton} ${styles.restartButton}`} onClick={startSimulation}>Restart Conversation</button>); 
     }
+  
+    // --- 💡 수정된 부분 ---
+    // 빠른 답장 버튼(Quick Replies)들은 이제 별도의 영역에 표시되므로, 여기서는 항상 텍스트 입력창을 렌더링합니다.
+    return (
+      <div className={styles.inputArea}>
+        <input type="text" className={styles.textInput} value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleTextInputSend()} placeholder="Enter a message..."/>
+        <button className={styles.sendButton} onClick={handleTextInputSend}>Send</button>
+      </div>
+    );
+  };
+  
+  const renderQuickReplies = () => {
+    if (!currentNode) return null;
 
-    if (currentNode.type === 'message') {
-      if (edges.some(edge => edge.source === currentNode.id)) {
-        return null;
-      }
-    }
     const replies = currentNode.data.replies || [];
-    if (replies.length > 0) {
-      return replies.map((answer) => (
-        <button key={answer.value} className={styles.optionButton} onClick={() => handleOptionClick(answer)}>{answer.display}</button>
-      ));
-    }
-    if (currentNode.type === 'slotfilling') {
-      return (
-        <div className={styles.inputArea}>
-          <input type="text" className={styles.textInput} value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleTextInputSend()} placeholder="Enter a message..."/>
-          <button className={styles.sendButton} onClick={handleTextInputSend}>Send</button>
-        </div>
-      );
-    }
-    if (currentNode.type === 'form') {
-      return null;
-    }
-    return (<button className={`${styles.optionButton} ${styles.restartButton}`} onClick={startSimulation}>Restart Conversation</button>);
+    const showReplies = replies.length > 0 && (currentNode.type === 'message' || currentNode.type === 'slotfilling');
+  
+    if (!showReplies) return null;
+  
+    return (
+      <div className={styles.quickRepliesContainer}>
+        {replies.map((answer) => (
+          <button key={answer.value} className={styles.optionButton} onClick={() => handleOptionClick(answer)}>{answer.display}</button>
+        ))}
+      </div>
+    );
   };
 
   return (
     <div className={`${styles.simulator} ${isExpanded ? styles.expanded : ''}`}>
-      <div className={`${styles.header} ${isExpanded ? styles.expanded : ''}`}>
-        {isExpanded ? <span></span> : <span>Chatbot</span>}
+      <div className={styles.header}>
+        <span>Chatbot</span>
         <div className={styles.headerButtons}>
           {isVisible && (
             <button className={styles.headerButton} onClick={() => setIsExpanded(!isExpanded)} title={isExpanded ? "Collapse" : "Expand"}>
@@ -568,6 +568,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
           return null;
         })}
       </div>
+      {renderQuickReplies()}
       <div className={styles.options}>
         {renderOptions()}
       </div>
