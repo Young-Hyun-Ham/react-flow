@@ -93,3 +93,20 @@
   background-color: #f8f9fa;
   font-weight: bold;
 }
+
+.languageSelector {
+  position: absolute;
+  top: 40px;
+  left: 670px;
+  padding: 5px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 0.9rem;
+}
+
+.languageSelector label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
