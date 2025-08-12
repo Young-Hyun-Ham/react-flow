@@ -49,11 +49,58 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
     }
   }, [history]);
 
+  const handleApiNode = async (node) => {
+    const loadingId = Date.now();
+    setHistory(prev => [...prev, { type: 'loading', id: loadingId }]);
+
+    try {
+      const { method, url, headers, body } = node.data;
+      
+      const interpolatedUrl = interpolateMessage(url, slots);
+      const interpolatedHeaders = JSON.parse(interpolateMessage(headers || '{}', slots));
+      
+      const options = {
+        method,
+        headers: interpolatedHeaders,
+      };
+
+      if (method !== 'GET' && body) {
+        options.body = interpolateMessage(body, slots);
+      }
+      
+      console.log("API Request:", { method, url: interpolatedUrl, headers: interpolatedHeaders, body: options.body });
+
+      const response = await fetch(interpolatedUrl, options);
+      const result = await response.json();
+      
+      const resultMessage = JSON.stringify(result, null, 2);
+      setSlots(prev => ({...prev, api_response: resultMessage}));
+
+      setHistory(prev => prev.map(item => 
+        item.id === loadingId 
+          ? { type: 'bot', message: `API Response:\n\`\`\`\n${resultMessage}\n\`\`\``, id: loadingId }
+          : item
+      ));
+
+    } catch (error) {
+      console.error("API Error:", error);
+      setHistory(prev => prev.map(item => 
+        item.id === loadingId 
+          ? { type: 'bot', message: `Error: ${error.message}`, id: loadingId }
+          : item
+      ));
+    } finally {
+      proceedToNextNode(null, node.id);
+    }
+  };
+
   const addBotMessage = (nodeId) => {
     const node = nodes.find(n => n.id === nodeId);
     if (node) {
-      // --- 💡 추가된 부분: 시연을 위한 특정 노드 로딩 처리 ---
-      // Todo : 나중에 정리할 것
+        if (node.type === 'api') {
+            handleApiNode(node);
+            return;
+        }
 
       if (node.id === 'branch-1754639034237-vsol31e') {
         const loadingId = Date.now();
@@ -84,8 +131,8 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
         proceedToNextNode(null, nodeId);
         return;
       }
-
-      const isInteractive = node.type === 'form' || (node.type === 'branch' && node.data.replies?.length > 0) || node.type === 'api';
+      
+      const isInteractive = node.type === 'form' || (node.type === 'branch' && node.data.replies?.length > 0) || node.type === 'slotfilling';
       setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: isInteractive ? false : true, id: Date.now() }]);
     }
   };
@@ -138,7 +185,7 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
 
   useEffect(() => {
     const node = nodes.find(n => n.id === currentId);
-    if (node && (node.type === 'message' || (node.type === 'slotfilling' && !node.data.replies?.length))) {
+    if (node && (node.type === 'message')) {
       const nextEdge = edges.find((edge) => edge.source === node.id && !edge.sourceHandle);
       if (nextEdge) {
         const nextNode = nodes.find((n) => n.id === nextEdge.target);
@@ -241,12 +288,11 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
           }
           break;
         case 'date':
-          // const today = new Date();
-          // const year = today.getFullYear();
-          // const month = String(today.getMonth() + 1).padStart(2, '0');
-          // const day = String(today.getDate()).padStart(2, '0');
-          // defaultData[element.name] = `${year}-${month}-${day}`;
-          defaultData[element.name] = '2025-08-20';
+          const today = new Date();
+          const year = today.getFullYear();
+          const month = String(today.getMonth() + 1).padStart(2, '0');
+          const day = String(today.getDate()).padStart(2, '0');
+          defaultData[element.name] = `${year}-${month}-${day}`;
           break;
         case 'checkbox':
           if (element.options?.length > 0) {
@@ -269,11 +315,11 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
   const renderOptions = () => {
     if (!currentNode) { return (<button className={`${styles.optionButton} ${styles.restartButton}`} onClick={startSimulation}>Restart Conversation</button>); }
 
-    if (currentNode.type === 'branch' || currentNode.type === 'fixedmenu') {
+    if (currentNode.type === 'branch' || currentNode.type === 'fixedmenu' || currentNode.type === 'api') {
       return null;
     }
 
-    if (currentNode.type === 'message' || currentNode.type === 'api') {
+    if (currentNode.type === 'message') {
       if (edges.some(edge => edge.source === currentNode.id)) {
         return null;
       }
@@ -327,7 +373,7 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
               <div key={item.id} className={styles.messageRow}>
                 <div className={styles.avatar}>🤖</div>
                 <div className={`${styles.message} ${styles.botMessage}`}>
-                  loading...
+                  <img src="/images/Loading.gif" alt="Loading..." style={{ width: '80px', height: '60px' }} />
                 </div>
               </div>
             );

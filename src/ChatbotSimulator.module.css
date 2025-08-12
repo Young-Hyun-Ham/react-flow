@@ -162,7 +162,7 @@
 
 .sendButton {
   flex-shrink: 0;
-  width: 60px;
+  /* width: 60px; */
   border: none;
   border-radius: 20px;
   background-color: #007aff;
@@ -272,12 +272,13 @@
   font-weight: bold;
   cursor: pointer;
   margin-top: 10px;
+  align-items: center;
 }
 
 .formDefaultButton {
   align-self: flex-end;
   padding: 8px 20px;
-  background-color: #afafaf;
+  background-color: #007aff;
   color: white;
   border: none;
   border-radius: 20px;
