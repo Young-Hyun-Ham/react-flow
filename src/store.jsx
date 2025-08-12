@@ -17,11 +17,22 @@ const defaultColors = {
   link: '#34495e',
 };
 
+const defaultTextColors = {
+  message: '#ffffff',
+  form: '#ffffff',
+  branch: '#ffffff',
+  slotfilling: '#ffffff',
+  api: '#ffffff',
+  fixedmenu: '#ffffff',
+  link: '#ffffff',
+}
+
 const useStore = create((set, get) => ({
   nodes: [],
   edges: [],
   selectedNodeId: null,
   nodeColors: defaultColors,
+  nodeTextColors: defaultTextColors,
 
   fetchNodeColors: async () => {
     const docRef = doc(db, "settings", "nodeColors");
@@ -38,6 +49,21 @@ const useStore = create((set, get) => ({
     }
   },
 
+  fetchNodeTextColors: async () => {
+    const docRef = doc(db, "settings", "nodeTextColors");
+    try {
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const dbTextColors = docSnap.data();
+        set({ nodeTextColors: { ...defaultTextColors, ...dbTextColors } });
+      } else {
+        await setDoc(docRef, defaultTextColors);
+      }
+    } catch (error) {
+      console.error("Failed to fetch node text colors from DB", error);
+    }
+  },
+
   setNodeColor: async (type, color) => {
     const newColors = { ...get().nodeColors, [type]: color };
     set({ nodeColors: newColors });
@@ -46,6 +72,17 @@ const useStore = create((set, get) => ({
       await setDoc(docRef, newColors);
     } catch (error) {
       console.error("Failed to save node colors to DB", error);
+    }
+  },
+
+  setNodeTextColor: async (type, color) => {
+    const newTextColors = { ...get().nodeTextColors, [type]: color };
+    set({ nodeTextColors: newTextColors });
+    try {
+      const docRef = doc(db, "settings", "nodeTextColors");
+      await setDoc(docRef, newTextColors);
+    } catch (error) {
+      console.error("Failed to save node text colors to DB", error);
     }
   },
 

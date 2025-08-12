@@ -32,19 +32,13 @@ const SettingsIcon = () => (
     </svg>
 );
 
-const getTextColorByBackgroundColor = (hexColor) => {
-    if (!hexColor) return 'white';
-    const c = hexColor.substring(1);
-    const rgb = parseInt(c, 16);
-    const r = (rgb >> 16) & 0xff;
-    const g = (rgb >>  8) & 0xff;
-    const b = (rgb >>  0) & 0xff;
-    const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-    return luma < 128 ? 'white' : 'black';
-}
-
 function Flow({ scenarioId }) {
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, fetchScenario, saveScenario, addNode, selectedNodeId, setSelectedNodeId, duplicateNode, deleteSelectedEdges, nodeColors, setNodeColor } = useStore();
+  const { 
+    nodes, edges, onNodesChange, onEdgesChange, onConnect, 
+    fetchScenario, saveScenario, addNode, selectedNodeId, 
+    setSelectedNodeId, duplicateNode, deleteSelectedEdges, 
+    nodeColors, setNodeColor, nodeTextColors, setNodeTextColor 
+  } = useStore();
 
   const [rightPanelWidth, setRightPanelWidth] = useState(400);
   const [isSimulatorVisible, setIsSimulatorVisible] = useState(false);
@@ -135,11 +129,18 @@ function Flow({ scenarioId }) {
                 {nodeButtons.map(({ type, label }) => (
                     <div key={type} className={styles.colorSettingItem}>
                         <span>{label.replace('+ ', '')}</span>
-                        <input 
-                            type="color" 
-                            value={nodeColors[type]} 
-                            onChange={(e) => setNodeColor(type, e.target.value)}
-                        />
+                        <div className={styles.colorInputs}>
+                          <input 
+                              type="color" 
+                              value={nodeColors[type]} 
+                              onChange={(e) => setNodeColor(type, e.target.value)}
+                          />
+                          <input 
+                              type="color" 
+                              value={nodeTextColors[type]} 
+                              onChange={(e) => setNodeTextColor(type, e.target.value)}
+                          />
+                        </div>
                     </div>
                 ))}
             </div>
@@ -152,7 +153,7 @@ function Flow({ scenarioId }) {
                 className={styles.sidebarButton} 
                 style={{ 
                     backgroundColor: nodeColors[type], 
-                    color: getTextColorByBackgroundColor(nodeColors[type]) 
+                    color: nodeTextColors[type]
                 }}
             >
                 {label}

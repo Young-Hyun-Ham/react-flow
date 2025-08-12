@@ -65,8 +65,13 @@
   font-size: 0.9rem;
 }
 
+.colorInputs {
+  display: flex;
+  gap: 5px;
+}
+
 .colorSettingItem input[type="color"] {
-  width: 40px;
+  width: 30px;
   height: 24px;
   border: 1px solid #ccc;
   border-radius: 4px;

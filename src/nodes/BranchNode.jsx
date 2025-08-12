@@ -19,7 +19,8 @@ function BranchNode({ id, data }) {
   const updateNodeData = useStore((state) => state.updateNodeData);
   const branchOptionRefs = useRef([]);
   const nodeColor = useStore((state) => state.nodeColors.branch);
-  const textColor = getTextColorByBackgroundColor(nodeColor);
+  const textColor = useStore((state) => state.nodeTextColors.branch);
+  // const textColor = getTextColorByBackgroundColor(nodeColor);
 
   useEffect(() => {
     branchOptionRefs.current = branchOptionRefs.current.slice(0, data.replies?.length);

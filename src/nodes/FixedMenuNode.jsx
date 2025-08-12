@@ -18,7 +18,8 @@ function FixedMenuNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);
   const branchOptionRefs = useRef([]);
   const nodeColor = useStore((state) => state.nodeColors.fixedmenu);
-  const textColor = getTextColorByBackgroundColor(nodeColor);
+  const textColor = useStore((state) => state.nodeTextColors.fixedmenu);
+  // const textColor = getTextColorByBackgroundColor(nodeColor);
 
   useEffect(() => {
     branchOptionRefs.current = branchOptionRefs.current.slice(0, data.replies?.length);

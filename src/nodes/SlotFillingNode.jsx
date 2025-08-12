@@ -16,7 +16,8 @@ const getTextColorByBackgroundColor = (hexColor) => {
 function SlotFillingNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);
   const nodeColor = useStore((state) => state.nodeColors.slotfilling);
-  const textColor = getTextColorByBackgroundColor(nodeColor);
+  const textColor = useStore((state) => state.nodeTextColors.slotfilling);
+  // const textColor = getTextColorByBackgroundColor(nodeColor);
 
   return (
     <div className={styles.nodeWrapper}>

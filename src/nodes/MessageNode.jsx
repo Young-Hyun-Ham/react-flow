@@ -16,7 +16,8 @@ const getTextColorByBackgroundColor = (hexColor) => {
 function MessageNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);
   const nodeColor = useStore((state) => state.nodeColors.message);
-  const textColor = getTextColorByBackgroundColor(nodeColor);
+  const textColor = useStore((state) => state.nodeTextColors.message);
+  // const textColor = getTextColorByBackgroundColor(nodeColor);
 
   return (
     <div className={styles.nodeWrapper}>

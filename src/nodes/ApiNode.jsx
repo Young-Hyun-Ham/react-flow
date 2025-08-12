@@ -16,7 +16,8 @@ const getTextColorByBackgroundColor = (hexColor) => {
 function ApiNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);
   const nodeColor = useStore((state) => state.nodeColors.api);
-  const textColor = getTextColorByBackgroundColor(nodeColor);
+  const textColor = useStore((state) => state.nodeTextColors.api);
+//   const textColor = getTextColorByBackgroundColor(nodeColor);
 
   return (
     <div className={styles.nodeWrapper}>

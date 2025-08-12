@@ -20,6 +20,7 @@ function App() {
   const [isNewScenarioModalOpen, setIsNewScenarioModalOpen] = useState(false);
   // --- 💡 추가된 부분: zustand 스토어에서 fetchNodeColors 액션 가져오기 ---
   const fetchNodeColors = useStore((state) => state.fetchNodeColors);
+  const fetchNodeTextColors = useStore((state) => state.fetchNodeTextColors);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -36,6 +37,7 @@ function App() {
           setUser(currentUser);
           // --- 💡 추가된 부분: 인증된 사용자일 경우 DB에서 색상 설정 불러오기 ---
           fetchNodeColors();
+          fetchNodeTextColors();
         } else {
           signOut(auth);
           alert("Access denied. You don't have permission to access this account.");
@@ -48,7 +50,7 @@ function App() {
     });
 
     return () => unsubscribe();
-  }, [fetchNodeColors]); // 의존성 배열에 fetchNodeColors 추가
+  }, [fetchNodeColors, fetchNodeTextColors]); // 의존성 배열에 fetchNodeColors 추가
 
   const handleLogout = async () => {
     try {

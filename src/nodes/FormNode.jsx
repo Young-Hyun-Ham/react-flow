@@ -17,7 +17,8 @@ function FormNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);
   const updateNodeData = useStore((state) => state.updateNodeData);
   const nodeColor = useStore((state) => state.nodeColors.form);
-  const textColor = getTextColorByBackgroundColor(nodeColor);
+  const textColor = useStore((state) => state.nodeTextColors.form);
+  // const textColor = getTextColorByBackgroundColor(nodeColor);
 
   const renderElementPreview = (element) => {
     switch (element.type) {
