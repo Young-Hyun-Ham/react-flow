@@ -14,12 +14,11 @@
   top: 70px;
   right: 20px;
   width: max(600px, 70vw);
-  height: calc(100vh - 80px);
+  height: calc(100vh - 90px);
   z-index: 1000;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  border-radius: 20px;
+  border-radius: 8px;
   border-left: none;
-  border: 1px solid #e0e0e0;
 }
 
 
@@ -185,6 +184,7 @@
   display: flex;
   overflow-x: auto;
   gap: 8px;
+  flex-shrink: 0; /* --- 💡 수정된 부분 --- */
 }
 
 .inputArea {
