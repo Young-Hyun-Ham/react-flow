@@ -64,7 +64,9 @@ const HelpManual = () => (
         <tr>
           <td><strong>API</strong></td>
           <td>Red</td>
-          <td>Calls an external API and displays the response to the user.</td>
+          {/* --- 💡 수정된 부분 시작 --- */}
+          <td>Calls an external API. You can use slot values in the request and save parts of the JSON response back into slots. It also allows branching the flow based on API call success or failure.</td>
+          {/* --- 💡 수정된 부분 끝 --- */}
         </tr>
         <tr>
           <td><strong>Fixed Menu</strong></td>
@@ -87,20 +89,40 @@ const HelpManual = () => (
       <li>When editing is complete, click the <code>Save Changes</code> button at the bottom of the controller panel to apply changes to the node.</li>
     </ol>
 
-    <h3>5.2. Node Connection</h3>
+    {/* --- 💡 추가된 부분 시작 --- */}
+    <h3>5.2. Using the API Node</h3>
+    <p>The API node allows for dynamic interaction with external servers.</p>
     <ul>
-      <li>Click on the connection points (Handles) on the right or left edges of nodes and drag to other nodes' connection points to connect conversation flows.</li>
-      <li><strong>Condition Branch/Fixed Menu nodes</strong>: Each button (Branch/Menu) has its own separate connection point.</li>
+      <li><strong>Dynamic Requests</strong>: Use slots to make dynamic API calls. In the URL, Headers, or Body fields, you can insert values from previous user inputs or API responses using brace notation (e.g., <code>https://api.example.com/users/{'{userId}'}</code>).</li>
+      <li><strong>Response Mapping</strong>: After a successful API call, you can extract values from the JSON response and save them into new or existing slots. In the "Response Mapping" section of the controller:
+        <ul>
+          <li><strong>JSON Path</strong>: Specify the path to the desired value in the JSON response (e.g., <code>data.user.name</code>).</li>
+          <li><strong>Slot Name</strong>: Enter the name of the slot where you want to store the extracted value (e.g., <code>userName</code>).</li>
+        </ul>
+      </li>
+      <li><strong>Success/Failure Branching</strong>: The API node has two source handles on its right side:
+        <ul>
+          <li><code>On Success</code>: Drag a connection from this handle to the node that should follow a successful API call.</li>
+          <li><code>On Error</code>: Drag a connection from this handle to the node that should follow a failed API call (e.g., network error, server error).</li>
+        </ul>
+      </li>
     </ul>
 
-    <h3>5.3. Node and Connection Deletion/Duplication</h3>
+    <h3>5.3. Node Connection</h3>
+    {/* --- 💡 수정된 부분 끝 --- */}
+    <ul>
+      <li>Click on the connection points (Handles) on the right or left edges of nodes and drag to other nodes' connection points to connect conversation flows.</li>
+      <li><strong>Condition Branch/Fixed Menu/API nodes</strong>: Each button (Branch/Menu) or outcome (Success/Error) has its own separate connection point.</li>
+    </ul>
+
+    <h3>5.4. Node and Connection Deletion/Duplication</h3>
     <ul>
       <li><strong>Delete Node</strong>: Click the <code>❌</code> button in the top right of the node.</li>
       <li><strong>Delete Connection</strong>: Click only the connection you want to delete on the canvas to select it, then press <code>Backspace</code> or <code>Delete</code> on your keyboard.</li>
       <li><strong>Duplicate Node</strong>: Click the <code>+ Duplicate Node</code> button that appears at the bottom of the left 'Add Node' panel when you select the node you want to duplicate.</li>
     </ul>
 
-    <h3>5.4. Save and Test</h3>
+    <h3>5.5. Save and Test</h3>
     <ul>
       <li><strong>Save</strong>: Click the <code>Save Scenario</code> button in the top right of the screen to save the current scenario you're working on to the server.</li>
       <li><strong>Test</strong>: Click the <code>🤖</code> icon to open the simulator and test whether the scenario works as intended.</li>

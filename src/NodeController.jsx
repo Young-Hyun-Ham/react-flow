@@ -420,8 +420,26 @@ function NodeController() {
     );
   };
   
+  // 💡 --- API 컨트롤 UI --- 💡
   const renderApiControls = () => {
     const { data } = localNode;
+
+    const handleMappingChange = (index, part, value) => {
+      const newMapping = [...(data.responseMapping || [])];
+      newMapping[index] = { ...newMapping[index], [part]: value };
+      handleLocalDataChange('responseMapping', newMapping);
+    };
+
+    const addMapping = () => {
+      const newMapping = [...(data.responseMapping || []), { path: '', slot: '' }];
+      handleLocalDataChange('responseMapping', newMapping);
+    };
+
+    const deleteMapping = (index) => {
+      const newMapping = (data.responseMapping || []).filter((_, i) => i !== index);
+      handleLocalDataChange('responseMapping', newMapping);
+    };
+
     return (
       <>
         <div className={styles.formGroup}>
@@ -447,6 +465,32 @@ function NodeController() {
             <textarea value={data.body || ''} onChange={(e) => handleLocalDataChange('body', e.target.value)} rows={6} />
           </div>
         )}
+        <div className={styles.separator} />
+        <div className={styles.formGroup}>
+          <label>Response Mapping</label>
+          <div className={styles.repliesContainer}>
+            {(data.responseMapping || []).map((mapping, index) => (
+              <div key={index} className={styles.quickReply}>
+                <input
+                  className={styles.quickReplyInput}
+                  value={mapping.path}
+                  onChange={(e) => handleMappingChange(index, 'path', e.target.value)}
+                  placeholder="JSON Path (e.g., data.name)"
+                />
+                <input
+                  className={styles.quickReplyInput}
+                  value={mapping.slot}
+                  onChange={(e) => handleMappingChange(index, 'slot', e.target.value)}
+                  placeholder="Slot Name"
+                />
+                <button onClick={() => deleteMapping(index)} className={styles.deleteReplyButton}>×</button>
+              </div>
+            ))}
+            <button onClick={addMapping} className={styles.addReplyButton}>
+              + Add Mapping
+            </button>
+          </div>
+        </div>
       </>
     );
   };

@@ -121,7 +121,15 @@ const useStore = create((set, get) => ({
         newNode.data = { id: 'new_slotfilling', content: 'Enter your question.', slot: 'newSlot', replies: [] };
         break;
       case 'api':
-        newNode.data = { id: 'new_api', method: 'GET', url: '', headers: '{}', body: '{}' };
+        newNode.data = {
+          id: 'new_api',
+          method: 'GET',
+          url: '',
+          headers: '{}',
+          body: '{}',
+          responseMapping: [], // 💡 API 응답 매핑 정보 추가
+          errorMappingEnabled: true, // 💡 에러 핸들 기본값 추가
+        };
         break;
       case 'branch':
         newNode.data = { id: 'new_branch', content: 'Enter your conditional branch question.', replies: [{ display: 'Condition 1', value: `cond_${Date.now()}` }, { display: 'Condition 2', value: `cond_${Date.now() + 1}` }] };

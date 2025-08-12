@@ -43,8 +43,32 @@ function ApiNode({ id, data }) {
             rows={2}
           />
         </div>
+        {/* --- 💡 수정된 부분 시작 --- */}
+        {data.responseMapping && data.responseMapping.length > 0 && (
+          <div className={styles.section}>
+            <span className={styles.sectionTitle}>Response Mapping</span>
+            <div className={styles.previewBox}>
+              {data.responseMapping.length} item(s) configured
+            </div>
+          </div>
+        )}
       </div>
-      <Handle type="source" position={Position.Right} />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="onSuccess"
+        style={{ top: '35%', background: '#2ecc71' }}
+      />
+      <span style={{ position: 'absolute', right: '-70px', top: '35%', transform: 'translateY(-50%)', fontSize: '0.7rem', color: '#2ecc71' }}>On Success</span>
+      
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="onError"
+        style={{ top: '65%', background: '#e74c3c' }}
+      />
+      <span style={{ position: 'absolute', right: '-60px', top: '65%', transform: 'translateY(-50%)', fontSize: '0.7rem', color: '#e74c3c' }}>On Error</span>
+      {/* --- 💡 수정된 부분 끝 --- */}
     </div>
   );
 }

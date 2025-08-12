@@ -3,9 +3,14 @@ import styles from './ChatbotSimulator.module.css';
 
 const interpolateMessage = (message, slots) => {
   if (!message) return '';
-  return message.replace(/\{(\w+)\}/g, (match, key) => {
-    return slots[key] || match;
+  return message.replace(/\{([^}]+)\}/g, (match, key) => {
+    return slots.hasOwnProperty(key) ? slots[key] : match;
   });
+};
+
+const getNestedValue = (obj, path) => {
+    if (!path) return undefined;
+    return path.split('.').reduce((acc, part) => acc && acc[part], obj);
 };
 
 const validateInput = (value, validation) => {
@@ -31,7 +36,6 @@ const validateInput = (value, validation) => {
   }
 };
 
-
 function ChatbotSimulator({ nodes, edges, isVisible }) {
   const [history, setHistory] = useState([]);
   const [currentId, setCurrentId] = useState(null);
@@ -49,36 +53,58 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
     }
   }, [history]);
 
-  const handleApiNode = async (node) => {
+  // 💡 1. 인자로 currentSlots를 받도록 수정
+  const handleApiNode = async (node, currentSlots) => {
     const loadingId = Date.now();
     setHistory(prev => [...prev, { type: 'loading', id: loadingId }]);
 
+    let isSuccess = false;
     try {
-      const { method, url, headers, body } = node.data;
+      const { method, url, headers, body, responseMapping } = node.data;
       
-      const interpolatedUrl = interpolateMessage(url, slots);
-      const interpolatedHeaders = JSON.parse(interpolateMessage(headers || '{}', slots));
-      
+      // 💡 2. 상태(slots) 대신 전달받은 currentSlots 사용
+      const interpolatedUrl = interpolateMessage(url, currentSlots);
+      const interpolatedHeaders = JSON.parse(interpolateMessage(headers || '{}', currentSlots));
+      const interpolatedBody = method !== 'GET' && body ? interpolateMessage(body, currentSlots) : undefined;
+
       const options = {
         method,
         headers: interpolatedHeaders,
+        body: interpolatedBody,
       };
-
-      if (method !== 'GET' && body) {
-        options.body = interpolateMessage(body, slots);
-      }
       
       console.log("API Request:", { method, url: interpolatedUrl, headers: interpolatedHeaders, body: options.body });
 
       const response = await fetch(interpolatedUrl, options);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const result = await response.json();
       
-      const resultMessage = JSON.stringify(result, null, 2);
-      setSlots(prev => ({...prev, api_response: resultMessage}));
+      const newSlots = {};
+      if (responseMapping && responseMapping.length > 0) {
+        responseMapping.forEach(mapping => {
+          if (mapping.path && mapping.slot) {
+            const value = getNestedValue(result, mapping.path);
+            if (value !== undefined) {
+              newSlots[mapping.slot] = value;
+            }
+          }
+        });
+      } else {
+        newSlots['api_response'] = JSON.stringify(result, null, 2);
+      }
 
+      // 💡 3. 여기서는 기존 슬롯과 새로운 슬롯을 합쳐서 상태 업데이트
+      setSlots(prev => ({...prev, ...newSlots}));
+      isSuccess = true;
+
+      const resultMessage = `API call successful. Mapped data to slots.`;
       setHistory(prev => prev.map(item => 
         item.id === loadingId 
-          ? { type: 'bot', message: `API Response:\n\`\`\`\n${resultMessage}\n\`\`\``, id: loadingId }
+          ? { type: 'bot', message: resultMessage, id: loadingId }
           : item
       ));
 
@@ -90,31 +116,21 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
           : item
       ));
     } finally {
-      proceedToNextNode(null, node.id);
+      proceedToNextNode(isSuccess ? 'onSuccess' : 'onError', node.id);
     }
   };
 
-  const addBotMessage = (nodeId) => {
+  // 💡 4. updatedSlots 인자 추가 (기본값은 현재 상태의 slots)
+  const addBotMessage = (nodeId, updatedSlots = slots) => {
     const node = nodes.find(n => n.id === nodeId);
     if (node) {
         if (node.type === 'api') {
-            handleApiNode(node);
+            // 💡 5. handleApiNode 호출 시 updatedSlots 전달
+            handleApiNode(node, updatedSlots);
             return;
         }
 
-      if (node.id === 'branch-1754639034237-vsol31e') {
-        const loadingId = Date.now();
-        setHistory(prev => [...prev, { type: 'loading', id: loadingId }]);
-        
-        setTimeout(() => {
-          setHistory(prev => prev.map(item => 
-            item.id === loadingId 
-              ? { type: 'bot', nodeId, isCompleted: node.data.replies?.length > 0 ? false : true, id: loadingId }
-              : item
-          ));
-        }, 2000);
-        return;
-      }
+      // ... (이하 코드는 동일)
       
       if (node.type === 'fixedmenu') {
         setHistory([]);
@@ -137,7 +153,8 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
     }
   };
 
-  const proceedToNextNode = (sourceHandleId, sourceNodeId = currentId) => {
+  // 💡 6. updatedSlots 인자 추가
+  const proceedToNextNode = (sourceHandleId, sourceNodeId = currentId, updatedSlots = slots) => {
     if (!sourceNodeId) return;
     let nextEdge;
     if (sourceHandleId) {
@@ -152,10 +169,11 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
       const nextNode = nodes.find((node) => node.id === nextEdge.target);
       if (nextNode) {
         setCurrentId(nextNode.id);
-        setTimeout(() => addBotMessage(nextNode.id), 500);
+        // 💡 7. addBotMessage 호출 시 updatedSlots 전달
+        setTimeout(() => addBotMessage(nextNode.id, updatedSlots), 500);
       }
     } else {
-        if(currentNode?.type !== 'fixedmenu' && currentNode?.type !== 'branch') {
+        if(currentNode?.type !== 'fixedmenu' && currentNode?.type !== 'branch' && currentNode?.type !== 'api') {
             setTimeout(() => {
                 setHistory((prev) => [...prev, { type: 'bot', message: 'The conversation has ended.' }]);
                 setCurrentId(null);
@@ -163,7 +181,6 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
         }
     }
   };
-
 
   const startSimulation = useCallback(() => {
     const edgeTargets = new Set(edges.map((edge) => edge.target));
@@ -175,7 +192,7 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
       setFixedMenu(null);
       setHistory([]);
       setCurrentId(startNode.id);
-      addBotMessage(startNode.id);
+      addBotMessage(startNode.id, {}); // 💡 시작 시 빈 슬롯 전달
     }
   }, [nodes, edges]);
 
@@ -211,13 +228,16 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
     if (!inputValue.trim() || !currentNode) return;
     setHistory((prev) => [...prev, { type: 'user', message: inputValue }]);
 
+    // 💡 8. 새로운 슬롯 객체를 미리 만들고 상태 업데이트와 함수 호출에 모두 사용
+    let newSlots = { ...slots };
     const currentSlot = currentNode.data.slot;
     if (currentSlot) {
-      setSlots(prev => ({ ...prev, [currentSlot]: inputValue }));
+      newSlots = { ...slots, [currentSlot]: inputValue };
+      setSlots(newSlots);
     }
 
     setInputValue('');
-    proceedToNextNode(null);
+    proceedToNextNode(null, currentId, newSlots);
   };
 
   const handleOptionClick = (answer, sourceNodeId = currentId) => {
@@ -227,13 +247,16 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
     setHistory((prev) => [...prev, { type: 'user', message: answer.display }]);
     completeCurrentInteraction();
 
+    // 💡 9. 새로운 슬롯 객체를 미리 만들고 상태 업데이트와 함수 호출에 모두 사용
+    let newSlots = { ...slots };
     const currentSlot = sourceNode.data.slot;
     if (currentSlot && sourceNode.type === 'slotfilling') {
-      setSlots(prev => ({ ...prev, [currentSlot]: answer.value }));
+      newSlots = { ...slots, [currentSlot]: answer.value };
+      setSlots(newSlots);
     }
 
     const sourceHandleId = (sourceNode.type === 'branch' || sourceNode.type === 'fixedmenu') ? answer.value : null;
-    proceedToNextNode(sourceHandleId, sourceNodeId);
+    proceedToNextNode(sourceHandleId, sourceNodeId, newSlots);
   };
 
   const handleFormInputChange = (elementName, value) => {
@@ -262,10 +285,13 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
     }
 
     completeCurrentInteraction();
-    setSlots(prev => ({ ...prev, ...formData }));
+    
+    // 💡 10. 새로운 슬롯 객체를 미리 만들고 상태 업데이트와 함수 호출에 모두 사용
+    const newSlots = { ...slots, ...formData };
+    setSlots(newSlots);
     setFormData({});
     setHistory(prev => [...prev, { type: 'user', message: "Form submitted." }]);
-    proceedToNextNode(null);
+    proceedToNextNode(null, currentId, newSlots);
   };
   
   const handleFormDefault = () => {
