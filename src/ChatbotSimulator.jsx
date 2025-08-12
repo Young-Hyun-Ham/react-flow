@@ -74,6 +74,8 @@ function ChatbotSimulator({ nodes, edges, isVisible }) {
       };
       
       console.log("API Request:", { method, url: interpolatedUrl, headers: interpolatedHeaders, body: options.body });
+      //시연을 위해 의도적으로 2초 딜레이를 추가한다 TODO : 서비스 런칭 시 삭제 할 것
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       const response = await fetch(interpolatedUrl, options);
 
