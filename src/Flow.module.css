@@ -17,12 +17,11 @@
   gap: 10px;
 }
 
-/* --- 💡 추가된 부분: 사이드바 헤더 스타일 --- */
 .sidebarHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 5px; /* h3의 기존 margin-bottom과 유사하게 조정 */
+  margin-bottom: 5px;
 }
 
 .sidebarHeader h3 {
@@ -31,7 +30,6 @@
   font-size: 1.1rem;
 }
 
-/* --- 💡 추가된 부분: 전역 색상 설정 버튼 스타일 --- */
 .globalColorSettingButton {
   cursor: pointer;
   padding: 4px;
@@ -46,7 +44,6 @@
   background-color: #e0e0e0;
 }
 
-/* --- 💡 추가된 부분: 색상 설정 패널 스타일 --- */
 .colorSettingsPanel {
   display: flex;
   flex-direction: column;
@@ -77,7 +74,7 @@
   border-radius: 4px;
   padding: 2px;
   cursor: pointer;
-  background-color: transparent; /* iOS에서 배경색이 적용되는 문제 방지 */
+  background-color: transparent;
 }
 
 .sidebarButton {
@@ -162,7 +159,7 @@
 }
 
 .rightContainer.visible {
-  width: var(--right-panel-width);
+  /* The width is now controlled by inline styles in Flow.jsx */
 }
 
 .resizerV {

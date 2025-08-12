@@ -43,6 +43,7 @@ function Flow({ scenarioId }) {
   const [rightPanelWidth, setRightPanelWidth] = useState(400);
   const [isSimulatorVisible, setIsSimulatorVisible] = useState(false);
   const [isColorSettingsVisible, setIsColorSettingsVisible] = useState(false);
+  const [isSimulatorExpanded, setIsSimulatorExpanded] = useState(false);
   
   const colorInputRefs = {
     message: useRef(null),
@@ -153,7 +154,7 @@ function Flow({ scenarioId }) {
                 className={styles.sidebarButton} 
                 style={{ 
                     backgroundColor: nodeColors[type], 
-                    color: nodeTextColors[type]
+                    color: nodeTextColors[type] 
                 }}
             >
                 {label}
@@ -198,14 +199,20 @@ function Flow({ scenarioId }) {
         <NodeController />
       </div>
 
-      <div className={`${styles.resizerV} ${isSimulatorVisible ? styles.visible : ''}`} onMouseDown={handleMainResize} />
+      <div className={`${styles.resizerV} ${isSimulatorVisible && !isSimulatorExpanded ? styles.visible : ''}`} onMouseDown={handleMainResize} />
 
       <div
         className={`${styles.rightContainer} ${isSimulatorVisible ? styles.visible : ''}`}
-        style={{ '--right-panel-width': `${rightPanelWidth}px` }}
+        style={{ width: isSimulatorExpanded ? 'max(600px, 50%)' : isSimulatorVisible ? `${rightPanelWidth}px` : '0' }}
       >
         <div className={styles.panel}>
-          <ChatbotSimulator nodes={nodes} edges={edges} isVisible={isSimulatorVisible} />
+          <ChatbotSimulator 
+            nodes={nodes} 
+            edges={edges} 
+            isVisible={isSimulatorVisible}
+            isExpanded={isSimulatorExpanded}
+            setIsExpanded={setIsSimulatorExpanded}
+          />
         </div>
       </div>
     </div>
