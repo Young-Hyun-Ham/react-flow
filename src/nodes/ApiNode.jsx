@@ -23,7 +23,7 @@ function ApiNode({ id, data }) {
       <Handle type="target" position={Position.Left} />
       <div className={styles.nodeHeader} style={{ backgroundColor: nodeColor, color: textColor }}>
         <span className={styles.headerTextContent}>API</span>
-        <button onClick={(e) => { e.stopPropagation(); deleteNode(id); }} className={styles.deleteButton}>❌</button>
+        <button onClick={(e) => { e.stopPropagation(); deleteNode(id); }} className={styles.deleteButton} style={{ backgroundColor: nodeColor, color: textColor }}>X</button>
       </div>
       <div className={styles.nodeBody}>
         <div className={styles.section}>
