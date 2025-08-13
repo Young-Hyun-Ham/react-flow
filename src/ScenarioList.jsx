@@ -16,7 +16,6 @@ const styles = {
   list: {
     listStyle: 'none',
     padding: 0,
-    margin: 0,
     maxWidth: '600px',
     margin: '0 auto',
   },

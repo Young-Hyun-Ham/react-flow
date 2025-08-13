@@ -80,8 +80,26 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange, o
         <label>Validation Type</label>
         <select value={element.validation?.type || 'date'} onChange={(e) => handleValidationUpdate('type', e.target.value)}>
           <option value="date">Default Date</option>
+          <option value="today after">Today After</option>
+          {/* --- 💡 수정된 부분 시작 --- */}
+          <option value="custom">Custom</option>
+          {/* --- 💡 수정된 부분 끝 --- */}
         </select>
       </div>
+      {/* --- 💡 추가된 부분 시작 --- */}
+      {element.validation?.type === 'custom' && (
+        <>
+            <div className={styles.formGroup}>
+                <label>Start Date</label>
+                <input type="date" value={element.validation.startDate || ''} onChange={(e) => handleValidationUpdate('startDate', e.target.value)} />
+            </div>
+            <div className={styles.formGroup}>
+                <label>End Date</label>
+                <input type="date" value={element.validation.endDate || ''} onChange={(e) => handleValidationUpdate('endDate', e.target.value)} />
+            </div>
+        </>
+      )}
+      {/* --- 💡 추가된 부분 끝 --- */}
     </>
   );
 

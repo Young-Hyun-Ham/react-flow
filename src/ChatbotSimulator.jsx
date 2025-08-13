@@ -22,15 +22,31 @@ const validateInput = (value, validation) => {
     case 'phone number':
       return /^\d{2,3}-\d{3,4}-\d{4}$/.test(value);
     case 'custom':
-      if (validation.regex) {
-        try {
-          return new RegExp(validation.regex).test(value);
-        } catch (e) {
-          console.error("Invalid regex:", validation.regex);
-          return false;
+        // --- 💡 수정된 부분 시작 ---
+        if (validation.regex) { // Input type custom
+            try {
+                return new RegExp(validation.regex).test(value);
+            } catch (e) {
+                console.error("Invalid regex:", validation.regex);
+                return false;
+            }
+        } else if (validation.startDate && validation.endDate) { // Date type custom
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+            const selectedDate = new Date(value);
+            const startDate = new Date(validation.startDate);
+            const endDate = new Date(validation.endDate);
+            startDate.setHours(0, 0, 0, 0);
+            endDate.setHours(23, 59, 59, 999);
+            return selectedDate >= startDate && selectedDate <= endDate;
         }
-      }
-      return true;
+        return true;
+        // --- 💡 수정된 부분 끝 ---
+    case 'today after':
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+      const selectedDate = new Date(value);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); 
+      return selectedDate >= today;
     default:
       return true;
   }
@@ -283,10 +299,16 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
 
   const handleFormSubmit = () => {
     for (const element of currentNode.data.elements) {
-      if (element.type === 'input') {
+      if (element.type === 'input' || element.type === 'date') {
         const value = formData[element.name] || '';
         if (!validateInput(value, element.validation)) {
-          alert(`'${element.label}' input is not valid.`);
+            let alertMessage = `'${element.label}' input is not valid.`;
+            if (element.validation?.type === 'today after') {
+                alertMessage = `'${element.label}' must be today or a future date.`;
+            } else if (element.validation?.type === 'custom' && element.validation?.startDate && element.validation?.endDate) {
+                alertMessage = `'${element.label}' must be between ${element.validation.startDate} and ${element.validation.endDate}.`;
+            }
+          alert(alertMessage);
           return;
         }
       }
@@ -321,7 +343,11 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
           }
           break;
         case 'date':
-          defaultData[element.name] = '2025-08-20';
+          if (element.validation?.type === 'today after') {
+            defaultData[element.name] = new Date().toISOString().split('T')[0];
+          } else {
+            defaultData[element.name] = '2025-08-20';
+          }
           break;
         case 'checkbox':
           if (element.options?.length > 0) {

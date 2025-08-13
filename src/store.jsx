@@ -6,6 +6,7 @@ import {
 } from 'reactflow';
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from './firebase';
+import { createNodeData } from './nodeFactory'; // 팩토리 함수 import
 
 const defaultColors = {
   message: '#f39c12',
@@ -143,53 +144,13 @@ const useStore = create((set, get) => ({
   },
 
   addNode: (type) => {
+    const newNodeData = createNodeData(type);
     const newNode = {
-      id: `${type}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      type,
-      position: { x: 100, y: 100 },
-      data: {},
+        id: newNodeData.id,
+        type,
+        position: { x: 100, y: 100 },
+        data: newNodeData,
     };
-
-    switch (type) {
-      case 'message':
-        newNode.data = { id: 'new_message', content: 'New text message', replies: [] };
-        break;
-      case 'slotfilling':
-        newNode.data = { id: 'new_slotfilling', content: 'Enter your question.', slot: 'newSlot', replies: [] };
-        break;
-      case 'api':
-        newNode.data = {
-          id: 'new_api',
-          method: 'GET',
-          url: '',
-          headers: '{}',
-          body: '{}',
-          responseMapping: [], // 💡 API 응답 매핑 정보 추가
-          errorMappingEnabled: true, // 💡 에러 핸들 기본값 추가
-        };
-        break;
-      case 'branch':
-        newNode.data = { id: 'new_branch', content: 'Enter your conditional branch question.', replies: [{ display: 'Condition 1', value: `cond_${Date.now()}` }, { display: 'Condition 2', value: `cond_${Date.now() + 1}` }] };
-        break;
-      case 'form':
-        newNode.data = {
-          id: 'new_form',
-          title: 'new form',
-          elements: [],
-          dataSourceType: 'json',
-          dataSource: ''
-        };
-        break;
-      case 'fixedmenu':
-        newNode.data = { id: 'new_fixedmenu', title: 'Fixed Menu', replies: [{ display: 'Menu 1', value: `menu_${Date.now()}` }, { display: 'Menu 2', value: `menu_${Date.now() + 1}` }] };
-        break;
-      case 'link':
-        newNode.data = { id: 'new_link', content: 'https://', display: 'Link' };
-        break;
-      default:
-        break;
-    }
-
     set({ nodes: [...get().nodes, newNode] });
   },
 
