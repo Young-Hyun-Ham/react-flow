@@ -173,9 +173,11 @@ function Flow({ scenarioId }) {
 
       <div className={styles.mainContent}>
         <div className={styles.topRightControls}>
-          <button onClick={() => saveScenario(scenarioId)} className={`${styles.controlButton} ${styles.saveButton}`}>Save Scenario</button>
-          <div onClick={() => setIsSimulatorVisible(!isSimulatorVisible)} className={!isSimulatorVisible ? styles.botButtonHidden : styles.botButton}>
-            🤖
+          <div onClick={() => saveScenario(scenarioId)}>
+            <img src="/images/save.png" alt="Save Icon" className={styles.saveButton}/>
+          </div>
+          <div onClick={() => setIsSimulatorVisible(!isSimulatorVisible)}>
+            <img src="/images/chat_simulator.png" alt="Simulator Icon" className={!isSimulatorVisible ? styles.botButtonHidden : styles.botButton}/>
           </div>
         </div>
         <ReactFlow

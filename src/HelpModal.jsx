@@ -162,7 +162,7 @@ const HelpManual_ko = () => (
     <table className={styles.table}>
       <thead>
         <tr>
-          <th>노드 종류</th>
+          <th>노드<br />종류</th>
           <th>아이콘 색상</th>
           <th>설명</th>
         </tr>
@@ -179,12 +179,12 @@ const HelpManual_ko = () => (
           <td>사용자로부터 정형화된 데이터 입력을 받기 위한 양식입니다. (예: 이름, 날짜, 체크박스 등)</td>
         </tr>
         <tr>
-          <td><strong>조건 분기</strong></td>
+          <td><strong>조건<br />분기</strong></td>
           <td>초록색</td>
           <td>사용자의 답변에 따라 대화 흐름을 여러 갈래로 나눕니다.</td>
         </tr>
         <tr>
-          <td><strong>슬롯 채우기</strong></td>
+          <td><strong>슬롯<br />채우기</strong></td>
           <td>파란색</td>
           <td>사용자 입력을 받아 특정 변수(Slot)에 저장하는 데 사용됩니다.</td>
         </tr>

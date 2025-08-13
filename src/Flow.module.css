@@ -10,7 +10,7 @@
   width: 220px;
   flex-shrink: 0;
   padding: 15px;
-  background-color: #f8f9fa;
+  background-color: #e7e7e7;
   border-right: 1px solid #e0e0e0;
   display: flex;
   flex-direction: column;
@@ -116,7 +116,6 @@
   right: 15px;
   z-index: 10;
   display: flex;
-  gap: 10px;
 }
 
 .controlButton {
@@ -129,10 +128,10 @@
 }
 
 .saveButton {
-  background-color: #3498db;
-  color: white;
-  border-color: #3498db;
-  font-weight: bold;
+  bottom: 15px;
+  right: 15px;
+  width: 50px;
+  height: 50px;
 }
 
 .controllerPanel {
@@ -191,7 +190,7 @@
   right: 15px;
   width: 50px;
   height: 50px;
-  border-radius: 50%;
+  /* border-radius: 50%;
   background-color: #ffffff;
   color: white;
   display: flex;
@@ -200,7 +199,7 @@
   cursor: pointer;
   font-size: 1.5rem;
   transition: background-color 0.2s, transform 0.2s;
-  border : 1px solid #ccc;
+  border : 1px solid #ccc; */
 }
 
 .botButtonHidden {
@@ -208,7 +207,7 @@
   right: 15px;
   width: 50px;
   height: 50px;
-  border-radius: 50%;
+  /* border-radius: 50%;
   background-color: #919191;
   color: white;
   display: flex;
@@ -216,5 +215,5 @@
   align-items: center;
   cursor: pointer;
   font-size: 1.0rem;
-  transition: background-color 0.2s, transform 0.2s;
+  transition: background-color 0.2s, transform 0.2s; */
 }
