@@ -82,11 +82,11 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange, o
           <option value="date">Default Date</option>
           <option value="today after">Today After</option>
           {/* --- 💡 수정된 부분 시작 --- */}
-          <option value="custom">Custom</option>
+          <option value="today before">Today Before</option>
           {/* --- 💡 수정된 부분 끝 --- */}
+          <option value="custom">Custom</option>
         </select>
       </div>
-      {/* --- 💡 추가된 부분 시작 --- */}
       {element.validation?.type === 'custom' && (
         <>
             <div className={styles.formGroup}>
@@ -99,7 +99,6 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange, o
             </div>
         </>
       )}
-      {/* --- 💡 추가된 부분 끝 --- */}
     </>
   );
 

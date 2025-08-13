@@ -22,7 +22,6 @@ const validateInput = (value, validation) => {
     case 'phone number':
       return /^\d{2,3}-\d{3,4}-\d{4}$/.test(value);
     case 'custom':
-        // --- 💡 수정된 부분 시작 ---
         if (validation.regex) { // Input type custom
             try {
                 return new RegExp(validation.regex).test(value);
@@ -40,13 +39,18 @@ const validateInput = (value, validation) => {
             return selectedDate >= startDate && selectedDate <= endDate;
         }
         return true;
-        // --- 💡 수정된 부분 끝 ---
     case 'today after':
       if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-      const selectedDate = new Date(value);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); 
-      return selectedDate >= today;
+      const selectedDateAfter = new Date(value);
+      const todayAfter = new Date();
+      todayAfter.setHours(0, 0, 0, 0); 
+      return selectedDateAfter >= todayAfter;
+    case 'today before':
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+      const selectedDateBefore = new Date(value);
+      const todayBefore = new Date();
+      todayBefore.setHours(23, 59, 59, 999);
+      return selectedDateBefore <= todayBefore;
     default:
       return true;
   }
@@ -305,6 +309,8 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
             let alertMessage = `'${element.label}' input is not valid.`;
             if (element.validation?.type === 'today after') {
                 alertMessage = `'${element.label}' must be today or a future date.`;
+            } else if (element.validation?.type === 'today before') {
+                alertMessage = `'${element.label}' must be today or a past date.`;
             } else if (element.validation?.type === 'custom' && element.validation?.startDate && element.validation?.endDate) {
                 alertMessage = `'${element.label}' must be between ${element.validation.startDate} and ${element.validation.endDate}.`;
             }
@@ -343,7 +349,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
           }
           break;
         case 'date':
-          if (element.validation?.type === 'today after') {
+          if (element.validation?.type === 'today after' || element.validation?.type === 'today before') {
             defaultData[element.name] = new Date().toISOString().split('T')[0];
           } else {
             defaultData[element.name] = '2025-08-20';
@@ -371,8 +377,6 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
       return (<button className={`${styles.optionButton} ${styles.restartButton}`} onClick={startSimulation}>Restart Conversation</button>); 
     }
   
-    // --- 💡 수정된 부분 ---
-    // 빠른 답장 버튼(Quick Replies)들은 이제 별도의 영역에 표시되므로, 여기서는 항상 텍스트 입력창을 렌더링합니다.
     return (
       <div className={styles.inputArea}>
         <input type="text" className={styles.textInput} value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleTextInputSend()} placeholder="Enter a message..."/>
@@ -463,7 +467,21 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
                   <div className={styles.avatar}>🤖</div>
                   <div className={`${styles.message} ${styles.botMessage} ${styles.formContainer}`}>
                     <h3>{node.data.title}</h3>
-                    {node.data.elements?.map(el => (
+                    {node.data.elements?.map(el => {
+                      // --- 💡 수정된 부분 시작 ---
+                      const dateProps = {};
+                      if (el.type === 'date') {
+                          if (el.validation?.type === 'today after') {
+                              dateProps.min = new Date().toISOString().split('T')[0];
+                          } else if (el.validation?.type === 'today before') {
+                              dateProps.max = new Date().toISOString().split('T')[0];
+                          } else if (el.validation?.type === 'custom') {
+                              if(el.validation.startDate) dateProps.min = el.validation.startDate;
+                              if(el.validation.endDate) dateProps.max = el.validation.endDate;
+                          }
+                      }
+                      // --- 💡 수정된 부분 끝 ---
+                      return (
                       <div key={el.id} className={styles.formElement}>
                         <label className={styles.formLabel}>{el.label}</label>
                         {el.type === 'input' && (
@@ -478,18 +496,12 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
                         )}
                         {el.type === 'date' && (
                            <input
-                            type="text"
-                            placeholder="YYYY-MM-DD"
+                            type="date"
                             className={styles.formInput}
                             value={formData[el.name] || ''}
                             onChange={(e) => handleFormInputChange(el.name, e.target.value)}
-                            onFocus={(e) => (e.target.type = 'date')}
-                            onBlur={(e) => {
-                                if (!e.target.value) {
-                                    e.target.type = 'text';
-                                }
-                            }}
                             disabled={item.isCompleted}
+                            {...dateProps} // --- 💡 수정된 부분 ---
                           />
                         )}
                         {el.type === 'checkbox' && el.options?.map(opt => (
@@ -538,7 +550,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
                           </table>
                         )}
                       </div>
-                    ))}
+                    )})}
                     <div className={styles.formButtonContainer}>
                       <button className={styles.formDefaultButton} onClick={handleFormDefault} disabled={item.isCompleted}>
                         Default
