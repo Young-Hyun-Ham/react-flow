@@ -374,8 +374,8 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
 
   return (
     <div className={`${styles.simulator} ${isExpanded ? styles.expanded : ''}`}>
-      <div className={styles.header}>
-        <span>Chatbot</span>
+      <div className={`${styles.header} ${isExpanded ? styles.expanded : ''}`}>
+        {!isExpanded && (<span>Chatbot</span>)} {isExpanded && (<span></span>)}
         <div className={styles.headerButtons}>
           {isVisible && (
             <button className={styles.headerButton} onClick={() => setIsExpanded(!isExpanded)} title={isExpanded ? "Collapse" : "Expand"}>
