@@ -418,12 +418,21 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
   return (
     <div className={`${styles.simulator} ${isExpanded ? styles.expanded : ''}`}>
       <div className={`${styles.header} ${isExpanded ? styles.expanded : ''}`}>
-        {!isExpanded && (<span>AI Chatbot</span>)} {isExpanded && (<span></span>)}
+
+          <div className={styles.headerContent}>
+            <img src="/images/icon.png" alt="AI Chatbot Icon" className={styles.headerIcon} />
+            <div className={styles.headerTextContainer}>
+              <span className={styles.headerTitle}>AI ChatBot</span>
+              <span className={styles.headerSubtitle}>Booking Master</span>
+            </div>
+          </div>
+          
         <div className={styles.headerButtons}>
           {isVisible && (
-            <button className={styles.headerButton} onClick={() => setIsExpanded(!isExpanded)} title={isExpanded ? "Collapse" : "Expand"}>
-              {isExpanded ? <CollapseIcon /> : <ExpandIcon />}
-            </button>
+            <div className={styles.headerButton} onClick={() => setIsExpanded(!isExpanded)} title={isExpanded ? "Collapse" : "Expand"}>
+              {/* {isExpanded ? <CollapseIcon /> : <ExpandIcon />} */}
+              <img src="/images/expand.png" alt="expand" className={!isExpanded ? styles.expandIcon : styles.collapseIcon} />
+            </div>
           )}
           {isVisible && (
             <button className={styles.headerRestartButton} onClick={startSimulation}>
