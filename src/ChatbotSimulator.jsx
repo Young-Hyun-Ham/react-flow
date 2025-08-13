@@ -132,6 +132,25 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
   const addBotMessage = useCallback((nodeId, updatedSlots) => {
     const node = nodes.find(n => n.id === nodeId);
     if (node) {
+      // 시연을 위한 의도적 딜레이 추가
+      if (node.id === 'branch-1754639034237-vsol31e') {
+        const loadingId = Date.now();
+        // 1. 로딩 애니메이션 표시
+        setHistory(prev => [...prev, { type: 'loading', id: loadingId }]);
+
+        // 2. 2초 대기
+        setTimeout(() => {
+          // 3. 로딩 메시지를 실제 노드 콘텐츠로 교체
+          const isInteractive = node.type === 'form' || (node.type === 'branch' && node.data.replies?.length > 0) || node.type === 'slotfilling';
+          setHistory(prev => prev.map(item => 
+            item.id === loadingId 
+              ? { type: 'bot', nodeId: node.id, isCompleted: !isInteractive, id: loadingId } 
+              : item
+          ));
+        }, 2000); // 2초 딜레이
+        return; // 이 노드에 대한 처리는 여기서 종료
+      }
+      
       if (node.type === 'api') {
         handleApiNode(node, updatedSlots);
         return;
