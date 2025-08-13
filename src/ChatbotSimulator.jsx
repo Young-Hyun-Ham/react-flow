@@ -68,6 +68,47 @@ const CollapseIcon = () => (
   </svg>
 );
 
+const AttachIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M12 8V16" stroke="#444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M8 12H16" stroke="#444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+);
+
+const useDraggableScroll = () => {
+    const ref = useRef(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [startX, setStartX] = useState(0);
+    const [scrollLeft, setScrollLeft] = useState(0);
+
+    const onMouseDown = (e) => {
+        setIsDragging(true);
+        if (ref.current) {
+            setStartX(e.pageX - ref.current.offsetLeft);
+            setScrollLeft(ref.current.scrollLeft);
+        }
+    };
+
+    const onMouseLeave = () => {
+        setIsDragging(false);
+    };
+
+    const onMouseUp = () => {
+        setIsDragging(false);
+    };
+
+    const onMouseMove = (e) => {
+        if (!isDragging || !ref.current) return;
+        e.preventDefault();
+        const x = e.pageX - ref.current.offsetLeft;
+        const walk = (x - startX) * 2; // multiply for faster scroll
+        ref.current.scrollLeft = scrollLeft - walk;
+    };
+
+    return { ref, isDragging, onMouseDown, onMouseLeave, onMouseUp, onMouseMove };
+};
+
 
 function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }) {
   const [history, setHistory] = useState([]);
@@ -79,6 +120,8 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
   const historyRef = useRef(null);
 
   const currentNode = nodes.find(n => n.id === currentId);
+
+  const quickRepliesSlider = useDraggableScroll();
 
   useEffect(() => {
     if (historyRef.current) {
@@ -372,40 +415,10 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
     setFormData(defaultData);
   };
 
-  const renderOptions = () => {
-    if (!currentNode) { 
-      return (<button className={`${styles.optionButton} ${styles.restartButton}`} onClick={startSimulation}>Restart Conversation</button>); 
-    }
-  
-    return (
-      <div className={styles.inputArea}>
-        <input type="text" className={styles.textInput} value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleTextInputSend()} placeholder="Enter a message..."/>
-        <button className={styles.sendButton} onClick={handleTextInputSend}>Send</button>
-      </div>
-    );
-  };
-  
-  const renderQuickReplies = () => {
-    if (!currentNode) return null;
-
-    const replies = currentNode.data.replies || [];
-    const showReplies = replies.length > 0 && (currentNode.type === 'message' || currentNode.type === 'slotfilling');
-  
-    if (!showReplies) return null;
-  
-    return (
-      <div className={styles.quickRepliesContainer}>
-        {replies.map((answer) => (
-          <button key={answer.value} className={styles.optionButton} onClick={() => handleOptionClick(answer)}>{answer.display}</button>
-        ))}
-      </div>
-    );
-  };
-
   return (
     <div className={`${styles.simulator} ${isExpanded ? styles.expanded : ''}`}>
       <div className={`${styles.header} ${isExpanded ? styles.expanded : ''}`}>
-        {!isExpanded && (<span>Chatbot</span>)} {isExpanded && (<span></span>)}
+        {!isExpanded && (<span>AI Chatbot</span>)} {isExpanded && (<span></span>)}
         <div className={styles.headerButtons}>
           {isVisible && (
             <button className={styles.headerButton} onClick={() => setIsExpanded(!isExpanded)} title={isExpanded ? "Collapse" : "Expand"}>
@@ -437,8 +450,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
           if (item.type === 'loading') {
             return (
               <div key={item.id} className={styles.messageRow}>
-                {/* <div className={styles.avatar}>🤖</div> */}
-                <img src="/images/chat_simulator.png" alt="Chatbot Avatar" className={styles.avatar} />
+                <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
                 <div className={`${styles.message} ${styles.botMessage}`}>
                   <img src="/images/Loading.gif" alt="Loading..." style={{ width: '80px', height: '60px' }} />
                 </div>
@@ -453,8 +465,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
             if (node.type === 'link') {
               return (
                 <div key={item.id || index} className={styles.messageRow}>
-                  {/* <div className={styles.avatar}>🤖</div> */}
-                  <img src="/images/chat_simulator.png" alt="Chatbot Avatar" className={styles.avatar} />
+                  <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
                   <div className={`${styles.message} ${styles.botMessage}`}>
                     <span>Opening link in a new tab: </span>
                     <a href={node.data.content} target="_blank" rel="noopener noreferrer">{node.data.display || node.data.content}</a>
@@ -466,12 +477,10 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
             if (node.type === 'form') {
               return (
                 <div key={item.id || index} className={styles.messageRow}>
-                  {/* <div className={styles.avatar}>🤖</div> */}
-                  <img src="/images/chat_simulator.png" alt="Chatbot Avatar" className={styles.avatar} />
+                  <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
                   <div className={`${styles.message} ${styles.botMessage} ${styles.formContainer}`}>
                     <h3>{node.data.title}</h3>
                     {node.data.elements?.map(el => {
-                      // --- 💡 수정된 부분 시작 ---
                       const dateProps = {};
                       if (el.type === 'date') {
                           if (el.validation?.type === 'today after') {
@@ -483,7 +492,6 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
                               if(el.validation.endDate) dateProps.max = el.validation.endDate;
                           }
                       }
-                      // --- 💡 수정된 부분 끝 ---
                       return (
                       <div key={el.id} className={styles.formElement}>
                         <label className={styles.formLabel}>{el.label}</label>
@@ -504,7 +512,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
                             value={formData[el.name] || ''}
                             onChange={(e) => handleFormInputChange(el.name, e.target.value)}
                             disabled={item.isCompleted}
-                            {...dateProps} // --- 💡 수정된 부분 ---
+                            {...dateProps}
                           />
                         )}
                         {el.type === 'checkbox' && el.options?.map(opt => (
@@ -570,8 +578,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
             const message = interpolateMessage(node.data.content || node.data.label, slots);
             return (
               <div key={item.id || index} className={styles.messageRow}>
-                {/* <div className={styles.avatar}>🤖</div> */}
-                <img src="/images/chat_simulator.png" alt="Chatbot Avatar" className={styles.avatar} />
+                <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
                 <div className={`${styles.message} ${styles.botMessage}`}>
                   <div>{message}</div>
                   {node.type === 'branch' && (
@@ -602,8 +609,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
           if (item.type === 'bot' && item.message) {
             return (
                 <div key={item.id || index} className={styles.messageRow}>
-                  {/* <div className={styles.avatar}>🤖</div> */}
-                  <img src="/images/chat_simulator.png" alt="Chatbot Avatar" className={styles.avatar} />
+                  <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
                   <div className={`${styles.message} ${styles.botMessage}`}>{item.message}</div>
                 </div>
               );
@@ -611,9 +617,38 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
           return null;
         })}
       </div>
-      {renderQuickReplies()}
       <div className={styles.options}>
-        {renderOptions()}
+        <div className={styles.inputRow}>
+            <div className={styles.inputArea}>
+                <input
+                    type="text"
+                    className={styles.textInput}
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleTextInputSend()}
+                    placeholder="Ask about this Booking Master Page"
+                />
+            </div>
+        </div>
+        <div className={styles.buttonRow}>
+            <button className={styles.attachButton}>
+                <AttachIcon />
+            </button>
+            <div
+                ref={quickRepliesSlider.ref}
+                className={`${styles.quickRepliesContainer} ${quickRepliesSlider.isDragging ? styles.dragging : ''}`}
+                onMouseDown={quickRepliesSlider.onMouseDown}
+                onMouseLeave={quickRepliesSlider.onMouseLeave}
+                onMouseUp={quickRepliesSlider.onMouseUp}
+                onMouseMove={quickRepliesSlider.onMouseMove}
+            >
+                {currentNode && (currentNode.data.replies || []).length > 0 && (currentNode.type === 'message' || currentNode.type === 'slotfilling' || currentNode.type === 'branch') &&
+                    (currentNode.data.replies || []).map((answer) => (
+                        <button key={answer.value} className={styles.optionButton} onClick={() => handleOptionClick(answer)}>{answer.display}</button>
+                    ))
+                }
+            </div>
+        </div>
       </div>
     </div>
   );
