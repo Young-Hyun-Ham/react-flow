@@ -437,7 +437,8 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
           if (item.type === 'loading') {
             return (
               <div key={item.id} className={styles.messageRow}>
-                <div className={styles.avatar}>🤖</div>
+                {/* <div className={styles.avatar}>🤖</div> */}
+                <img src="/images/chat_simulator.png" alt="Chatbot Avatar" className={styles.avatar} />
                 <div className={`${styles.message} ${styles.botMessage}`}>
                   <img src="/images/Loading.gif" alt="Loading..." style={{ width: '80px', height: '60px' }} />
                 </div>
@@ -452,7 +453,8 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
             if (node.type === 'link') {
               return (
                 <div key={item.id || index} className={styles.messageRow}>
-                  <div className={styles.avatar}>🤖</div>
+                  {/* <div className={styles.avatar}>🤖</div> */}
+                  <img src="/images/chat_simulator.png" alt="Chatbot Avatar" className={styles.avatar} />
                   <div className={`${styles.message} ${styles.botMessage}`}>
                     <span>Opening link in a new tab: </span>
                     <a href={node.data.content} target="_blank" rel="noopener noreferrer">{node.data.display || node.data.content}</a>
@@ -464,7 +466,8 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
             if (node.type === 'form') {
               return (
                 <div key={item.id || index} className={styles.messageRow}>
-                  <div className={styles.avatar}>🤖</div>
+                  {/* <div className={styles.avatar}>🤖</div> */}
+                  <img src="/images/chat_simulator.png" alt="Chatbot Avatar" className={styles.avatar} />
                   <div className={`${styles.message} ${styles.botMessage} ${styles.formContainer}`}>
                     <h3>{node.data.title}</h3>
                     {node.data.elements?.map(el => {
@@ -567,7 +570,8 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
             const message = interpolateMessage(node.data.content || node.data.label, slots);
             return (
               <div key={item.id || index} className={styles.messageRow}>
-                <div className={styles.avatar}>🤖</div>
+                {/* <div className={styles.avatar}>🤖</div> */}
+                <img src="/images/chat_simulator.png" alt="Chatbot Avatar" className={styles.avatar} />
                 <div className={`${styles.message} ${styles.botMessage}`}>
                   <div>{message}</div>
                   {node.type === 'branch' && (
@@ -598,7 +602,8 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
           if (item.type === 'bot' && item.message) {
             return (
                 <div key={item.id || index} className={styles.messageRow}>
-                  <div className={styles.avatar}>🤖</div>
+                  {/* <div className={styles.avatar}>🤖</div> */}
+                  <img src="/images/chat_simulator.png" alt="Chatbot Avatar" className={styles.avatar} />
                   <div className={`${styles.message} ${styles.botMessage}`}>{item.message}</div>
                 </div>
               );
