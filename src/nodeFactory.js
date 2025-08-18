@@ -37,16 +37,17 @@ export const createNodeData = (type) => {
   }
 };
 
+// --- 💡 수정된 부분 시작 ---
 export const createFormElement = (elementType) => {
     const newId = `${elementType}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     let newElement;
 
     switch (elementType) {
         case 'input':
-            newElement = { id: newId, type: 'input', name: '', label: 'New Input', placeholder: '', validation: { type: 'text' } };
+            newElement = { id: newId, type: 'input', name: '', label: 'New Input', placeholder: '', validation: { type: 'text' }, defaultValue: '' };
             break;
         case 'date':
-            newElement = { id: newId, type: 'date', name: '', label: 'New Date' };
+            newElement = { id: newId, type: 'date', name: '', label: 'New Date', defaultValue: '' };
             break;
         case 'grid':
             const rows = 2;
@@ -62,13 +63,14 @@ export const createFormElement = (elementType) => {
             };
             break;
         case 'checkbox':
-            newElement = { id: newId, type: 'checkbox', name: '', label: 'New Checkbox', options: [] };
+            newElement = { id: newId, type: 'checkbox', name: '', label: 'New Checkbox', options: [], defaultValue: [] };
             break;
         case 'dropbox':
-            newElement = { id: newId, type: 'dropbox', name: '', label: 'New Dropbox', options: [] };
+            newElement = { id: newId, type: 'dropbox', name: '', label: 'New Dropbox', options: [], defaultValue: '' };
             break;
         default:
             newElement = { id: newId, type: elementType };
     }
     return newElement;
 }
+// --- 💡 수정된 부분 끝 ---

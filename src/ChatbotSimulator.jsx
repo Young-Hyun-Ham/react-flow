@@ -393,42 +393,11 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
   
   const handleFormDefault = () => {
     if (!currentNode || currentNode.type !== 'form') return;
-
+  
     const defaultData = {};
     currentNode.data.elements.forEach(element => {
-      if (!element.name) return;
-
-      switch (element.type) {
-        case 'input':
-          if (element.validation?.type === 'email') {
-            defaultData[element.name] = 'test@example.com';
-          } else if (element.validation?.type === 'phone number') {
-            defaultData[element.name] = '010-1234-5678';
-          } else if (element.label === 'Estimated Cargo Weight(kg)') {
-            defaultData[element.name] = '1000';
-          } else {
-            defaultData[element.name] = `1`;
-          }
-          break;
-        case 'date':
-          if (element.validation?.type === 'today after' || element.validation?.type === 'today before') {
-            defaultData[element.name] = new Date().toISOString().split('T')[0];
-          } else {
-            defaultData[element.name] = '2025-08-20';
-          }
-          break;
-        case 'checkbox':
-          if (element.options?.length > 0) {
-            defaultData[element.name] = [element.options[0]];
-          }
-          break;
-        case 'dropbox':
-          if (element.options?.length > 0) {
-            defaultData[element.name] = element.options[0];
-          }
-          break;
-        default:
-          break;
+      if (element.name && element.defaultValue !== undefined) {
+        defaultData[element.name] = element.defaultValue;
       }
     });
     setFormData(defaultData);
@@ -478,7 +447,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
           if (item.type === 'loading') {
             return (
               <div key={item.id} className={styles.messageRow}>
-                <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
+                <img src="/images/avatar-loading.png" alt="Chatbot Avatar" className={styles.avatar} />
                 <div className={`${styles.message} ${styles.botMessage}`}>
                   <img src="/images/Loading.gif" alt="Loading..." style={{ width: '80px', height: '60px' }} />
                 </div>

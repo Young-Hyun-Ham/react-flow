@@ -55,6 +55,12 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange, o
         <label>Placeholder</label>
         <input type="text" value={element.placeholder || ''} onChange={(e) => handleUpdate('placeholder', e.target.value)} />
       </div>
+      {/* --- 💡 수정된 부분 시작 --- */}
+      <div className={styles.formGroup}>
+        <label>default value(Optional)</label>
+        <input type="text" value={element.defaultValue || ''} onChange={(e) => handleUpdate('defaultValue', e.target.value)} />
+      </div>
+      {/* --- 💡 수정된 부분 끝 --- */}
       <div className={styles.formGroup}>
         <label>Validation Type</label>
         <select value={element.validation?.type || 'text'} onChange={(e) => handleValidationUpdate('type', e.target.value)}>
@@ -76,14 +82,18 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange, o
   const renderDateControls = () => (
      <>
       {renderSharedControls()}
+      {/* --- 💡 수정된 부분 시작 --- */}
+      <div className={styles.formGroup}>
+        <label>default value(Optional)</label>
+        <input type="date" value={element.defaultValue || ''} onChange={(e) => handleUpdate('defaultValue', e.target.value)} />
+      </div>
+      {/* --- 💡 수정된 부분 끝 --- */}
       <div className={styles.formGroup}>
         <label>Validation Type</label>
         <select value={element.validation?.type || 'date'} onChange={(e) => handleValidationUpdate('type', e.target.value)}>
           <option value="date">Default Date</option>
           <option value="today after">Today After</option>
-          {/* --- 💡 수정된 부분 시작 --- */}
           <option value="today before">Today Before</option>
-          {/* --- 💡 수정된 부분 끝 --- */}
           <option value="custom">Custom</option>
         </select>
       </div>
@@ -155,6 +165,25 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange, o
           <button onClick={addOption} className={styles.addReplyButton}>+ Add Option</button>
         </div>
       </div>
+      {/* --- 💡 수정된 부분 시작 --- */}
+      <div className={styles.formGroup}>
+        <label>default value(Optional)</label>
+        {element.type === 'checkbox' ? (
+          <input 
+            type="text" 
+            value={(element.defaultValue || []).join(',')}
+            onChange={(e) => handleUpdate('defaultValue', e.target.value.split(','))}
+            placeholder="e.g.,Option1,Option2"
+          />
+        ) : (
+          <input 
+            type="text" 
+            value={element.defaultValue || ''} 
+            onChange={(e) => handleUpdate('defaultValue', e.target.value)} 
+          />
+        )}
+      </div>
+      {/* --- 💡 수정된 부분 끝 --- */}
     </>
   );
 
@@ -264,10 +293,10 @@ function NodeController() {
 
         switch (elementType) {
             case 'input':
-              newElement = { id: newId, type: 'input', name: '', label: 'New Input', placeholder: '', validation: { type: 'text' } };
+              newElement = { id: newId, type: 'input', name: '', label: 'New Input', placeholder: '', validation: { type: 'text' }, defaultValue: '' };
               break;
             case 'date':
-              newElement = { id: newId, type: 'date', name: '', label: 'New Date' };
+              newElement = { id: newId, type: 'date', name: '', label: 'New Date', defaultValue: '' };
               break;
             case 'grid':
               const rows = 2;
@@ -283,10 +312,10 @@ function NodeController() {
               };
               break;
             case 'checkbox':
-              newElement = { id: newId, type: 'checkbox', name: '', label: 'New Checkbox', options: [] };
+              newElement = { id: newId, type: 'checkbox', name: '', label: 'New Checkbox', options: [], defaultValue: [] };
               break;
             case 'dropbox':
-              newElement = { id: newId, type: 'dropbox', name: '', label: 'New Dropbox', options: [] };
+              newElement = { id: newId, type: 'dropbox', name: '', label: 'New Dropbox', options: [], defaultValue: '' };
               break;
             default:
               newElement = { id: newId, type: elementType };
