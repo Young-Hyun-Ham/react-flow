@@ -185,13 +185,34 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
 
   const proceedToNextNode = useCallback((sourceHandleId, sourceNodeId, updatedSlots) => {
     if (!sourceNodeId) return;
+    
+    const sourceNode = nodes.find(n => n.id === sourceNodeId);
     let nextEdge;
-    if (sourceHandleId) {
-      nextEdge = edges.find(
-        (edge) => edge.source === sourceNodeId && edge.sourceHandle === sourceHandleId
-      );
-    } else {
-      nextEdge = edges.find((edge) => edge.source === sourceNodeId && !edge.sourceHandle);
+
+    // LLM 노드 분기 처리
+    if (sourceNode && sourceNode.type === 'llm' && sourceNode.data.conditions?.length > 0) {
+        const llmOutput = updatedSlots[sourceNode.data.outputVar] || '';
+        
+        const matchedCondition = sourceNode.data.conditions.find(cond => 
+            llmOutput.toLowerCase().includes(cond.keyword.toLowerCase())
+        );
+
+        if (matchedCondition) {
+            nextEdge = edges.find(edge => edge.source === sourceNodeId && edge.sourceHandle === matchedCondition.id);
+        }
+    }
+
+    // 일반적인 엣지 탐색 (LLM 분기 실패 시 또는 다른 노드일 경우)
+    if (!nextEdge) {
+        if (sourceHandleId) {
+            nextEdge = edges.find(
+              (edge) => edge.source === sourceNodeId && edge.sourceHandle === sourceHandleId
+            );
+        } else {
+            // "default" 핸들을 우선으로 찾고, 없으면 핸들이 없는 엣지를 찾음
+            nextEdge = edges.find((edge) => edge.source === sourceNodeId && edge.sourceHandle === 'default') || 
+                       edges.find((edge) => edge.source === sourceNodeId && !edge.sourceHandle);
+        }
     }
 
     if (nextEdge) {
@@ -279,10 +300,9 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
     }
   }, [proceedToNextNode]);
 
-  // --- 💡 수정된 부분 시작 ---
   const handleLlmNode = useCallback(async (node, currentSlots) => {
     const streamingMessageId = Date.now();
-    // 1. isStreaming: true 상태를 추가하여 히스토리에 새 메시지 항목을 만듭니다.
+    let accumulatedContent = ''; // 전체 응답을 저장할 변수
     setHistory(prev => [...prev, { type: 'bot_streaming', id: streamingMessageId, content: '', isStreaming: true }]);
 
     try {
@@ -290,55 +310,38 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
 
         const response = await fetch('https://musclecat.co.kr/generate', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt: interpolatedPrompt }),
         });
 
-        if (!response.body) {
-            throw new Error('ReadableStream not available');
-        }
+        if (!response.body) throw new Error('ReadableStream not available');
 
         const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
 
         while (true) {
             const { value, done } = await reader.read();
             if (done) {
-              // 2. 스트리밍이 완료되면 isStreaming을 false로 변경합니다.
-              setHistory(prev =>
-                prev.map(item =>
-                    item.id === streamingMessageId
-                        ? { ...item, isStreaming: false }
-                        : item
-                )
-              );
+              setHistory(prev => prev.map(item => item.id === streamingMessageId ? { ...item, isStreaming: false } : item));
               break;
             }
-
-            setHistory(prev =>
-                prev.map(item =>
-                    item.id === streamingMessageId
-                        ? { ...item, content: item.content + value }
-                        : item
-                )
-            );
+            accumulatedContent += value; // 응답 내용을 계속 추가
+            setHistory(prev => prev.map(item => item.id === streamingMessageId ? { ...item, content: accumulatedContent } : item));
         }
     } catch (error) {
         console.error("LLM Error:", error);
-        setHistory(prev =>
-            prev.map(item =>
-                item.id === streamingMessageId
-                  // 3. 에러 발생 시에도 isStreaming을 false로 변경합니다.
-                    ? { ...item, content: `Error: ${error.message}`, isStreaming: false }
-                    : item
-            )
-        );
+        accumulatedContent = `Error: ${error.message}`;
+        setHistory(prev => prev.map(item => item.id === streamingMessageId ? { ...item, content: accumulatedContent, isStreaming: false } : item));
     } finally {
-        proceedToNextNode(null, node.id, currentSlots);
+        // ▼▼▼▼▼ LLM 응답을 슬롯에 저장하고 다음 노드로 진행 ▼▼▼▼▼
+        let finalSlots = { ...currentSlots };
+        if (node.data.outputVar) {
+            finalSlots[node.data.outputVar] = accumulatedContent;
+            setSlots(finalSlots);
+        }
+        proceedToNextNode(null, node.id, finalSlots);
+        // ▲▲▲▲▲ LLM 응답을 슬롯에 저장하고 다음 노드로 진행 ▲▲▲▲▲
     }
   }, [proceedToNextNode]);
-  // --- 💡 수정된 부분 끝 ---
   
   const startSimulation = useCallback(() => {
     const edgeTargets = new Set(edges.map((edge) => edge.target));
@@ -510,11 +513,9 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
       )}
       <div className={styles.history} ref={historyRef}>
         {history.map((item, index) => {
-          // --- 💡 수정된 부분 시작 ---
           if (item.type === 'bot_streaming') {
             return (
               <div key={item.id} className={styles.messageRow}>
-                {/* isStreaming 상태에 따라 다른 아바타 이미지를 표시합니다. */}
                 <img 
                   src={item.isStreaming ? "/images/avatar-loading.png" : "/images/avatar.png"} 
                   alt="Chatbot Avatar" 
@@ -524,7 +525,6 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
               </div>
             );
           }
-          // --- 💡 수정된 부분 끝 ---
           if (item.type === 'loading') {
             return (
               <div key={item.id} className={styles.messageRow}>

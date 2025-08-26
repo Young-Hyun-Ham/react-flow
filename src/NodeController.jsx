@@ -543,15 +543,67 @@ function NodeController() {
 
   const renderLlmControls = () => {
     const { data } = localNode;
+
+    const handleConditionChange = (index, value) => {
+      const newConditions = [...(data.conditions || [])];
+      newConditions[index] = { ...newConditions[index], keyword: value };
+      handleLocalDataChange('conditions', newConditions);
+    };
+  
+    const addCondition = () => {
+      const newCondition = {
+        id: `cond-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        keyword: 'New Keyword',
+      };
+      const newConditions = [...(data.conditions || []), newCondition];
+      handleLocalDataChange('conditions', newConditions);
+    };
+  
+    const deleteCondition = (index) => {
+      const newConditions = (data.conditions || []).filter((_, i) => i !== index);
+      handleLocalDataChange('conditions', newConditions);
+    };
+
     return (
-      <div className={styles.formGroup}>
-        <label>Prompt</label>
-        <textarea
-          value={data.prompt || ''}
-          onChange={(e) => handleLocalDataChange('prompt', e.target.value)}
-          rows={10}
-        />
-      </div>
+      <>
+        <div className={styles.formGroup}>
+          <label>Prompt</label>
+          <textarea
+            value={data.prompt || ''}
+            onChange={(e) => handleLocalDataChange('prompt', e.target.value)}
+            rows={8}
+          />
+        </div>
+        <div className={styles.formGroup}>
+          <label>Output Variable</label>
+          <input
+            type="text"
+            value={data.outputVar || ''}
+            onChange={(e) => handleLocalDataChange('outputVar', e.target.value)}
+            placeholder="Variable to store LLM output"
+          />
+        </div>
+        <div className={styles.separator} />
+        <div className={styles.formGroup}>
+          <label>Conditions (Branching)</label>
+          <div className={styles.repliesContainer}>
+            {(data.conditions || []).map((cond, index) => (
+              <div key={cond.id} className={styles.quickReply}>
+                <input
+                  className={styles.quickReplyInput}
+                  value={cond.keyword}
+                  onChange={(e) => handleConditionChange(index, e.target.value)}
+                  placeholder="Keyword to match"
+                />
+                <button onClick={() => deleteCondition(index)} className={styles.deleteReplyButton}>×</button>
+              </div>
+            ))}
+            <button onClick={addCondition} className={styles.addReplyButton}>
+              + Add Condition
+            </button>
+          </div>
+        </div>
+      </>
     );
   };
 
@@ -618,7 +670,7 @@ function NodeController() {
         return renderFormControls();
       case 'api':
         return renderApiControls();
-      case 'llm': // LLM 노드 컨트롤러 렌더링
+      case 'llm':
         return renderLlmControls();
       default:
         return renderDefaultControls();

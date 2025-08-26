@@ -4,7 +4,7 @@ import useStore from '../store';
 
 function LlmNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);
-  const updateNodeData = useStore((state) => state.updateNodeData); // 이전 단계에서 추가
+  const updateNodeData = useStore((state) => state.updateNodeData);
   const nodeColor = useStore((state) => state.nodeColors.llm);
   const textColor = useStore((state) => state.nodeTextColors.llm);
 
@@ -14,7 +14,6 @@ function LlmNode({ id, data }) {
 
   return (
     <div className={styles.nodeWrapper}>
-      {/* 입력 핸들 (좌측) */}
       <Handle type="target" position={Position.Left} />
 
       <div className={styles.nodeHeader} style={{ backgroundColor: nodeColor, color: textColor }}>
@@ -38,35 +37,40 @@ function LlmNode({ id, data }) {
             type="text"
             className={styles.textInput}
             value={data.outputVar || ''}
-            onChange={onOutputVarChange}
+            onChange={onOutputVarChange} // This is handled in NodeController, but let's keep it for potential direct use
+            readOnly // Controller에서 수정하므로 readOnly로 변경
           />
         </div>
+        {/* ▼▼▼▼▼ 조건 분기 표시 UI 추가 ▼▼▼▼▼ */}
+        <div className={styles.section}>
+          <span className={styles.sectionTitle}>Conditions:</span>
+          <div className={styles.branchOptionsContainer}>
+            {data.conditions?.map((cond, index) => (
+              <div key={cond.id} className={styles.branchOption}>
+                <span className={styles.branchOptionButton}>{cond.keyword}</span>
+                <Handle
+                  type="source"
+                  position={Position.Right}
+                  id={cond.id}
+                  style={{ top: `${(index / (data.conditions.length + 1)) * 100 + (1 / (data.conditions.length + 1) * 50)}%`, background: '#555' }}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* ▲▲▲▲▲ 조건 분기 표시 UI 추가 ▲▲▲▲▲ */}
       </div>
 
-      {/* ▼▼▼▼▼ 수정된 출력 핸들 (우측) ▼▼▼▼▼ */}
-      {/* 1. 배열(Array) 타입일 경우의 출력 핸들 */}
-      <div style={{ position: 'absolute', top: '22%', right: -33, fontSize: '11px', color: '#555' }}>
-        Array
-      </div>
+      {/* 기본 출력 핸들 */}
       <Handle
         type="source"
         position={Position.Right}
-        id="array" // 배열 경로를 위한 고유 ID
-        style={{ top: '25%' }}
+        id="default"
+        style={{ bottom: 15, top: 'auto', background: '#e74c3c' }}
       />
-
-      {/* 2. 그 외(Other) 타입일 경우의 출력 핸들 */}
-      <div style={{ position: 'absolute', bottom: '30%', right: -35, fontSize: '11px', color: '#555' }}>
-        Other
+       <div style={{ position: 'absolute', bottom: 10, right: -45, fontSize: '11px', color: '#e74c3c' }}>
+        Default
       </div>
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="other" // 그 외 경로를 위한 고유 ID
-        style={{ bottom: '30%', top: 'auto' }}
-      />
-      {/* ▲▲▲▲▲ 수정된 출력 핸들 (우측) ▲▲▲▲▲ */}
-
     </div>
   );
 }

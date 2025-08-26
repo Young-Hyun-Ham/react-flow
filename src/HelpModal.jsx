@@ -33,7 +33,6 @@ const HelpManual = () => (
 
  <h2>4. Node Types and Functions</h2>
  <p>Click the desired node from the left panel to add it to the canvas.</p>
-  {/* --- 💡 수정된 부분 시작 --- */}
  <table className={styles.table}>
  <thead>
   <tr>
@@ -64,7 +63,7 @@ const HelpManual = () => (
   </tr>
   <tr>
   <td><strong>LLM</strong></td>
-  <td>Connects to a large language model to generate text based on a dynamic prompt.</td>
+  <td>Connects to a large language model to generate text based on a dynamic prompt. The flow can be branched based on keywords in the generated response.</td>
   </tr>
   <tr>
   <td><strong>Fixed Menu</strong></td>
@@ -76,7 +75,6 @@ const HelpManual = () => (
   </tr>
  </tbody>
  </table>
-  {/* --- 💡 수정된 부분 끝 --- */}
 
  <h2>5. Scenario Editing and Testing</h2>
  <h3>5.1. Node Editing</h3>
@@ -111,18 +109,30 @@ const HelpManual = () => (
 
  <h3>5.4. Using the LLM Node</h3>
  <p>The LLM node sends a prompt to a large language model and displays the response in a streaming format. You can create dynamic prompts by combining text with slot values.</p>
+ <ul>
+    <li><strong>Output Variable</strong>: You can store the entire generated text from the LLM into a slot. Specify the slot name in the 'Output Variable' field in the controller.</li>
+    <li><strong>Conditional Branching</strong>: You can branch the conversation flow based on the content of the LLM's response.
+        <ul>
+            <li>In the controller, click '+ Add Condition' to add a new branch.</li>
+            <li>Enter a specific 'Keyword' for each condition.</li>
+            <li>If the keyword is found within the LLM's generated text, the conversation will proceed through the corresponding handle on the node.</li>
+            <li>If none of the keywords are found, the conversation will proceed through the 'Default' handle.</li>
+        </ul>
+    </li>
+ </ul>
  <p><strong>Example:</strong></p>
  <ol>
-  <li>Create a <strong>SlotFilling</strong> node with the content "What topic are you curious about?" and set the slot name to <code>topic</code>.</li>
+  <li>Create a <strong>SlotFilling</strong> node with the content "Which city would you like to know the weather for?" and set the slot name to <code>city</code>.</li>
   <li>Connect this node to an <strong>LLM</strong> node.</li>
-  <li>In the LLM node's controller, set the prompt to: <code>Tell me a short, fun story about {'{topic}'}.</code></li>
-  <li>When you test this in the simulator, the value you enter for the topic will be inserted into the prompt sent to the language model.</li>
+  <li>In the LLM node's controller, set the prompt to: <code>Tell me about the weather in {'{city}'}. Mention if it is 'sunny', 'rainy', or 'cloudy'.</code> Set the 'Output Variable' to <code>weather_report</code>.</li>
+  <li>Add two conditions: one with the keyword "sunny" and another with "rainy".</li>
+  <li>Connect the "sunny" handle to a message node saying "Great! It's a sunny day.", the "rainy" handle to a node saying "Don't forget your umbrella!", and the "Default" handle to a node saying "Here is the weather forecast."</li>
  </ol>
  
  <h3>5.5. Node Connection</h3>
  <ul>
  <li>Click on the connection points (Handles) on the right or left edges of nodes and drag to other nodes' connection points to connect conversation flows.</li>
- <li><strong>Condition Branch/Fixed Menu/API nodes</strong>: Each button (Branch/Menu) or outcome (Success/Error) has its own separate connection point.</li>
+ <li><strong>Condition Branch/Fixed Menu/API/LLM nodes</strong>: Each button (Branch/Menu), outcome (Success/Error), or condition has its own separate connection point.</li>
  </ul>
 
  <h3>5.6. Node and Connection Deletion/Duplication</h3>
@@ -134,7 +144,7 @@ const HelpManual = () => (
 
  <h3>5.7. Save and Test</h3>
  <ul>
- <li><strong>Save</strong>: Click the <code>Save Scenario</code> button in the top right of the screen to save the current scenario you're working on to the server.</li>
+ <li><strong>Save</strong>: Click the <code><img src="/images/save.png" alt="save" style={{ width: '24px', height: '24px' }}/></code> icon in the top right of the screen to save the current scenario you're working on to the server.</li>
  <li><strong>Test</strong>: Click the <code><img src="/images/chat_simulator.png" alt="chatbot" style={{ width: '24px', height: '24px' }}/></code> icon to open the simulator and test whether the scenario works as intended.</li>
  </ul>
 </>
@@ -172,7 +182,6 @@ const HelpManual_ko = () => (
 
  <h2>4. 노드 종류 및 기능</h2>
  <p>좌측 패널에서 원하는 노드를 클릭하여 캔버스에 추가하세요.</p>
-  {/* --- 💡 수정된 부분 시작 --- */}
  <table className={styles.table}>
  <thead>
   <tr>
@@ -203,7 +212,7 @@ const HelpManual_ko = () => (
   </tr>
   <tr>
   <td><strong>LLM</strong></td>
-  <td>거대 언어 모델과 연동하여 동적인 프롬프트를 기반으로 텍스트를 생성합니다.</td>
+  <td>거대 언어 모델과 연동하여 동적인 프롬프트를 기반으로 텍스트를 생성합니다. 생성된 응답 내용의 키워드에 따라 흐름을 분기할 수 있습니다.</td>
   </tr>
   <tr>
   <td><strong>고정 메뉴</strong></td>
@@ -215,7 +224,6 @@ const HelpManual_ko = () => (
   </tr>
  </tbody>
  </table>
-  {/* --- 💡 수정된 부분 끝 --- */}
 
  <h2>5. 시나리오 편집 및 테스트</h2>
  <h3>5.1. 노드 편집</h3>
@@ -250,18 +258,30 @@ const HelpManual_ko = () => (
 
  <h3>5.4. LLM 노드 사용하기</h3>
  <p>LLM 노드는 거대 언어 모델에 프롬프트를 보내고, 그 응답을 스트리밍 형태로 보여줍니다. 텍스트와 슬롯 값을 조합하여 동적인 프롬프트를 만들 수 있습니다.</p>
+ <ul>
+    <li><strong>출력 변수 (Output Variable)</strong>: LLM이 생성한 전체 텍스트를 슬롯에 저장할 수 있습니다. 컨트롤러의 'Output Variable' 필드에 슬롯 이름을 지정하세요.</li>
+    <li><strong>조건부 분기 (Conditional Branching)</strong>: LLM 응답 내용에 따라 대화 흐름을 분기할 수 있습니다.
+        <ul>
+            <li>컨트롤러에서 '+ Add Condition' 버튼을 눌러 새 분기를 추가합니다.</li>
+            <li>각 조건마다 특정 '키워드'를 입력합니다.</li>
+            <li>LLM이 생성한 텍스트에 해당 키워드가 포함되어 있으면, 노드의 해당 핸들을 통해 대화가 진행됩니다.</li>
+            <li>만약 설정된 키워드가 모두 발견되지 않으면, 'Default' 핸들을 통해 대화가 진행됩니다.</li>
+        </ul>
+    </li>
+ </ul>
  <p><strong>예시:</strong></p>
  <ol>
-  <li><strong>슬롯 채우기</strong> 노드를 생성하고, 질문 내용에 "어떤 주제가 궁금하신가요?"를, 슬롯 이름에 <code>topic</code>을 입력합니다.</li>
+  <li><strong>슬롯 채우기</strong> 노드를 생성하고, 질문 내용에 "어느 도시의 날씨가 궁금하신가요?"를, 슬롯 이름에 <code>city</code>를 입력합니다.</li>
   <li>이 노드를 <strong>LLM</strong> 노드와 연결합니다.</li>
-  <li>LLM 노드의 컨트롤러에서 프롬프트를 다음과 같이 설정합니다: <code>{'{topic}'}에 대한 짧고 재미있는 이야기를 들려줘.</code></li>
-  <li>시뮬레이터에서 테스트하면, 주제에 입력한 값이 프롬프트에 포함되어 언어 모델로 전송됩니다.</li>
+  <li>LLM 노드 컨트롤러에서 프롬프트를 <code>{'{city}'}의 날씨를 알려주세요. '맑음', '비', '흐림' 중 하나로 언급해주세요.</code>로 설정하고, 'Output Variable'을 <code>weather_report</code>로 지정합니다.</li>
+  <li>"맑음"과 "비"를 키워드로 하는 두 개의 조건을 추가합니다.</li>
+  <li>"맑음" 핸들은 "좋아요! 화창한 날씨입니다." 라는 메시지 노드로, "비" 핸들은 "우산을 잊지 마세요!" 라는 노드로, "Default" 핸들은 "일기 예보를 알려드릴게요." 라는 노드로 각각 연결합니다.</li>
  </ol>
 
  <h3>5.5. 노드 연결</h3>
  <ul>
  <li>노드의 좌우 가장자리에 있는 연결점을 클릭하여 다른 노드의 연결점으로 드래그하면 대화 흐름을 연결할 수 있습니다.</li>
- <li><strong>조건 분기/고정 메뉴/API 노드</strong>: 각 버튼(Branch/Menu)이나 결과(Success/Error)마다 별도의 연결점을 가집니다.</li>
+ <li><strong>조건 분기/고정 메뉴/API/LLM 노드</strong>: 각 버튼(Branch/Menu), 결과(Success/Error), 또는 조건마다 별도의 연결점을 가집니다.</li>
  </ul>
 
  <h3>5.6. 노드 및 연결선 삭제/복제</h3>
@@ -273,7 +293,7 @@ const HelpManual_ko = () => (
 
  <h3>5.7. 저장 및 테스트</h3>
  <ul>
- <li><strong>저장</strong>: 화면 우측 상단의 <code>Save Scenario</code> 버튼을 클릭하여 현재 작업 중인 시나리오를 서버에 저장합니다.</li>
+ <li><strong>저장</strong>: 화면 우측 상단의 <code><img src="/images/save.png" alt="save" style={{ width: '24px', height: '24px' }}/></code> 아이콘을 클릭하여 현재 작업 중인 시나리오를 서버에 저장합니다.</li>
  <li><strong>테스트</strong>: <code><img src="/images/chat_simulator.png" alt="chatbot" style={{ width: '24px', height: '24px' }}/></code> 아이콘을 클릭하여 시뮬레이터를 열고, 시나리오가 의도한 대로 작동하는지 테스트합니다.</li>
  </ul>
 </>

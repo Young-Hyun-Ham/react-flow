@@ -32,8 +32,13 @@ export const createNodeData = (type) => {
       return { ...baseData, title: 'Fixed Menu', replies: [{ display: 'Menu 1', value: `menu_${Date.now()}` }, { display: 'Menu 2', value: `menu_${Date.now() + 1}` }] };
     case 'link':
       return { ...baseData, content: 'https://', display: 'Link' };
-    case 'llm': // LLM 노드 데이터 추가
-      return { ...baseData, prompt: 'Ask me anything...' };
+    case 'llm':
+      return { 
+        ...baseData, 
+        prompt: 'Ask me anything...',
+        outputVar: 'llm_output', // 기본 출력 변수 이름
+        conditions: [] // 조건 분기를 위한 배열 초기화
+      };
     default:
       return baseData;
   }
