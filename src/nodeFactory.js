@@ -32,6 +32,8 @@ export const createNodeData = (type) => {
       return { ...baseData, title: 'Fixed Menu', replies: [{ display: 'Menu 1', value: `menu_${Date.now()}` }, { display: 'Menu 2', value: `menu_${Date.now() + 1}` }] };
     case 'link':
       return { ...baseData, content: 'https://', display: 'Link' };
+    case 'llm': // LLM 노드 데이터 추가
+      return { ...baseData, prompt: 'Ask me anything...' };
     default:
       return baseData;
   }

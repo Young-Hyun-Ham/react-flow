@@ -541,6 +541,20 @@ function NodeController() {
     );
   };
 
+  const renderLlmControls = () => {
+    const { data } = localNode;
+    return (
+      <div className={styles.formGroup}>
+        <label>Prompt</label>
+        <textarea
+          value={data.prompt || ''}
+          onChange={(e) => handleLocalDataChange('prompt', e.target.value)}
+          rows={10}
+        />
+      </div>
+    );
+  };
+
 
   const renderDefaultControls = () => {
     const { type, data } = localNode;
@@ -604,6 +618,8 @@ function NodeController() {
         return renderFormControls();
       case 'api':
         return renderApiControls();
+      case 'llm': // LLM 노드 컨트롤러 렌더링
+        return renderLlmControls();
       default:
         return renderDefaultControls();
     }

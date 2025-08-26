@@ -155,6 +155,11 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
         handleApiNode(node, updatedSlots);
         return;
       }
+
+      if (node.type === 'llm') { // LLM 노드 처리 로직
+        handleLlmNode(node, updatedSlots);
+        return;
+      }
       
       if (node.type === 'fixedmenu') {
         setHistory([]);
@@ -273,6 +278,53 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
       proceedToNextNode(isSuccess ? 'onSuccess' : 'onError', node.id, finalSlots);
     }
   }, [proceedToNextNode]);
+
+  const handleLlmNode = useCallback(async (node, currentSlots) => {
+    const streamingMessageId = Date.now();
+    setHistory(prev => [...prev, { type: 'bot_streaming', id: streamingMessageId, content: '' }]);
+
+    try {
+        const interpolatedPrompt = interpolateMessage(node.data.prompt, currentSlots);
+
+        const response = await fetch('https://210.114.17.65/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ prompt: interpolatedPrompt }),
+        });
+
+        if (!response.body) {
+            throw new Error('ReadableStream not available');
+        }
+
+        const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+
+            setHistory(prev =>
+                prev.map(item =>
+                    item.id === streamingMessageId
+                        ? { ...item, content: item.content + value }
+                        : item
+                )
+            );
+        }
+    } catch (error) {
+        console.error("LLM Error:", error);
+        setHistory(prev =>
+            prev.map(item =>
+                item.id === streamingMessageId
+                    ? { ...item, content: `Error: ${error.message}` }
+                    : item
+            )
+        );
+    } finally {
+        proceedToNextNode(null, node.id, currentSlots);
+    }
+}, [proceedToNextNode]);
   
   const startSimulation = useCallback(() => {
     const edgeTargets = new Set(edges.map((edge) => edge.target));
@@ -444,6 +496,14 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
       )}
       <div className={styles.history} ref={historyRef}>
         {history.map((item, index) => {
+          if (item.type === 'bot_streaming') {
+            return (
+              <div key={item.id} className={styles.messageRow}>
+                <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
+                <div className={`${styles.message} ${styles.botMessage}`}>{item.content}</div>
+              </div>
+            );
+          }
           if (item.type === 'loading') {
             return (
               <div key={item.id} className={styles.messageRow}>

@@ -16,6 +16,7 @@ const defaultColors = {
   api: '#e74c3c',
   fixedmenu: '#e74c3c',
   link: '#34495e',
+  llm: '#1abc9c', // LLM 노드 색상 추가
 };
 
 const defaultTextColors = {
@@ -26,6 +27,7 @@ const defaultTextColors = {
   api: '#ffffff',
   fixedmenu: '#ffffff',
   link: '#ffffff',
+  llm: '#ffffff', // LLM 노드 텍스트 색상 추가
 }
 
 const useStore = create((set, get) => ({
