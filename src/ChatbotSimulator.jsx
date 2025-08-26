@@ -204,7 +204,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
       const sourceNode = nodes.find(n => n.id === sourceNodeId);
       if(sourceNode?.type !== 'fixedmenu' && sourceNode?.type !== 'branch' && sourceNode?.type !== 'api') {
         setTimeout(() => {
-          setHistory((prev) => [...prev, { type: 'bot', message: 'The conversation has ended.' }]);
+          //setHistory((prev) => [...prev, { type: 'bot', message: 'The conversation has ended.' }]);
           setCurrentId(null);
         }, 500);
       }
