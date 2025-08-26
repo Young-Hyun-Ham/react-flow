@@ -286,7 +286,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
     try {
         const interpolatedPrompt = interpolateMessage(node.data.prompt, currentSlots);
 
-        const response = await fetch('https://210.114.17.65/generate', {
+        const response = await fetch('https://musclecat.co.kr/generate', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
