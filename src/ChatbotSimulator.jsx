@@ -279,9 +279,11 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
     }
   }, [proceedToNextNode]);
 
+  // --- 💡 수정된 부분 시작 ---
   const handleLlmNode = useCallback(async (node, currentSlots) => {
     const streamingMessageId = Date.now();
-    setHistory(prev => [...prev, { type: 'bot_streaming', id: streamingMessageId, content: '' }]);
+    // 1. isStreaming: true 상태를 추가하여 히스토리에 새 메시지 항목을 만듭니다.
+    setHistory(prev => [...prev, { type: 'bot_streaming', id: streamingMessageId, content: '', isStreaming: true }]);
 
     try {
         const interpolatedPrompt = interpolateMessage(node.data.prompt, currentSlots);
@@ -302,7 +304,17 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
 
         while (true) {
             const { value, done } = await reader.read();
-            if (done) break;
+            if (done) {
+              // 2. 스트리밍이 완료되면 isStreaming을 false로 변경합니다.
+              setHistory(prev =>
+                prev.map(item =>
+                    item.id === streamingMessageId
+                        ? { ...item, isStreaming: false }
+                        : item
+                )
+              );
+              break;
+            }
 
             setHistory(prev =>
                 prev.map(item =>
@@ -317,14 +329,16 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
         setHistory(prev =>
             prev.map(item =>
                 item.id === streamingMessageId
-                    ? { ...item, content: `Error: ${error.message}` }
+                  // 3. 에러 발생 시에도 isStreaming을 false로 변경합니다.
+                    ? { ...item, content: `Error: ${error.message}`, isStreaming: false }
                     : item
             )
         );
     } finally {
         proceedToNextNode(null, node.id, currentSlots);
     }
-}, [proceedToNextNode]);
+  }, [proceedToNextNode]);
+  // --- 💡 수정된 부분 끝 ---
   
   const startSimulation = useCallback(() => {
     const edgeTargets = new Set(edges.map((edge) => edge.target));
@@ -496,14 +510,21 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
       )}
       <div className={styles.history} ref={historyRef}>
         {history.map((item, index) => {
+          // --- 💡 수정된 부분 시작 ---
           if (item.type === 'bot_streaming') {
             return (
               <div key={item.id} className={styles.messageRow}>
-                <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
+                {/* isStreaming 상태에 따라 다른 아바타 이미지를 표시합니다. */}
+                <img 
+                  src={item.isStreaming ? "/images/avatar-loading.png" : "/images/avatar.png"} 
+                  alt="Chatbot Avatar" 
+                  className={styles.avatar} 
+                />
                 <div className={`${styles.message} ${styles.botMessage}`}>{item.content}</div>
               </div>
             );
           }
+          // --- 💡 수정된 부분 끝 ---
           if (item.type === 'loading') {
             return (
               <div key={item.id} className={styles.messageRow}>
