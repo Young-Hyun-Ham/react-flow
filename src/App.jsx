@@ -7,7 +7,8 @@ import Board from './Board';
 import Login from './Login';
 import HelpModal from './HelpModal';
 import NewScenarioModal from './NewScenarioModal';
-import useStore from './store'; // --- 💡 추가된 부분 ---
+import ApiDocs from './ApiDocs'; // --- 💡 1. ApiDocs 컴포넌트 import ---
+import useStore from './store';
 import './App.css';
 
 function App() {
@@ -18,7 +19,6 @@ function App() {
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [scenarios, setScenarios] = useState([]);
   const [isNewScenarioModalOpen, setIsNewScenarioModalOpen] = useState(false);
-  // --- 💡 추가된 부분: zustand 스토어에서 fetchNodeColors 액션 가져오기 ---
   const fetchNodeColors = useStore((state) => state.fetchNodeColors);
   const fetchNodeTextColors = useStore((state) => state.fetchNodeTextColors);
 
@@ -35,7 +35,6 @@ function App() {
 
         if (isAuthorized) {
           setUser(currentUser);
-          // --- 💡 추가된 부분: 인증된 사용자일 경우 DB에서 색상 설정 불러오기 ---
           fetchNodeColors();
           fetchNodeTextColors();
         } else {
@@ -50,7 +49,7 @@ function App() {
     });
 
     return () => unsubscribe();
-  }, [fetchNodeColors, fetchNodeTextColors]); // 의존성 배열에 fetchNodeColors 추가
+  }, [fetchNodeColors, fetchNodeTextColors]);
 
   const handleLogout = async () => {
     try {
@@ -129,6 +128,10 @@ function App() {
           <button onClick={() => handleViewChange('board')} className={view === 'board' ? 'active' : ''}>
             Board
           </button>
+          {/* --- 💡 2. API 명세 페이지로 가는 네비게이션 버튼 추가 --- */}
+          <button onClick={() => handleViewChange('api')} className={view === 'api' ? 'active' : ''}>
+            API Docs
+          </button>
         </nav>
         <div className="user-profile">
           <img src={user.photoURL} alt={user.displayName} className="user-avatar" />
@@ -154,6 +157,11 @@ function App() {
         
         <div className={`view-container ${view !== 'board' ? 'hidden' : ''}`}>
             <Board user={user} />
+        </div>
+
+        {/* --- 💡 3. view 상태에 따라 ApiDocs 컴포넌트를 렌더링하는 컨테이너 추가 --- */}
+        <div className={`view-container ${view !== 'api' ? 'hidden' : ''}`}>
+            <ApiDocs />
         </div>
       </main>
       <HelpModal isOpen={isHelpModalOpen} onClose={() => setIsHelpModalOpen(false)} />
