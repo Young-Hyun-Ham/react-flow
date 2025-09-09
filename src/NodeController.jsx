@@ -55,12 +55,10 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange, o
         <label>Placeholder</label>
         <input type="text" value={element.placeholder || ''} onChange={(e) => handleUpdate('placeholder', e.target.value)} />
       </div>
-      {/* --- 💡 수정된 부분 시작 --- */}
       <div className={styles.formGroup}>
         <label>default value(Optional)</label>
         <input type="text" value={element.defaultValue || ''} onChange={(e) => handleUpdate('defaultValue', e.target.value)} />
       </div>
-      {/* --- 💡 수정된 부분 끝 --- */}
       <div className={styles.formGroup}>
         <label>Validation Type</label>
         <select value={element.validation?.type || 'text'} onChange={(e) => handleValidationUpdate('type', e.target.value)}>
@@ -82,12 +80,10 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange, o
   const renderDateControls = () => (
      <>
       {renderSharedControls()}
-      {/* --- 💡 수정된 부분 시작 --- */}
       <div className={styles.formGroup}>
         <label>default value(Optional)</label>
         <input type="date" value={element.defaultValue || ''} onChange={(e) => handleUpdate('defaultValue', e.target.value)} />
       </div>
-      {/* --- 💡 수정된 부분 끝 --- */}
       <div className={styles.formGroup}>
         <label>Validation Type</label>
         <select value={element.validation?.type || 'date'} onChange={(e) => handleValidationUpdate('type', e.target.value)}>
@@ -165,7 +161,6 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange, o
           <button onClick={addOption} className={styles.addReplyButton}>+ Add Option</button>
         </div>
       </div>
-      {/* --- 💡 수정된 부분 시작 --- */}
       <div className={styles.formGroup}>
         <label>default value(Optional)</label>
         {element.type === 'checkbox' ? (
@@ -183,7 +178,6 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange, o
           />
         )}
       </div>
-      {/* --- 💡 수정된 부분 끝 --- */}
     </>
   );
 
@@ -466,7 +460,6 @@ function NodeController() {
     );
   };
   
-  // 💡 --- API 컨트롤 UI --- 💡
   const renderApiControls = () => {
     const { data } = localNode;
 
@@ -607,6 +600,34 @@ function NodeController() {
     );
   };
 
+  // --- 👇 [추가된 부분] ---
+  const renderToastControls = () => {
+    const { data } = localNode;
+    return (
+        <>
+            <div className={styles.formGroup}>
+                <label>Toast Message</label>
+                <textarea 
+                    value={data.message || ''} 
+                    onChange={(e) => handleLocalDataChange('message', e.target.value)} 
+                    rows={4}
+                />
+            </div>
+            <div className={styles.formGroup}>
+                <label>Toast Type</label>
+                <select 
+                    value={data.toastType || 'info'} 
+                    onChange={(e) => handleLocalDataChange('toastType', e.target.value)}
+                >
+                    <option value="info">Info</option>
+                    <option value="success">Success</option>
+                    <option value="error">Error</option>
+                </select>
+            </div>
+        </>
+    );
+  };
+  // --- 👆 [여기까지] ---
 
   const renderDefaultControls = () => {
     const { type, data } = localNode;
@@ -672,6 +693,9 @@ function NodeController() {
         return renderApiControls();
       case 'llm':
         return renderLlmControls();
+      // --- 👇 [추가] ---
+      case 'toast':
+        return renderToastControls();
       default:
         return renderDefaultControls();
     }

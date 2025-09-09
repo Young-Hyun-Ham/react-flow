@@ -6,7 +6,7 @@ import {
 } from 'reactflow';
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from './firebase';
-import { createNodeData } from './nodeFactory'; // 팩토리 함수 import
+import { createNodeData } from './nodeFactory';
 
 const defaultColors = {
   message: '#f39c12',
@@ -16,7 +16,9 @@ const defaultColors = {
   api: '#e74c3c',
   fixedmenu: '#e74c3c',
   link: '#34495e',
-  llm: '#1abc9c', // LLM 노드 색상 추가
+  llm: '#1abc9c',
+  // --- 👇 [추가] ---
+  toast: '#95a5a6',
 };
 
 const defaultTextColors = {
@@ -27,7 +29,9 @@ const defaultTextColors = {
   api: '#ffffff',
   fixedmenu: '#ffffff',
   link: '#ffffff',
-  llm: '#ffffff', // LLM 노드 텍스트 색상 추가
+  llm: '#ffffff',
+  // --- 👇 [추가] ---
+  toast: '#ffffff',
 }
 
 const useStore = create((set, get) => ({

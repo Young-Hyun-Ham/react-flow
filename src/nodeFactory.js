@@ -36,15 +36,22 @@ export const createNodeData = (type) => {
       return { 
         ...baseData, 
         prompt: 'Ask me anything...',
-        outputVar: 'llm_output', // 기본 출력 변수 이름
-        conditions: [] // 조건 분기를 위한 배열 초기화
+        outputVar: 'llm_output',
+        conditions: [] 
       };
+    // --- 👇 [추가된 부분] ---
+    case 'toast':
+      return {
+        ...baseData,
+        message: 'This is a toast message.',
+        toastType: 'info' // info, success, error
+      };
+    // --- 👆 [여기까지] ---
     default:
       return baseData;
   }
 };
 
-// --- 💡 수정된 부분 시작 ---
 export const createFormElement = (elementType) => {
     const newId = `${elementType}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     let newElement;
@@ -80,4 +87,3 @@ export const createFormElement = (elementType) => {
     }
     return newElement;
 }
-// --- 💡 수정된 부분 끝 ---

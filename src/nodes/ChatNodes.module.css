@@ -20,14 +20,14 @@
   border-top-right-radius: 8px;
   color: white;
 }
-/* --- 💡 수정된 부분: 배경색 클래스 제거 --- */
-/* .headerMessage { background-color: #f39c12; }
-.headerApi { background-color: #3498db; }
-.headerBranch { background-color: #2ecc71; }
-.headerForm { background-color: #9b59b6; }
-.headerFixedMenu { background-color: #e74c3c; }
-.headerLink { background-color: #34495e; } */
 
+/* --- 👇 [추가] 헤더 좌측 아이콘+텍스트 정렬용 --- */
+.headerLeft {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+/* --- 👆 [여기까지] --- */
 
 .headerTextContent {
   font-size: 0.8rem;
@@ -41,8 +41,6 @@
   color: white;
   font-size: 0.7rem;
   margin-right: -10px;
-  /* opacity: 0.8;
-  transition: opacity 0.2s; */
 }
 .deleteButton:hover {
   opacity: 1;
@@ -243,9 +241,9 @@
 
 .branchOption {
   position: relative;
-  display: flex; /* flex property added */
-  align-items: center; /* vertical center alignment */
-  justify-content: space-between; /* spacing between button and handle */
+  display: flex; 
+  align-items: center;
+  justify-content: space-between;
   padding-right: 15px;
 }
 
@@ -256,7 +254,7 @@
   background-color: #fff;
   border: 1px solid #ccc;
   border-radius: 20px;
-  text-align: left; /* text left alignment */
+  text-align: left;
   font-size: 0.85rem;
   color: #333;
   box-sizing: border-box;

@@ -132,23 +132,18 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
   const addBotMessage = useCallback((nodeId, updatedSlots) => {
     const node = nodes.find(n => n.id === nodeId);
     if (node) {
-      // 시연을 위한 의도적 딜레이 추가
       if (node.id === 'branch-1754639034237-vsol31e') {
         const loadingId = Date.now();
-        // 1. 로딩 애니메이션 표시
         setHistory(prev => [...prev, { type: 'loading', id: loadingId }]);
-
-        // 2. 2초 대기
         setTimeout(() => {
-          // 3. 로딩 메시지를 실제 노드 콘텐츠로 교체
           const isInteractive = node.type === 'form' || (node.type === 'branch' && node.data.replies?.length > 0) || node.type === 'slotfilling';
           setHistory(prev => prev.map(item => 
             item.id === loadingId 
               ? { type: 'bot', nodeId: node.id, isCompleted: !isInteractive, id: loadingId } 
               : item
           ));
-        }, 2000); // 2초 딜레이
-        return; // 이 노드에 대한 처리는 여기서 종료
+        }, 2000);
+        return;
       }
       
       if (node.type === 'api') {
@@ -156,7 +151,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
         return;
       }
 
-      if (node.type === 'llm') { // LLM 노드 처리 로직
+      if (node.type === 'llm') {
         handleLlmNode(node, updatedSlots);
         return;
       }
@@ -176,11 +171,17 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
         proceedToNextNode(null, nodeId, updatedSlots);
         return;
       }
+
+      if (node.type === 'toast') {
+        const message = interpolateMessage(node.data.message, updatedSlots);
+        alert(`[${node.data.toastType || 'info'}] ${message}`);
+        proceedToNextNode(null, nodeId, updatedSlots);
+        return;
+      }
       
       const isInteractive = node.type === 'form' || (node.type === 'branch' && node.data.replies?.length > 0) || node.type === 'slotfilling';
       setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: !isInteractive, id: Date.now() }]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes]);
 
   const proceedToNextNode = useCallback((sourceHandleId, sourceNodeId, updatedSlots) => {
@@ -189,7 +190,6 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
     const sourceNode = nodes.find(n => n.id === sourceNodeId);
     let nextEdge;
 
-    // LLM 노드 분기 처리
     if (sourceNode && sourceNode.type === 'llm' && sourceNode.data.conditions?.length > 0) {
         const llmOutput = updatedSlots[sourceNode.data.outputVar] || '';
         
@@ -202,14 +202,12 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
         }
     }
 
-    // 일반적인 엣지 탐색 (LLM 분기 실패 시 또는 다른 노드일 경우)
     if (!nextEdge) {
         if (sourceHandleId) {
             nextEdge = edges.find(
               (edge) => edge.source === sourceNodeId && edge.sourceHandle === sourceHandleId
             );
         } else {
-            // "default" 핸들을 우선으로 찾고, 없으면 핸들이 없는 엣지를 찾음
             nextEdge = edges.find((edge) => edge.source === sourceNodeId && edge.sourceHandle === 'default') || 
                        edges.find((edge) => edge.source === sourceNodeId && !edge.sourceHandle);
         }
@@ -225,7 +223,6 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
       const sourceNode = nodes.find(n => n.id === sourceNodeId);
       if(sourceNode?.type !== 'fixedmenu' && sourceNode?.type !== 'branch' && sourceNode?.type !== 'api') {
         setTimeout(() => {
-          //setHistory((prev) => [...prev, { type: 'bot', message: 'The conversation has ended.' }]);
           setCurrentId(null);
         }, 500);
       }
@@ -302,7 +299,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
 
   const handleLlmNode = useCallback(async (node, currentSlots) => {
     const streamingMessageId = Date.now();
-    let accumulatedContent = ''; // 전체 응답을 저장할 변수
+    let accumulatedContent = '';
     setHistory(prev => [...prev, { type: 'bot_streaming', id: streamingMessageId, content: '', isStreaming: true }]);
 
     try {
@@ -324,7 +321,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
               setHistory(prev => prev.map(item => item.id === streamingMessageId ? { ...item, isStreaming: false } : item));
               break;
             }
-            accumulatedContent += value; // 응답 내용을 계속 추가
+            accumulatedContent += value;
             setHistory(prev => prev.map(item => item.id === streamingMessageId ? { ...item, content: accumulatedContent } : item));
         }
     } catch (error) {
@@ -332,14 +329,12 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
         accumulatedContent = `Error: ${error.message}`;
         setHistory(prev => prev.map(item => item.id === streamingMessageId ? { ...item, content: accumulatedContent, isStreaming: false } : item));
     } finally {
-        // ▼▼▼▼▼ LLM 응답을 슬롯에 저장하고 다음 노드로 진행 ▼▼▼▼▼
         let finalSlots = { ...currentSlots };
         if (node.data.outputVar) {
             finalSlots[node.data.outputVar] = accumulatedContent;
             setSlots(finalSlots);
         }
         proceedToNextNode(null, node.id, finalSlots);
-        // ▲▲▲▲▲ LLM 응답을 슬롯에 저장하고 다음 노드로 진행 ▲▲▲▲▲
     }
   }, [proceedToNextNode]);
   
@@ -487,7 +482,6 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
         <div className={styles.headerButtons}>
           {isVisible && (
             <div className={styles.headerButton} onClick={() => setIsExpanded(!isExpanded)} title={isExpanded ? "Collapse" : "Expand"}>
-              {/* {isExpanded ? <CollapseIcon /> : <ExpandIcon />} */}
               <img src="/images/expand.png" alt="expand" className={!isExpanded ? styles.expandIcon : styles.collapseIcon} />
             </div>
           )}

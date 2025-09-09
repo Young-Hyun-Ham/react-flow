@@ -9,7 +9,9 @@ import ApiNode from './nodes/ApiNode';
 import FormNode from './nodes/FormNode';
 import FixedMenuNode from './nodes/FixedMenuNode';
 import LinkNode from './nodes/LinkNode';
-import LlmNode from './nodes/LlmNode'; // LLM 노드 import
+import LlmNode from './nodes/LlmNode';
+// --- 👇 [추가] ---
+import ToastNode from './nodes/ToastNode';
 import ChatbotSimulator from './ChatbotSimulator';
 import NodeController from './NodeController';
 import useStore from './store';
@@ -23,7 +25,9 @@ const nodeTypes = {
   form: FormNode,
   fixedmenu: FixedMenuNode,
   link: LinkNode,
-  llm: LlmNode, // LLM 노드 등록
+  llm: LlmNode,
+  // --- 👇 [추가] ---
+  toast: ToastNode,
 };
 
 const SettingsIcon = () => (
@@ -113,9 +117,11 @@ function Flow({ scenarioId }) {
     { type: 'branch', label: '+ Condition Branch' },
     { type: 'slotfilling', label: '+ SlotFilling' },
     { type: 'api', label: '+ API' },
-    { type: 'llm', label: '+ LLM' }, // LLM 노드 버튼 추가
+    { type: 'llm', label: '+ LLM' },
     { type: 'fixedmenu', label: '+ Fixed Menu' },
     { type: 'link', label: '+ Link' },
+    // --- 👇 [추가] ---
+    { type: 'toast', label: '+ Toast' },
   ];
 
   return (
