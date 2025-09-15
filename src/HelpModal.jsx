@@ -13,6 +13,7 @@ const HelpManual = () => (
  <ul>
  <li><strong>Flow Editor</strong>: The main workspace for visually creating and editing chatbot conversation flows.</li>
  <li><strong>Board</strong>: Provides a simple bulletin board feature to help communication between users.</li>
+ <li><strong>API Docs</strong>: Displays the API specification for managing scenarios.</li>
  </ul>
 
  <h2>2. Scenario Management</h2>
@@ -23,7 +24,13 @@ const HelpManual = () => (
  <li><strong>Edit/Delete Scenario</strong>: Use the <code>Edit</code> button next to each scenario item to change the name, or the <code>Delete</code> button to permanently remove the scenario.</li>
  </ul>
 
- <h2>3. Flow Editor Screen Layout</h2>
+  <h2>3. Board Usage</h2>
+  <ul>
+    <li>You can write new posts, and attach images or files.</li>
+    <li>You can edit or delete only the posts you have created.</li>
+  </ul>
+
+ <h2>4. Flow Editor Screen Layout</h2>
  <ol>
  <li><strong>Node Addition Panel (Left)</strong>: Add various types of nodes that make up the scenario to the canvas.</li>
  <li><strong>Canvas (Center)</strong>: Space for placing nodes and connecting them to create actual conversation flows.</li>
@@ -31,7 +38,7 @@ const HelpManual = () => (
  <li><strong>Simulator (Right)</strong>: Can be activated by clicking the <code><img src="/images/chat_simulator.png" alt="chatbot" style={{ width: '24px', height: '24px' }}/></code> icon to test how your written scenario works in real-time as an actual chatbot.</li>
  </ol>
 
- <h2>4. Node Types and Functions</h2>
+ <h2>5. Node Types and Functions</h2>
  <p>Click the desired node from the left panel to add it to the canvas.</p>
  <table className={styles.table}>
  <thead>
@@ -73,23 +80,27 @@ const HelpManual = () => (
   <td><strong>Link</strong></td>
   <td>Delivers external website links to users.</td>
   </tr>
+   <tr>
+  <td><strong>Toast</strong></td>
+  <td>Displays a small, non-intrusive pop-up message (like a toast notification) to the user in the simulator. It does not interrupt the conversation flow.</td>
+  </tr>
  </tbody>
  </table>
 
- <h2>5. Scenario Editing and Testing</h2>
- <h3>5.1. Node Editing</h3>
+ <h2>6. Scenario Editing and Testing</h2>
+ <h3>6.1. Node Editing</h3>
  <ol>
  <li>Click on the node you want to edit on the canvas.</li>
  <li>Modify the node's text, buttons, form elements, etc. in the <strong>Controller Panel</strong> that appears on the right.</li>
  <li>When editing is complete, click the <code>Save Changes</code> button at the bottom of the controller panel to apply changes to the node.</li>
  </ol>
 
- <h3>5.2. Using Slots (Variables)</h3>
+ <h3>6.2. Using Slots (Variables)</h3>
  <p>Slots are variables used to store and reuse information within a scenario. You can store user input from a <strong>SlotFilling</strong> node or data from an <strong>API</strong> node's response into a slot.</p>
  <p>To use a stored slot value in other nodes (like Message, API, or LLM), use brace notation: <code>{'{slotName}'}</code>.</p>
  <p><strong>Example:</strong> If you stored a user's name in a slot called <code>userName</code>, you can use it in a Message node like this: <code>Hello, {'{userName}'}! Welcome.</code></p>
 
- <h3>5.3. Using the API Node</h3>
+ <h3>6.3. Using the API Node</h3>
  <p>The API node allows for dynamic interaction with external servers.</p>
  <ul>
  <li><strong>Dynamic Requests</strong>: Use slots to make dynamic API calls. In the URL, Headers, or Body fields, you can insert values from previous user inputs or API responses using brace notation (e.g., <code>https://api.example.com/users/{'{userId}'}</code>).</li>
@@ -107,7 +118,7 @@ const HelpManual = () => (
  </li>
  </ul>
 
- <h3>5.4. Using the LLM Node</h3>
+ <h3>6.4. Using the LLM Node</h3>
  <p>The LLM node sends a prompt to a large language model and displays the response in a streaming format. You can create dynamic prompts by combining text with slot values.</p>
  <ul>
     <li><strong>Output Variable</strong>: You can store the entire generated text from the LLM into a slot. Specify the slot name in the 'Output Variable' field in the controller.</li>
@@ -129,20 +140,20 @@ const HelpManual = () => (
   <li>Connect the "sunny" handle to a message node saying "Great! It's a sunny day.", the "rainy" handle to a node saying "Don't forget your umbrella!", and the "Default" handle to a node saying "Here is the weather forecast."</li>
  </ol>
  
- <h3>5.5. Node Connection</h3>
+ <h3>6.5. Node Connection</h3>
  <ul>
  <li>Click on the connection points (Handles) on the right or left edges of nodes and drag to other nodes' connection points to connect conversation flows.</li>
  <li><strong>Condition Branch/Fixed Menu/API/LLM nodes</strong>: Each button (Branch/Menu), outcome (Success/Error), or condition has its own separate connection point.</li>
  </ul>
 
- <h3>5.6. Node and Connection Deletion/Duplication</h3>
+ <h3>6.6. Node and Connection Deletion/Duplication</h3>
  <ul>
  <li><strong>Delete Node</strong>: Click the <code>x</code> button in the top right of the node.</li>
  <li><strong>Delete Connection</strong>: Click only the connection you want to delete on the canvas to select it, then press <code>Backspace</code> or <code>Delete</code> on your keyboard.</li>
  <li><strong>Duplicate Node</strong>: Click the <code>+ Duplicate Node</code> button that appears at the bottom of the left 'Add Node' panel when you select the node you want to duplicate.</li>
  </ul>
 
- <h3>5.7. Save and Test</h3>
+ <h3>6.7. Save and Test</h3>
  <ul>
  <li><strong>Save</strong>: Click the <code><img src="/images/save.png" alt="save" style={{ width: '24px', height: '24px' }}/></code> icon in the top right of the screen to save the current scenario you're working on to the server.</li>
  <li><strong>Test</strong>: Click the <code><img src="/images/chat_simulator.png" alt="chatbot" style={{ width: '24px', height: '24px' }}/></code> icon to open the simulator and test whether the scenario works as intended.</li>
@@ -162,6 +173,7 @@ const HelpManual_ko = () => (
  <ul>
  <li><strong>Flow Editor</strong>: 챗봇 대화 흐름을 시각적으로 만들고 편집하는 기본 작업 공간입니다.</li>
  <li><strong>Board</strong>: 사용자 간 소통을 돕는 간단한 게시판 기능을 제공합니다.</li>
+ <li><strong>API Docs</strong>: 시나리오 관리를 위한 API 명세를 보여줍니다.</li>
  </ul>
 
  <h2>2. 시나리오 관리</h2>
@@ -172,7 +184,13 @@ const HelpManual_ko = () => (
  <li><strong>시나리오 수정/삭제</strong>: 각 항목 옆의 <code>수정</code> 버튼으로 이름을 변경하거나, <code>삭제</code> 버튼으로 시나리오를 영구적으로 제거합니다.</li>
  </ul>
 
- <h2>3. Flow Editor 화면 구성</h2>
+ <h2>3. 게시판 사용법</h2>
+  <ul>
+    <li>새 게시물을 작성하고, 이미지나 파일을 첨부할 수 있습니다.</li>
+    <li>자신이 작성한 게시물만 수정하거나 삭제할 수 있습니다.</li>
+  </ul>
+
+ <h2>4. Flow Editor 화면 구성</h2>
  <ol>
  <li><strong>노드 추가 패널 (좌측)</strong>: 시나리오를 구성하는 다양한 종류의 노드를 캔버스에 추가합니다.</li>
  <li><strong>캔버스 (중앙)</strong>: 노드를 배치하고 연결하여 실제 대화 흐름을 구성하는 공간입니다.</li>
@@ -180,7 +198,7 @@ const HelpManual_ko = () => (
  <li><strong>시뮬레이터 (우측)</strong>: <code><img src="/images/chat_simulator.png" alt="chatbot" style={{ width: '24px', height: '24px' }}/></code> 아이콘을 클릭하여 활성화할 수 있으며, 작성한 시나리오가 실제 챗봇처럼 동작하는지 실시간으로 테스트할 수 있습니다.</li>
  </ol>
 
- <h2>4. 노드 종류 및 기능</h2>
+ <h2>5. 노드 종류 및 기능</h2>
  <p>좌측 패널에서 원하는 노드를 클릭하여 캔버스에 추가하세요.</p>
  <table className={styles.table}>
  <thead>
@@ -222,23 +240,27 @@ const HelpManual_ko = () => (
   <td><strong>링크</strong></td>
   <td>외부 웹사이트 링크를 사용자에게 전달합니다.</td>
   </tr>
+  <tr>
+  <td><strong>토스트</strong></td>
+  <td>시뮬레이터 내에서 사용자에게 방해되지 않는 작은 팝업 메시지(토스트 알림)를 표시합니다. 대화 흐름을 중단시키지 않습니다.</td>
+  </tr>
  </tbody>
  </table>
 
- <h2>5. 시나리오 편집 및 테스트</h2>
- <h3>5.1. 노드 편집</h3>
+ <h2>6. 시나리오 편집 및 테스트</h2>
+ <h3>6.1. 노드 편집</h3>
  <ol>
  <li>캔버스에서 편집하고 싶은 노드를 클릭합니다.</li>
  <li>우측에 나타나는 <strong>컨트롤러 패널</strong>에서 노드의 텍스트, 버튼, 양식 요소 등을 수정합니다.</li>
  <li>편집이 끝나면 컨트롤러 패널 하단의 <code>Save Changes</code> 버튼을 클릭하여 변경 사항을 노드에 적용합니다.</li>
  </ol>
 
- <h3>5.2. 슬롯(변수) 사용하기</h3>
+ <h3>6.2. 슬롯(변수) 사용하기</h3>
  <p>슬롯은 시나리오 내에서 정보를 저장하고 재사용하기 위한 변수입니다. <strong>슬롯 채우기</strong> 노드를 통해 받은 사용자 입력이나 <strong>API</strong> 노드의 응답 데이터 등을 슬롯에 저장할 수 있습니다.</p>
  <p>저장된 슬롯 값은 다른 노드(메시지, API, LLM 등)에서 중괄호 표기법(<code>{'{슬롯이름}'}</code>)을 사용하여 불러올 수 있습니다.</p>
  <p><strong>예시:</strong> <code>userName</code>이라는 슬롯에 사용자 이름을 저장했다면, 메시지 노드에서 <code>안녕하세요, {'{userName}'}님!</code> 과 같이 사용할 수 있습니다.</p>
 
- <h3>5.3. API 노드 사용하기</h3>
+ <h3>6.3. API 노드 사용하기</h3>
  <p>API 노드를 사용하면 외부 서버와 동적으로 상호작용할 수 있습니다.</p>
  <ul>
  <li><strong>동적 요청</strong>: 슬롯을 사용하여 동적인 API를 호출할 수 있습니다. URL, Headers, Body 필드에 중괄호 표기법(예: <code>https://api.example.com/users/{'{userId}'}</code>)을 사용하여 이전 사용자 입력이나 다른 API 응답 값을 삽입할 수 있습니다.</li>
@@ -256,7 +278,7 @@ const HelpManual_ko = () => (
  </li>
  </ul>
 
- <h3>5.4. LLM 노드 사용하기</h3>
+ <h3>6.4. LLM 노드 사용하기</h3>
  <p>LLM 노드는 거대 언어 모델에 프롬프트를 보내고, 그 응답을 스트리밍 형태로 보여줍니다. 텍스트와 슬롯 값을 조합하여 동적인 프롬프트를 만들 수 있습니다.</p>
  <ul>
     <li><strong>출력 변수 (Output Variable)</strong>: LLM이 생성한 전체 텍스트를 슬롯에 저장할 수 있습니다. 컨트롤러의 'Output Variable' 필드에 슬롯 이름을 지정하세요.</li>
@@ -278,20 +300,20 @@ const HelpManual_ko = () => (
   <li>"맑음" 핸들은 "좋아요! 화창한 날씨입니다." 라는 메시지 노드로, "비" 핸들은 "우산을 잊지 마세요!" 라는 노드로, "Default" 핸들은 "일기 예보를 알려드릴게요." 라는 노드로 각각 연결합니다.</li>
  </ol>
 
- <h3>5.5. 노드 연결</h3>
+ <h3>6.5. 노드 연결</h3>
  <ul>
  <li>노드의 좌우 가장자리에 있는 연결점을 클릭하여 다른 노드의 연결점으로 드래그하면 대화 흐름을 연결할 수 있습니다.</li>
  <li><strong>조건 분기/고정 메뉴/API/LLM 노드</strong>: 각 버튼(Branch/Menu), 결과(Success/Error), 또는 조건마다 별도의 연결점을 가집니다.</li>
  </ul>
 
- <h3>5.6. 노드 및 연결선 삭제/복제</h3>
+ <h3>6.6. 노드 및 연결선 삭제/복제</h3>
  <ul>
  <li><strong>노드 삭제</strong>: 노드 우측 상단의 <code>x</code> 버튼을 클릭합니다.</li>
  <li><strong>연결선 삭제</strong>: 캔버스에서 삭제하고 싶은 연결선만 클릭하여 선택한 후, 키보드의 <code>Backspace</code> 또는 <code>Delete</code> 키를 누릅니다.</li>
  <li><strong>노드 복제</strong>: 복제하고 싶은 노드를 선택했을 때 좌측 '노드 추가' 패널 하단에 나타나는 <code>+ Duplicate Node</code> 버튼을 클릭합니다.</li>
  </ul>
 
- <h3>5.7. 저장 및 테스트</h3>
+ <h3>6.7. 저장 및 테스트</h3>
  <ul>
  <li><strong>저장</strong>: 화면 우측 상단의 <code><img src="/images/save.png" alt="save" style={{ width: '24px', height: '24px' }}/></code> 아이콘을 클릭하여 현재 작업 중인 시나리오를 서버에 저장합니다.</li>
  <li><strong>테스트</strong>: <code><img src="/images/chat_simulator.png" alt="chatbot" style={{ width: '24px', height: '24px' }}/></code> 아이콘을 클릭하여 시뮬레이터를 열고, 시나리오가 의도한 대로 작동하는지 테스트합니다.</li>
