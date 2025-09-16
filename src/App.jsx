@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { auth, onAuthStateChanged, signOut, db } from './firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import Flow from './Flow';
+import Flow from './Flow'; // 이 부분을 수정합니다.
 import ScenarioList from './ScenarioList';
 import Board from './Board';
 import Login from './Login';
 import HelpModal from './HelpModal';
 import NewScenarioModal from './NewScenarioModal';
-import ApiDocs from './ApiDocs'; // --- 💡 1. ApiDocs 컴포넌트 import ---
+import ApiDocs from './ApiDocs';
 import useStore from './store';
 import './App.css';
 
@@ -128,7 +128,6 @@ function App() {
           <button onClick={() => handleViewChange('board')} className={view === 'board' ? 'active' : ''}>
             Board
           </button>
-          {/* --- 💡 2. API 명세 페이지로 가는 네비게이션 버튼 추가 --- */}
           <button onClick={() => handleViewChange('api')} className={view === 'api' ? 'active' : ''}>
             API Docs
           </button>
@@ -159,7 +158,6 @@ function App() {
             <Board user={user} />
         </div>
 
-        {/* --- 💡 3. view 상태에 따라 ApiDocs 컴포넌트를 렌더링하는 컨테이너 추가 --- */}
         <div className={`view-container ${view !== 'api' ? 'hidden' : ''}`}>
             <ApiDocs />
         </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import ReactFlow, { Controls } from 'reactflow';
+import ReactFlow, { Controls, useReactFlow } from 'reactflow';
 import 'reactflow/dist/style.css';
 
 import MessageNode from './nodes/MessageNode';
@@ -10,7 +10,6 @@ import FormNode from './nodes/FormNode';
 import FixedMenuNode from './nodes/FixedMenuNode';
 import LinkNode from './nodes/LinkNode';
 import LlmNode from './nodes/LlmNode';
-// --- 👇 [추가] ---
 import ToastNode from './nodes/ToastNode';
 import ChatbotSimulator from './ChatbotSimulator';
 import NodeController from './NodeController';
@@ -26,7 +25,6 @@ const nodeTypes = {
   fixedmenu: FixedMenuNode,
   link: LinkNode,
   llm: LlmNode,
-  // --- 👇 [추가] ---
   toast: ToastNode,
 };
 
@@ -43,24 +41,20 @@ function Flow({ scenarioId }) {
     nodes, edges, onNodesChange, onEdgesChange, onConnect, 
     fetchScenario, saveScenario, addNode, selectedNodeId, 
     setSelectedNodeId, duplicateNode, deleteSelectedEdges, 
-    nodeColors, setNodeColor, nodeTextColors, setNodeTextColor 
+    nodeColors, setNodeColor, nodeTextColors, setNodeTextColor,
+    // --- 👇 [추가] ---
+    exportSelectedNodes, importNodes
   } = useStore();
+  
+  // --- 👇 [수정] reactflow 인스턴스에서 선택된 노드 정보를 가져옵니다. ---
+  const { getNodes } = useReactFlow();
+  const selectedNodesCount = getNodes().filter(n => n.selected).length;
 
   const [rightPanelWidth, setRightPanelWidth] = useState(400);
   const [isSimulatorVisible, setIsSimulatorVisible] = useState(false);
   const [isColorSettingsVisible, setIsColorSettingsVisible] = useState(false);
   const [isSimulatorExpanded, setIsSimulatorExpanded] = useState(false);
   
-  const colorInputRefs = {
-    message: useRef(null),
-    form: useRef(null),
-    branch: useRef(null),
-    slotfilling: useRef(null),
-    api: useRef(null),
-    fixedmenu: useRef(null),
-    link: useRef(null),
-  };
-
   useEffect(() => {
     if (scenarioId) {
       fetchScenario(scenarioId);
@@ -120,7 +114,6 @@ function Flow({ scenarioId }) {
     { type: 'llm', label: '+ LLM' },
     { type: 'fixedmenu', label: '+ Fixed Menu' },
     { type: 'link', label: '+ Link' },
-    // --- 👇 [추가] ---
     { type: 'toast', label: '+ Toast' },
   ];
 
@@ -169,6 +162,16 @@ function Flow({ scenarioId }) {
                 {label}
             </button>
         ))}
+        
+        {/* --- 👇 [수정/추가된 부분 시작] --- */}
+        <div className={styles.separator} />
+        <button onClick={importNodes} className={styles.sidebarButton} style={{backgroundColor: '#555', color: 'white'}}>
+          Import Nodes
+        </button>
+        <button onClick={exportSelectedNodes} className={styles.sidebarButton} disabled={selectedNodesCount === 0} style={{backgroundColor: '#555', color: 'white'}}>
+          Export Nodes ({selectedNodesCount})
+        </button>
+        {/* --- 👆 [여기까지] --- */}
 
         {selectedNodeId && (
           <>
@@ -230,4 +233,15 @@ function Flow({ scenarioId }) {
   );
 }
 
-export default Flow;
+// --- 👇 [수정] ReactFlowProvider로 감싸줍니다. ---
+import { ReactFlowProvider } from 'reactflow';
+
+function FlowWithProvider(props) {
+  return (
+    <ReactFlowProvider>
+      <Flow {...props} />
+    </ReactFlowProvider>
+  );
+}
+
+export default FlowWithProvider;

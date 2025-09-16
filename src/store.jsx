@@ -17,7 +17,6 @@ const defaultColors = {
   fixedmenu: '#e74c3c',
   link: '#34495e',
   llm: '#1abc9c',
-  // --- 👇 [추가] ---
   toast: '#95a5a6',
 };
 
@@ -30,7 +29,6 @@ const defaultTextColors = {
   fixedmenu: '#ffffff',
   link: '#ffffff',
   llm: '#ffffff',
-  // --- 👇 [추가] ---
   toast: '#ffffff',
 }
 
@@ -328,6 +326,82 @@ const useStore = create((set, get) => ({
       }),
     }));
   },
+
+  // --- 👇 [추가된 부분 시작] ---
+  exportSelectedNodes: () => {
+    const { nodes, edges } = get();
+    const selectedNodes = nodes.filter(n => n.selected);
+    const selectedNodeIds = new Set(selectedNodes.map(n => n.id));
+    
+    const relevantEdges = edges.filter(e => 
+      selectedNodeIds.has(e.source) && selectedNodeIds.has(e.target)
+    );
+
+    const dataToExport = {
+      nodes: selectedNodes,
+      edges: relevantEdges,
+    };
+
+    navigator.clipboard.writeText(JSON.stringify(dataToExport, null, 2))
+      .then(() => alert(`${selectedNodes.length} nodes exported to clipboard!`))
+      .catch(err => console.error('Failed to export nodes: ', err));
+  },
+
+  importNodes: async () => {
+    try {
+      const clipboardText = await navigator.clipboard.readText();
+      const dataToImport = JSON.parse(clipboardText);
+
+      if (!dataToImport.nodes || !Array.isArray(dataToImport.nodes)) {
+        throw new Error('Invalid data format in clipboard.');
+      }
+
+      const { nodes: currentNodes, edges: currentEdges } = get();
+      const idMapping = new Map();
+
+      const newNodes = dataToImport.nodes.map((node, index) => {
+        const oldId = node.id;
+        const newId = `${node.type}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}-${index}`;
+        idMapping.set(oldId, newId);
+        
+        return {
+          ...node,
+          id: newId,
+          position: {
+            x: node.position.x + 20,
+            y: node.position.y + 20,
+          },
+          selected: false,
+        };
+      });
+
+      const newEdges = (dataToImport.edges || []).map(edge => {
+        const newSource = idMapping.get(edge.source);
+        const newTarget = idMapping.get(edge.target);
+        if (newSource && newTarget) {
+          return {
+            ...edge,
+            id: `reactflow__edge-${newSource}${edge.sourceHandle || ''}-${newTarget}${edge.targetHandle || ''}`,
+            source: newSource,
+            target: newTarget,
+          };
+        }
+        return null;
+      }).filter(Boolean);
+
+      set({
+        nodes: [...currentNodes, ...newNodes],
+        edges: [...currentEdges, ...newEdges],
+      });
+
+      alert(`${newNodes.length} nodes imported successfully!`);
+
+    } catch (err) {
+      console.error('Failed to import nodes: ', err);
+      alert('Failed to import nodes from clipboard. Check console for details.');
+    }
+  },
+  // --- 👆 [여기까지] ---
 
   fetchScenario: async (scenarioId) => {
     if (!scenarioId) return;
