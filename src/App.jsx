@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { auth, onAuthStateChanged, signOut, db } from './firebase';
-import { doc, setDoc } from 'firebase/firestore';
-import Flow from './Flow'; // 이 부분을 수정합니다.
+import { auth, onAuthStateChanged, signOut } from './firebase';
+import Flow from './Flow';
 import ScenarioList from './ScenarioList';
 import Board from './Board';
 import Login from './Login';
@@ -21,6 +20,11 @@ function App() {
   const [isNewScenarioModalOpen, setIsNewScenarioModalOpen] = useState(false);
   const fetchNodeColors = useStore((state) => state.fetchNodeColors);
   const fetchNodeTextColors = useStore((state) => state.fetchNodeTextColors);
+
+  const API_BASE_URL = 'http://202.20.84.65:8082/api/v1/chat/scenarios';
+  const TENANT_ID = '1000';
+  const STAGE_ID = 'DEV';
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -68,24 +72,44 @@ function App() {
     setIsNewScenarioModalOpen(true);
   };
 
+  // --- 💡 수정된 부분 시작 ---
   const handleCreateScenario = async (newScenarioName) => {
-    if (scenarios.includes(newScenarioName)) {
+    if (scenarios.some(s => s.name === newScenarioName)) {
       alert("A scenario with that name already exists. Please choose a different name.");
       return;
     }
-    const newScenarioRef = doc(db, "scenarios", newScenarioName);
     try {
-      await setDoc(newScenarioRef, { nodes: [], edges: [] });
-      alert(`Scenario '${newScenarioName}' has been created.`);
-      setScenarios(prev => [...prev, newScenarioName]);
-      setSelectedScenario(newScenarioName);
+      const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          category_id : '111',
+          name: newScenarioName,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        // FastAPI의 상세한 유효성 검사 오류 메시지를 표시하도록 수정
+        const errorMessage = errorData.detail ? JSON.stringify(errorData.detail) : `HTTP error! status: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+      
+      const newScenario = await response.json();
+
+      alert(`Scenario '${newScenario.name}' has been created.`);
+      setScenarios(prev => [...prev, newScenario]);
+      setSelectedScenario(newScenario.id);
       setView('flow');
       setIsNewScenarioModalOpen(false);
     } catch (error) {
       console.error("Error creating new scenario: ", error);
-      alert("Failed to create scenario.");
+      alert(`Failed to create scenario: ${error.message}`);
     }
   };
+  // --- 💡 수정된 부분 끝 ---
 
 
   const handleViewChange = (targetView) => {
