@@ -153,7 +153,27 @@ const HelpManual = () => (
  <li><strong>Duplicate Node</strong>: Click the <code>+ Duplicate Node</code> button that appears at the bottom of the left 'Add Node' panel when you select the node you want to duplicate.</li>
  </ul>
 
- <h3>6.7. Save and Test</h3>
+{/* --- 💡 [수정] 추가된 부분 --- */}
+ <h3>6.7. Node Export/Import</h3>
+  <p>You can copy nodes from one scenario and paste them into another, making it easy to reuse complex flows.</p>
+  <ul>
+    <li><strong>Export Nodes</strong>:
+      <ol>
+        <li>On the canvas, select one or more nodes you wish to copy. You can select multiple nodes by holding down the <code>Shift</code> key and clicking on them.</li>
+        <li>In the left 'Add Node' panel, click the <code>Export Nodes</code> button.</li>
+        <li>The selected nodes and their connections will be copied to your clipboard.</li>
+      </ol>
+    </li>
+    <li><strong>Import Nodes</strong>:
+      <ol>
+        <li>Navigate to the scenario where you want to paste the nodes.</li>
+        <li>In the left panel, click the <code>Import Nodes</code> button.</li>
+        <li>The nodes from your clipboard will be pasted onto the canvas.</li>
+      </ol>
+    </li>
+  </ul>
+
+ <h3>6.8. Save and Test</h3>
  <ul>
  <li><strong>Save</strong>: Click the <code><img src="/images/save.png" alt="save" style={{ width: '24px', height: '24px' }}/></code> icon in the top right of the screen to save the current scenario you're working on to the server.</li>
  <li><strong>Test</strong>: Click the <code><img src="/images/chat_simulator.png" alt="chatbot" style={{ width: '24px', height: '24px' }}/></code> icon to open the simulator and test whether the scenario works as intended.</li>
@@ -312,8 +332,28 @@ const HelpManual_ko = () => (
  <li><strong>연결선 삭제</strong>: 캔버스에서 삭제하고 싶은 연결선만 클릭하여 선택한 후, 키보드의 <code>Backspace</code> 또는 <code>Delete</code> 키를 누릅니다.</li>
  <li><strong>노드 복제</strong>: 복제하고 싶은 노드를 선택했을 때 좌측 '노드 추가' 패널 하단에 나타나는 <code>+ Duplicate Node</code> 버튼을 클릭합니다.</li>
  </ul>
+ 
+ {/* --- 💡 [수정] 추가된 부분 --- */}
+ <h3>6.7. 노드 내보내기/가져오기</h3>
+ <p>특정 시나리오에서 만든 노드들을 복사하여 다른 시나리오에 붙여넣을 수 있습니다. 복잡한 흐름을 재사용할 때 유용합니다.</p>
+ <ul>
+  <li><strong>노드 내보내기 (Export)</strong>:
+   <ol>
+    <li>캔버스에서 복사하고 싶은 노드를 하나 이상 선택합니다. <code>Shift</code> 키를 누른 채 클릭하면 여러 노드를 선택할 수 있습니다.</li>
+    <li>왼쪽 '노드 추가' 패널에서 <code>Export Nodes</code> 버튼을 클릭합니다.</li>
+    <li>선택된 노드와 노드 간의 연결선 정보가 클립보드에 복사됩니다.</li>
+   </ol>
+  </li>
+  <li><strong>노드 가져오기 (Import)</strong>:
+   <ol>
+    <li>노드를 붙여넣고 싶은 시나리오의 편집 화면으로 이동합니다.</li>
+    <li>왼쪽 패널에서 <code>Import Nodes</code> 버튼을 클릭합니다.</li>
+    <li>클립보드에 있던 노드들이 캔버스에 붙여넣어집니다.</li>
+   </ol>
+  </li>
+ </ul>
 
- <h3>6.7. 저장 및 테스트</h3>
+ <h3>6.8. 저장 및 테스트</h3>
  <ul>
  <li><strong>저장</strong>: 화면 우측 상단의 <code><img src="/images/save.png" alt="save" style={{ width: '24px', height: '24px' }}/></code> 아이콘을 클릭하여 현재 작업 중인 시나리오를 서버에 저장합니다.</li>
  <li><strong>테스트</strong>: <code><img src="/images/chat_simulator.png" alt="chatbot" style={{ width: '24px', height: '24px' }}/></code> 아이콘을 클릭하여 시뮬레이터를 열고, 시나리오가 의도한 대로 작동하는지 테스트합니다.</li>
