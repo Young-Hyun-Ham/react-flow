@@ -16,7 +16,7 @@ React와 React Flow 라이브러리를 기반으로 제작된 시각적 챗봇 �
 
 ## 📸 스크린샷 (Screenshot)
 
-![Chatbot Scenario Editor Screenshot](/images/screenshot.jpg)
+![Chatbot Scenario Editor Screenshot](/public/images/screenshot.jpg)
 
 ---
 
