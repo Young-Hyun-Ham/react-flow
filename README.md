@@ -14,6 +14,12 @@ React와 React Flow 라이브러리를 기반으로 제작된 시각적 챗봇 �
 
 ---
 
+<!-- ## 📸 스크린샷 (Screenshot)
+
+![Chatbot Scenario Editor Screenshot](/public/images/screenshot.jpg)
+
+--- -->
+
 ## 🖥️ Flow Editor 화면 구성
 
 -   **노드 추가 패널 (좌측)**: 시나리오를 구성하는 다양한 종류의 노드를 캔버스에 추가합니다.
