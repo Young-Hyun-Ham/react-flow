@@ -164,17 +164,17 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange, o
       <div className={styles.formGroup}>
         <label>default value(Optional)</label>
         {element.type === 'checkbox' ? (
-          <input 
-            type="text" 
+          <input
+            type="text"
             value={(element.defaultValue || []).join(',')}
             onChange={(e) => handleUpdate('defaultValue', e.target.value.split(','))}
             placeholder="e.g.,Option1,Option2"
           />
         ) : (
-          <input 
-            type="text" 
-            value={element.defaultValue || ''} 
-            onChange={(e) => handleUpdate('defaultValue', e.target.value)} 
+          <input
+            type="text"
+            value={element.defaultValue || ''}
+            onChange={(e) => handleUpdate('defaultValue', e.target.value)}
           />
         )}
       </div>
@@ -459,7 +459,7 @@ function NodeController() {
       </>
     );
   };
-  
+
   const renderApiControls = () => {
     const { data } = localNode;
 
@@ -542,7 +542,7 @@ function NodeController() {
       newConditions[index] = { ...newConditions[index], keyword: value };
       handleLocalDataChange('conditions', newConditions);
     };
-  
+
     const addCondition = () => {
       const newCondition = {
         id: `cond-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
@@ -551,7 +551,7 @@ function NodeController() {
       const newConditions = [...(data.conditions || []), newCondition];
       handleLocalDataChange('conditions', newConditions);
     };
-  
+
     const deleteCondition = (index) => {
       const newConditions = (data.conditions || []).filter((_, i) => i !== index);
       handleLocalDataChange('conditions', newConditions);
@@ -600,23 +600,22 @@ function NodeController() {
     );
   };
 
-  // --- 👇 [추가된 부분] ---
   const renderToastControls = () => {
     const { data } = localNode;
     return (
         <>
             <div className={styles.formGroup}>
                 <label>Toast Message</label>
-                <textarea 
-                    value={data.message || ''} 
-                    onChange={(e) => handleLocalDataChange('message', e.target.value)} 
+                <textarea
+                    value={data.message || ''}
+                    onChange={(e) => handleLocalDataChange('message', e.target.value)}
                     rows={4}
                 />
             </div>
             <div className={styles.formGroup}>
                 <label>Toast Type</label>
-                <select 
-                    value={data.toastType || 'info'} 
+                <select
+                    value={data.toastType || 'info'}
                     onChange={(e) => handleLocalDataChange('toastType', e.target.value)}
                 >
                     <option value="info">Info</option>
@@ -625,6 +624,41 @@ function NodeController() {
                 </select>
             </div>
         </>
+    );
+  };
+  
+  // --- 💡 [추가된 부분 시작] ---
+  const renderIframeControls = () => {
+    const { data } = localNode;
+    return (
+      <>
+        <div className={styles.formGroup}>
+          <label>URL</label>
+          <textarea
+            value={data.url || ''}
+            onChange={(e) => handleLocalDataChange('url', e.target.value)}
+            rows={3}
+          />
+        </div>
+        <div className={styles.gridControls}>
+            <div className={styles.formGroup}>
+                <label>Width (px)</label>
+                <input
+                    type="number"
+                    value={data.width || ''}
+                    onChange={(e) => handleLocalDataChange('width', e.target.value)}
+                />
+            </div>
+            <div className={styles.formGroup}>
+                <label>Height (px)</label>
+                <input
+                    type="number"
+                    value={data.height || ''}
+                    onChange={(e) => handleLocalDataChange('height', e.target.value)}
+                />
+            </div>
+        </div>
+      </>
     );
   };
   // --- 👆 [여기까지] ---
@@ -693,9 +727,11 @@ function NodeController() {
         return renderApiControls();
       case 'llm':
         return renderLlmControls();
-      // --- 👇 [추가] ---
       case 'toast':
         return renderToastControls();
+      // --- 💡 [수정] iframe case 추가 ---
+      case 'iframe':
+        return renderIframeControls();
       default:
         return renderDefaultControls();
     }

@@ -39,12 +39,19 @@ export const createNodeData = (type) => {
         outputVar: 'llm_output',
         conditions: [] 
       };
-    // --- 👇 [추가된 부분] ---
     case 'toast':
       return {
         ...baseData,
         message: 'This is a toast message.',
         toastType: 'info' // info, success, error
+      };
+    // --- 💡 [추가된 부분] ---
+    case 'iframe':
+      return {
+        ...baseData,
+        url: 'https://www.example.com',
+        width: '250',
+        height: '200'
       };
     // --- 👆 [여기까지] ---
     default:

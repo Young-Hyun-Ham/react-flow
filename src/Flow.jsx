@@ -11,6 +11,7 @@ import FixedMenuNode from './nodes/FixedMenuNode';
 import LinkNode from './nodes/LinkNode';
 import LlmNode from './nodes/LlmNode';
 import ToastNode from './nodes/ToastNode';
+import IframeNode from './nodes/IframeNode'; // --- 💡 [추가] ---
 import ChatbotSimulator from './ChatbotSimulator';
 import NodeController from './NodeController';
 import useStore from './store';
@@ -26,6 +27,7 @@ const nodeTypes = {
   link: LinkNode,
   llm: LlmNode,
   toast: ToastNode,
+  iframe: IframeNode, // --- 💡 [추가] ---
 };
 
 const SettingsIcon = () => (
@@ -113,6 +115,7 @@ function Flow({ scenario, backend }) {
     { type: 'fixedmenu', label: '+ Fixed Menu' },
     { type: 'link', label: '+ Link' },
     { type: 'toast', label: '+ Toast' },
+    { type: 'iframe', label: '+ iFrame' }, // --- 💡 [추가] ---
   ];
 
   return (
@@ -181,11 +184,9 @@ function Flow({ scenario, backend }) {
 
       <div className={styles.mainContent}>
         <div className={styles.topRightControls}>
-          {/* --- 💡 수정된 부분 시작 --- */}
           <div onClick={() => saveScenario(backend, scenario)}>
             <img src="/images/save.png" alt="Save Icon" className={styles.saveButton}/>
           </div>
-          {/* --- 💡 수정된 부분 끝 --- */}
           <div onClick={() => setIsSimulatorVisible(!isSimulatorVisible)}>
             <img src="/images/chat_simulator.png" alt="Simulator Icon" className={!isSimulatorVisible ? styles.botButtonHidden : styles.botButton}/>
           </div>

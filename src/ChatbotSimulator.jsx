@@ -43,7 +43,7 @@ const validateInput = (value, validation) => {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
       const selectedDateAfter = new Date(value);
       const todayAfter = new Date();
-      todayAfter.setHours(0, 0, 0, 0); 
+      todayAfter.setHours(0, 0, 0, 0);
       return selectedDateAfter >= todayAfter;
     case 'today before':
       if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -129,6 +129,51 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
     }
   }, [history]);
 
+  const proceedToNextNode = useCallback((sourceHandleId, sourceNodeId, updatedSlots) => {
+    if (!sourceNodeId) return;
+    
+    const sourceNode = nodes.find(n => n.id === sourceNodeId);
+    let nextEdge;
+
+    if (sourceNode && sourceNode.type === 'llm' && sourceNode.data.conditions?.length > 0) {
+        const llmOutput = updatedSlots[sourceNode.data.outputVar] || '';
+        
+        const matchedCondition = sourceNode.data.conditions.find(cond => 
+            llmOutput.toLowerCase().includes(cond.keyword.toLowerCase())
+        );
+
+        if (matchedCondition) {
+            nextEdge = edges.find(edge => edge.source === sourceNodeId && edge.sourceHandle === matchedCondition.id);
+        }
+    }
+
+    if (!nextEdge) {
+        if (sourceHandleId) {
+            nextEdge = edges.find(
+              (edge) => edge.source === sourceNodeId && edge.sourceHandle === sourceHandleId
+            );
+        } else {
+            nextEdge = edges.find((edge) => edge.source === sourceNodeId && edge.sourceHandle === 'default') || 
+                       edges.find((edge) => edge.source === sourceNodeId && !edge.sourceHandle);
+        }
+    }
+
+    if (nextEdge) {
+      const nextNode = nodes.find((node) => node.id === nextEdge.target);
+      if (nextNode) {
+        setCurrentId(nextNode.id);
+        setTimeout(() => addBotMessage(nextNode.id, updatedSlots), 500);
+      }
+    } else {
+      const sourceNode = nodes.find(n => n.id === sourceNodeId);
+      if(sourceNode?.type !== 'fixedmenu' && sourceNode?.type !== 'branch' && sourceNode?.type !== 'api') {
+        setTimeout(() => {
+          setCurrentId(null);
+        }, 500);
+      }
+    }
+  }, [edges, nodes]);
+
   const addBotMessage = useCallback((nodeId, updatedSlots) => {
     const node = nodes.find(n => n.id === nodeId);
     if (node) {
@@ -180,54 +225,9 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
       }
       
       const isInteractive = node.type === 'form' || (node.type === 'branch' && node.data.replies?.length > 0) || node.type === 'slotfilling';
-      setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: !isInteractive, id: Date.now() }]);
+      setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: !isInteractive || node.type === 'iframe', id: Date.now() }]);
     }
-  }, [nodes]);
-
-  const proceedToNextNode = useCallback((sourceHandleId, sourceNodeId, updatedSlots) => {
-    if (!sourceNodeId) return;
-    
-    const sourceNode = nodes.find(n => n.id === sourceNodeId);
-    let nextEdge;
-
-    if (sourceNode && sourceNode.type === 'llm' && sourceNode.data.conditions?.length > 0) {
-        const llmOutput = updatedSlots[sourceNode.data.outputVar] || '';
-        
-        const matchedCondition = sourceNode.data.conditions.find(cond => 
-            llmOutput.toLowerCase().includes(cond.keyword.toLowerCase())
-        );
-
-        if (matchedCondition) {
-            nextEdge = edges.find(edge => edge.source === sourceNodeId && edge.sourceHandle === matchedCondition.id);
-        }
-    }
-
-    if (!nextEdge) {
-        if (sourceHandleId) {
-            nextEdge = edges.find(
-              (edge) => edge.source === sourceNodeId && edge.sourceHandle === sourceHandleId
-            );
-        } else {
-            nextEdge = edges.find((edge) => edge.source === sourceNodeId && edge.sourceHandle === 'default') || 
-                       edges.find((edge) => edge.source === sourceNodeId && !edge.sourceHandle);
-        }
-    }
-
-    if (nextEdge) {
-      const nextNode = nodes.find((node) => node.id === nextEdge.target);
-      if (nextNode) {
-        setCurrentId(nextNode.id);
-        setTimeout(() => addBotMessage(nextNode.id, updatedSlots), 500);
-      }
-    } else {
-      const sourceNode = nodes.find(n => n.id === sourceNodeId);
-      if(sourceNode?.type !== 'fixedmenu' && sourceNode?.type !== 'branch' && sourceNode?.type !== 'api') {
-        setTimeout(() => {
-          setCurrentId(null);
-        }, 500);
-      }
-    }
-  }, [edges, nodes, addBotMessage]);
+  }, [nodes, proceedToNextNode]);
 
   const handleApiNode = useCallback(async (node, currentSlots) => {
     const loadingId = Date.now();
@@ -359,7 +359,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
 
   useEffect(() => {
     const node = nodes.find(n => n.id === currentId);
-    if (node && (node.type === 'message')) {
+    if (node && (node.type === 'message' || node.type === 'iframe')) { // --- 💡 [수정] iframe 노드도 자동 진행되도록 ---
       const nextEdge = edges.find((edge) => edge.source === node.id && !edge.sourceHandle);
       if (nextEdge) {
         const nextNode = nodes.find((n) => n.id === nextEdge.target);
@@ -533,6 +533,23 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
           if (item.type === 'bot' && item.nodeId) {
             const node = nodes.find(n => n.id === item.nodeId);
             if (!node) return null;
+
+            if (node.type === 'iframe') {
+              return (
+                <div key={item.id || index} className={styles.messageRow}>
+                  <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
+                  <div className={`${styles.message} ${styles.botMessage} ${styles.iframeContainer}`}>
+                    <iframe
+                      src={interpolateMessage(node.data.url, slots)}
+                      width={node.data.width || '100%'}
+                      height={node.data.height || '250'}
+                      style={{ border: 'none', borderRadius: '18px' }}
+                      title="chatbot-iframe"
+                    ></iframe>
+                  </div>
+                </div>
+              );
+            }
 
             if (node.type === 'link') {
               return (

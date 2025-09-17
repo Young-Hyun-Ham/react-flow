@@ -19,6 +19,7 @@ const defaultColors = {
   link: '#34495e',
   llm: '#1abc9c',
   toast: '#95a5a6',
+  iframe: '#2c3e50',
 };
 
 const defaultTextColors = {
@@ -31,6 +32,7 @@ const defaultTextColors = {
   link: '#ffffff',
   llm: '#ffffff',
   toast: '#ffffff',
+  iframe: '#ffffff',
 }
 
 const useStore = create((set, get) => ({
