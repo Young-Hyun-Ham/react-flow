@@ -8,6 +8,7 @@ import HelpModal from './HelpModal';
 import NewScenarioModal from './NewScenarioModal';
 import ApiDocs from './ApiDocs';
 import useStore from './store';
+import * as backendService from './backendService';
 import './App.css';
 
 function App() {
@@ -18,13 +19,10 @@ function App() {
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [scenarios, setScenarios] = useState([]);
   const [isNewScenarioModalOpen, setIsNewScenarioModalOpen] = useState(false);
+  const [backend, setBackend] = useState('fastapi'); // 'firebase' or 'fastapi'
+
   const fetchNodeColors = useStore((state) => state.fetchNodeColors);
   const fetchNodeTextColors = useStore((state) => state.fetchNodeTextColors);
-
-  const API_BASE_URL = 'http://202.20.84.65:8082/api/v1/chat/scenarios';
-  const TENANT_ID = '1000';
-  const STAGE_ID = 'DEV';
-
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -63,8 +61,8 @@ function App() {
     }
   };
 
-  const handleScenarioSelect = (scenarioId) => {
-    setSelectedScenario(scenarioId);
+  const handleScenarioSelect = (scenario) => {
+    setSelectedScenario(scenario);
     setView('flow');
   };
   
@@ -72,36 +70,16 @@ function App() {
     setIsNewScenarioModalOpen(true);
   };
 
-  // --- 💡 수정된 부분 시작 ---
   const handleCreateScenario = async (newScenarioName) => {
     if (scenarios.some(s => s.name === newScenarioName)) {
       alert("A scenario with that name already exists. Please choose a different name.");
       return;
     }
     try {
-      const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          category_id : '111',
-          name: newScenarioName,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        // FastAPI의 상세한 유효성 검사 오류 메시지를 표시하도록 수정
-        const errorMessage = errorData.detail ? JSON.stringify(errorData.detail) : `HTTP error! status: ${response.status}`;
-        throw new Error(errorMessage);
-      }
-      
-      const newScenario = await response.json();
-
+      const newScenario = await backendService.createScenario(backend, { newScenarioName });
       alert(`Scenario '${newScenario.name}' has been created.`);
       setScenarios(prev => [...prev, newScenario]);
-      setSelectedScenario(newScenario.id);
+      setSelectedScenario(newScenario);
       setView('flow');
       setIsNewScenarioModalOpen(false);
     } catch (error) {
@@ -109,8 +87,6 @@ function App() {
       alert(`Failed to create scenario: ${error.message}`);
     }
   };
-  // --- 💡 수정된 부분 끝 ---
-
 
   const handleViewChange = (targetView) => {
     if (targetView === 'flow') {
@@ -157,6 +133,15 @@ function App() {
           </button>
         </nav>
         <div className="user-profile">
+          {/* Backend Switch */}
+          <div className="backend-switch">
+            <span>Firebase</span>
+            <label className="switch">
+              <input type="checkbox" checked={backend === 'fastapi'} onChange={() => setBackend(prev => prev === 'firebase' ? 'fastapi' : 'firebase')} />
+              <span className="slider round"></span>
+            </label>
+            <span>FastAPI</span>
+          </div>
           <img src={user.photoURL} alt={user.displayName} className="user-avatar" />
           <span>{user.displayName}</span>
           <button onClick={handleLogout} className="logout-button">Logout</button>
@@ -165,6 +150,7 @@ function App() {
       <main className="app-main">
         <div className={`view-container ${view !== 'list' ? 'hidden' : ''}`}>
             <ScenarioList 
+                backend={backend}
                 onSelect={handleScenarioSelect} 
                 onAddScenario={handleAddNewScenario}
                 scenarios={scenarios}
@@ -174,7 +160,7 @@ function App() {
         
         {selectedScenario && (
             <div className={`view-container ${view !== 'flow' ? 'hidden' : ''}`}>
-                <Flow scenarioId={selectedScenario} />
+                <Flow scenario={selectedScenario} backend={backend} />
             </div>
         )}
         

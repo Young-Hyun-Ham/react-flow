@@ -7,6 +7,7 @@ import {
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from './firebase';
 import { createNodeData } from './nodeFactory';
+import * as backendService from './backendService';
 
 const defaultColors = {
   message: '#f39c12',
@@ -327,7 +328,6 @@ const useStore = create((set, get) => ({
     }));
   },
 
-  // --- 👇 [추가된 부분 시작] ---
   exportSelectedNodes: () => {
     const { nodes, edges } = get();
     const selectedNodes = nodes.filter(n => n.selected);
@@ -402,19 +402,9 @@ const useStore = create((set, get) => ({
     }
   },
   
-  // --- 👇 [FastAPI 연동 부분 시작] ---
-  fetchScenario: async (scenarioId) => {
-    if (!scenarioId) return;
-    const TENANT_ID = '1000';
-    const STAGE_ID = 'DEV';
-    const API_URL = `http://202.20.84.65:8082/api/v1/chat/scenarios/${TENANT_ID}/${STAGE_ID}/${scenarioId}`;
-    
+  fetchScenario: async (backend, scenarioId) => {
     try {
-      const response = await fetch(API_URL);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
+      const data = await backendService.fetchScenarioData(backend, { scenarioId });
       set({ nodes: data.nodes || [], edges: data.edges || [], selectedNodeId: null });
     } catch (error) {
       console.error("Error fetching scenario:", error);
@@ -423,48 +413,21 @@ const useStore = create((set, get) => ({
     }
   },
 
-  saveScenario: async (scenarioId) => {
-    if (!scenarioId) {
-      alert('No scenario selected to save.');
-      return;
-    }
-    const TENANT_ID = '1000';
-    const STAGE_ID = 'DEV';
-    const API_BASE_URL = 'http://202.20.84.65:8082/api/v1/chat/scenarios';
+  // --- 💡 수정된 부분 시작 ---
+  saveScenario: async (backend, scenario) => {
     try {
       const { nodes, edges } = get();
-      // App.jsx의 scenarios 상태에서 현재 시나리오 이름을 찾아야 하지만,
-      // store에서는 직접 접근할 수 없으므로 우선 'name' 필드는 제외하고 요청합니다.
-      // 만약 이름 변경도 여기서 처리해야 한다면, saveScenario 호출 시 이름을 함께 넘겨받아야 합니다.
-      const payload = {
-        ten_id: TENANT_ID,
-        stg_id: STAGE_ID,
-        category_id: "111", // 필수 필드로 가정하고 추가
-        // name: "Scenario Name", // 이름은 PUT 요청 시 제외하거나, App.jsx에서 가져와야 함
-        nodes,
-        edges,
-      };
-
-      const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}/${scenarioId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
+      await backendService.saveScenarioData(backend, {
+        scenario,
+        data: { nodes, edges },
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail ? JSON.stringify(errorData.detail) : `HTTP error! status: ${response.status}`);
-      }
-      
       alert(`Scenario has been saved successfully!`);
     } catch (error) {
       console.error("Error saving scenario:", error);
       alert(`Failed to save scenario: ${error.message}`);
     }
   },
-   // --- 👆 [FastAPI 연동 부분 끝] ---
+  // --- 💡 수정된 부분 끝 ---
 }));
 
 export default useStore;

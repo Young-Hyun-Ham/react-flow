@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import * as backendService from './backendService';
 
 const styles = {
   container: {
@@ -49,19 +50,14 @@ const styles = {
   }
 };
 
-function ScenarioList({ onSelect, onAddScenario, scenarios, setScenarios }) {
+function ScenarioList({ backend, onSelect, onAddScenario, scenarios, setScenarios }) {
   const [loading, setLoading] = useState(true);
-  const API_BASE_URL = 'http://202.20.84.65:8082/api/v1/chat/scenarios/1000/DEV';
 
   useEffect(() => {
-    const fetchScenarios = async () => {
+    const fetchAndSetScenarios = async () => {
+      setLoading(true);
       try {
-        const response = await fetch(API_BASE_URL);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        const scenarioList = data.scenarios || data; 
+        const scenarioList = await backendService.fetchScenarios(backend);
         setScenarios(scenarioList);
       } catch (error) {
         console.error("Error fetching scenarios:", error);
@@ -71,8 +67,8 @@ function ScenarioList({ onSelect, onAddScenario, scenarios, setScenarios }) {
       }
     };
 
-    fetchScenarios();
-  }, [setScenarios]);
+    fetchAndSetScenarios();
+  }, [backend, setScenarios]);
 
   const handleRenameScenario = async (oldScenario) => {
     const newName = prompt("Enter the new scenario name:", oldScenario.name);
@@ -82,17 +78,7 @@ function ScenarioList({ onSelect, onAddScenario, scenarios, setScenarios }) {
         return;
       }
       try {
-        const response = await fetch(`${API_BASE_URL}/${oldScenario.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: newName })
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail ? JSON.stringify(errorData.detail) : 'Failed to rename scenario');
-        }
-        
+        await backendService.renameScenario(backend, { oldScenario, newName });
         setScenarios(prev => prev.map(s => (s.id === oldScenario.id ? { ...s, name: newName } : s)));
         alert("Scenario renamed successfully.");
       } catch (error) {
@@ -102,26 +88,10 @@ function ScenarioList({ onSelect, onAddScenario, scenarios, setScenarios }) {
     }
   };
 
-  // --- 💡 수정된 부분: 시나리오 삭제 API 연동 로직 ---
   const handleDeleteScenario = async (scenarioId) => {
     if (window.confirm(`Are you sure you want to delete this scenario?`)) {
       try {
-        const response = await fetch(`${API_BASE_URL}/${scenarioId}`, {
-          method: 'DELETE',
-        });
-        
-        if (!response.ok) {
-            // DELETE 요청은 본문이 없을 수 있으므로, 에러 처리 분기
-            let errorDetail = `HTTP error! status: ${response.status}`;
-            try {
-                const errorData = await response.json();
-                errorDetail = errorData.detail ? JSON.stringify(errorData.detail) : errorDetail;
-            } catch (e) {
-                // JSON 파싱 실패 시, 상태 코드로 오류 메시지 설정
-            }
-            throw new Error(errorDetail);
-        }
-        
+        await backendService.deleteScenario(backend, { scenarioId });
         setScenarios(prev => prev.filter(s => s.id !== scenarioId));
         alert("Scenario deleted successfully.");
       } catch (error) {
@@ -142,7 +112,7 @@ function ScenarioList({ onSelect, onAddScenario, scenarios, setScenarios }) {
         {scenarios.map(scenario => (
           <li key={scenario.id} style={styles.listItem}>
             <span
-                onClick={() => onSelect(scenario.id)}
+                onClick={() => onSelect(scenario)}
                 style={styles.scenarioName}
                 onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'}
                 onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'}

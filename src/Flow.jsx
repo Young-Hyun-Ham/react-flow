@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import ReactFlow, { Controls, useReactFlow } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -36,17 +36,15 @@ const SettingsIcon = () => (
     </svg>
 );
 
-function Flow({ scenarioId }) {
+function Flow({ scenario, backend }) {
   const { 
     nodes, edges, onNodesChange, onEdgesChange, onConnect, 
     fetchScenario, saveScenario, addNode, selectedNodeId, 
     setSelectedNodeId, duplicateNode, deleteSelectedEdges, 
     nodeColors, setNodeColor, nodeTextColors, setNodeTextColor,
-    // --- 👇 [추가] ---
     exportSelectedNodes, importNodes
   } = useStore();
   
-  // --- 👇 [수정] reactflow 인스턴스에서 선택된 노드 정보를 가져옵니다. ---
   const { getNodes } = useReactFlow();
   const selectedNodesCount = getNodes().filter(n => n.selected).length;
 
@@ -56,10 +54,10 @@ function Flow({ scenarioId }) {
   const [isSimulatorExpanded, setIsSimulatorExpanded] = useState(false);
   
   useEffect(() => {
-    if (scenarioId) {
-      fetchScenario(scenarioId);
+    if (scenario) {
+      fetchScenario(backend, scenario.id);
     }
-  }, [scenarioId, fetchScenario]);
+  }, [scenario, backend, fetchScenario]);
 
   const handleNodeClick = (event, node) => {
     setSelectedNodeId(node.id);
@@ -163,7 +161,6 @@ function Flow({ scenarioId }) {
             </button>
         ))}
         
-        {/* --- 👇 [수정/추가된 부분 시작] --- */}
         <div className={styles.separator} />
         <button onClick={importNodes} className={styles.sidebarButton} style={{backgroundColor: '#555', color: 'white'}}>
           Import Nodes
@@ -171,7 +168,6 @@ function Flow({ scenarioId }) {
         <button onClick={exportSelectedNodes} className={styles.sidebarButton} disabled={selectedNodesCount === 0} style={{backgroundColor: '#555', color: 'white'}}>
           Export Nodes ({selectedNodesCount})
         </button>
-        {/* --- 👆 [여기까지] --- */}
 
         {selectedNodeId && (
           <>
@@ -185,9 +181,11 @@ function Flow({ scenarioId }) {
 
       <div className={styles.mainContent}>
         <div className={styles.topRightControls}>
-          <div onClick={() => saveScenario(scenarioId)}>
+          {/* --- 💡 수정된 부분 시작 --- */}
+          <div onClick={() => saveScenario(backend, scenario)}>
             <img src="/images/save.png" alt="Save Icon" className={styles.saveButton}/>
           </div>
+          {/* --- 💡 수정된 부분 끝 --- */}
           <div onClick={() => setIsSimulatorVisible(!isSimulatorVisible)}>
             <img src="/images/chat_simulator.png" alt="Simulator Icon" className={!isSimulatorVisible ? styles.botButtonHidden : styles.botButton}/>
           </div>
@@ -233,7 +231,6 @@ function Flow({ scenarioId }) {
   );
 }
 
-// --- 👇 [수정] ReactFlowProvider로 감싸줍니다. ---
 import { ReactFlowProvider } from 'reactflow';
 
 function FlowWithProvider(props) {
