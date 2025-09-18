@@ -73,16 +73,16 @@ const HelpManual = () => (
   <td>Connects to a large language model to generate text based on a dynamic prompt. The flow can be branched based on keywords in the generated response.</td>
   </tr>
   <tr>
-  <td><strong>Fixed Menu</strong></td>
-  <td>Configures a menu that is always exposed at the bottom of the chatbot conversation window. Can be the starting point of a scenario.</td>
-  </tr>
-  <tr>
   <td><strong>Link</strong></td>
   <td>Delivers external website links to users.</td>
   </tr>
    <tr>
   <td><strong>Toast</strong></td>
   <td>Displays a small, non-intrusive pop-up message (like a toast notification) to the user in the simulator. It does not interrupt the conversation flow.</td>
+  </tr>
+  <tr>
+  <td><strong>iFrame</strong></td>
+  <td>Embeds an external webpage directly within the chatbot interface using an iframe.</td>
   </tr>
  </tbody>
  </table>
@@ -143,7 +143,7 @@ const HelpManual = () => (
  <h3>6.5. Node Connection</h3>
  <ul>
  <li>Click on the connection points (Handles) on the right or left edges of nodes and drag to other nodes' connection points to connect conversation flows.</li>
- <li><strong>Condition Branch/Fixed Menu/API/LLM nodes</strong>: Each button (Branch/Menu), outcome (Success/Error), or condition has its own separate connection point.</li>
+ <li><strong>Condition Branch/API/LLM nodes</strong>: Each button (Branch), outcome (Success/Error), or condition has its own separate connection point.</li>
  </ul>
 
  <h3>6.6. Node and Connection Deletion/Duplication</h3>
@@ -153,7 +153,6 @@ const HelpManual = () => (
  <li><strong>Duplicate Node</strong>: Click the <code>+ Duplicate Node</code> button that appears at the bottom of the left 'Add Node' panel when you select the node you want to duplicate.</li>
  </ul>
 
-{/* --- 💡 [수정] 추가된 부분 --- */}
  <h3>6.7. Node Export/Import</h3>
   <p>You can copy nodes from one scenario and paste them into another, making it easy to reuse complex flows.</p>
   <ul>
@@ -253,16 +252,16 @@ const HelpManual_ko = () => (
   <td>거대 언어 모델과 연동하여 동적인 프롬프트를 기반으로 텍스트를 생성합니다. 생성된 응답 내용의 키워드에 따라 흐름을 분기할 수 있습니다.</td>
   </tr>
   <tr>
-  <td><strong>고정 메뉴</strong></td>
-  <td>챗봇 대화창 하단에 항상 노출되는 메뉴를 설정합니다. 시나리오의 시작점이 될 수 있습니다.</td>
-  </tr>
-  <tr>
   <td><strong>링크</strong></td>
   <td>외부 웹사이트 링크를 사용자에게 전달합니다.</td>
   </tr>
   <tr>
   <td><strong>토스트</strong></td>
   <td>시뮬레이터 내에서 사용자에게 방해되지 않는 작은 팝업 메시지(토스트 알림)를 표시합니다. 대화 흐름을 중단시키지 않습니다.</td>
+  </tr>
+   <tr>
+  <td><strong>iFrame</strong></td>
+  <td>iframe을 사용하여 외부 웹페이지를 챗봇 인터페이스 내에 직접 삽입합니다.</td>
   </tr>
  </tbody>
  </table>
@@ -323,7 +322,7 @@ const HelpManual_ko = () => (
  <h3>6.5. 노드 연결</h3>
  <ul>
  <li>노드의 좌우 가장자리에 있는 연결점을 클릭하여 다른 노드의 연결점으로 드래그하면 대화 흐름을 연결할 수 있습니다.</li>
- <li><strong>조건 분기/고정 메뉴/API/LLM 노드</strong>: 각 버튼(Branch/Menu), 결과(Success/Error), 또는 조건마다 별도의 연결점을 가집니다.</li>
+ <li><strong>조건 분기/API/LLM 노드</strong>: 각 버튼(Branch), 결과(Success/Error), 또는 조건마다 별도의 연결점을 가집니다.</li>
  </ul>
 
  <h3>6.6. 노드 및 연결선 삭제/복제</h3>
@@ -333,7 +332,6 @@ const HelpManual_ko = () => (
  <li><strong>노드 복제</strong>: 복제하고 싶은 노드를 선택했을 때 좌측 '노드 추가' 패널 하단에 나타나는 <code>+ Duplicate Node</code> 버튼을 클릭합니다.</li>
  </ul>
  
- {/* --- 💡 [수정] 추가된 부분 --- */}
  <h3>6.7. 노드 내보내기/가져오기</h3>
  <p>특정 시나리오에서 만든 노드들을 복사하여 다른 시나리오에 붙여넣을 수 있습니다. 복잡한 흐름을 재사용할 때 유용합니다.</p>
  <ul>
@@ -361,6 +359,186 @@ const HelpManual_ko = () => (
 </>
 );
 
+const HelpManual_vi = () => (
+<>
+ <h2>1. Bắt đầu</h2>
+ <h3>1.1. Đăng nhập</h3>
+ <ul>
+ <li>Bạn phải đăng nhập bằng tài khoản Google để sử dụng dịch vụ.</li>
+ <li>Chỉ những người dùng có <strong>email và tên miền được ủy quyền</strong> (<code>cyberlogitec.com</code>, <code>wisenut.co.kr</code>) mới có thể truy cập dịch vụ.</li>
+ </ul>
+ <h3>1.2. Màn hình chính</h3>
+ <ul>
+ <li><strong>Trình chỉnh sửa luồng (Flow Editor)</strong>: Không gian làm việc chính để tạo và chỉnh sửa luồng hội thoại của chatbot một cách trực quan.</li>
+ <li><strong>Bảng tin (Board)</strong>: Cung cấp tính năng bảng tin đơn giản để giúp người dùng giao tiếp với nhau.</li>
+ <li><strong>Tài liệu API (API Docs)</strong>: Hiển thị thông số kỹ thuật API để quản lý các kịch bản.</li>
+ </ul>
+
+ <h2>2. Quản lý kịch bản</h2>
+ <p>Màn hình đầu tiên bạn thấy sau khi đăng nhập là <strong>Danh sách kịch bản</strong>.</p>
+ <ul>
+ <li><strong>Thêm kịch bản mới</strong>: Nhấp vào nút <code>+ Thêm kịch bản mới</code> và nhập tên kịch bản để tạo một luồng hội thoại mới.</li>
+ <li><strong>Chọn kịch bản</strong>: Nhấp vào tên kịch bản trong danh sách để điều hướng đến màn hình chỉnh sửa của kịch bản đó.</li>
+ <li><strong>Chỉnh sửa/Xóa kịch bản</strong>: Sử dụng nút <code>Chỉnh sửa</code> bên cạnh mỗi mục kịch bản để thay đổi tên, hoặc nút <code>Xóa</code> để xóa vĩnh viễn kịch bản.</li>
+ </ul>
+
+  <h2>3. Cách sử dụng Bảng tin</h2>
+  <ul>
+    <li>Bạn có thể viết bài mới, đính kèm hình ảnh hoặc tệp tin.</li>
+    <li>Bạn chỉ có thể chỉnh sửa hoặc xóa các bài đăng do chính bạn tạo.</li>
+  </ul>
+
+ <h2>4. Bố cục màn hình Trình chỉnh sửa luồng</h2>
+ <ol>
+ <li><strong>Bảng thêm Node (Bên trái)</strong>: Thêm các loại node khác nhau tạo nên kịch bản vào canvas.</li>
+ <li><strong>Canvas (Ở giữa)</strong>: Không gian để đặt các node và kết nối chúng để tạo ra các luồng hội thoại thực tế.</li>
+ <li><strong>Bảng điều khiển (Bên phải)</strong>: Được kích hoạt khi bạn chọn một node trên canvas, cho phép bạn chỉnh sửa nội dung chi tiết của node đó.</li>
+ <li><strong>Trình mô phỏng (Bên phải)</strong>: Có thể được kích hoạt bằng cách nhấp vào biểu tượng <code><img src="/images/chat_simulator.png" alt="chatbot" style={{ width: '24px', height: '24px' }}/></code> để kiểm tra xem kịch bản bạn đã viết hoạt động như thế nào trong thời gian thực như một chatbot thực tế.</li>
+ </ol>
+
+ <h2>5. Các loại Node và chức năng</h2>
+ <p>Nhấp vào node mong muốn từ bảng bên trái để thêm nó vào canvas.</p>
+ <table className={styles.table}>
+ <thead>
+  <tr>
+  <th>Loại Node</th>
+  <th>Mô tả</th>
+  </tr>
+ </thead>
+ <tbody>
+  <tr>
+  <td><strong>Tin nhắn</strong></td>
+  <td>Tin nhắn văn bản cơ bản nhất mà chatbot gửi cho người dùng. Bạn có thể thêm các nút trả lời nhanh (Quick Replies).</td>
+  </tr>
+  <tr>
+  <td><strong>Biểu mẫu</strong></td>
+  <td>Một biểu mẫu để nhận dữ liệu có cấu trúc từ người dùng (ví dụ: tên, ngày tháng, hộp kiểm, v.v.).</td>
+  </tr>
+  <tr>
+  <td><strong>Nhánh điều kiện</strong></td>
+  <td>Chia luồng hội thoại thành nhiều nhánh dựa trên phản hồi của người dùng.</td>
+  </tr>
+  <tr>
+  <td><strong>Điền vào chỗ trống (SlotFilling)</strong></td>
+  <td>Được sử dụng để nhận thông tin đầu vào của người dùng và lưu trữ nó trong các biến cụ thể (Slots).</td>
+  </tr>
+  <tr>
+  <td><strong>API</strong></td>
+  <td>Gọi một API bên ngoài. Bạn có thể sử dụng các giá trị của slot trong yêu cầu và lưu các phần của phản hồi JSON trở lại vào các slot. Nó cũng cho phép phân nhánh luồng dựa trên việc gọi API thành công hay thất bại.</td>
+  </tr>
+  <tr>
+  <td><strong>LLM</strong></td>
+  <td>Kết nối với một mô hình ngôn ngữ lớn để tạo văn bản dựa trên một lời nhắc động. Luồng có thể được phân nhánh dựa trên các từ khóa trong phản hồi được tạo ra.</td>
+  </tr>
+  <tr>
+  <td><strong>Liên kết</strong></td>
+  <td>Cung cấp các liên kết trang web bên ngoài cho người dùng.</td>
+  </tr>
+   <tr>
+  <td><strong>Thông báo nhanh (Toast)</strong></td>
+  <td>Hiển thị một thông báo bật lên nhỏ, không phô trương (giống như thông báo nhanh) cho người dùng trong trình mô phỏng. Nó không làm gián đoạn luồng hội thoại.</td>
+  </tr>
+  <tr>
+  <td><strong>iFrame</strong></td>
+  <td>Nhúng một trang web bên ngoài trực tiếp vào giao diện chatbot bằng iframe.</td>
+  </tr>
+ </tbody>
+ </table>
+
+ <h2>6. Chỉnh sửa và kiểm tra kịch bản</h2>
+ <h3>6.1. Chỉnh sửa Node</h3>
+ <ol>
+ <li>Nhấp vào node bạn muốn chỉnh sửa trên canvas.</li>
+ <li>Sửa đổi văn bản, nút, các yếu tố biểu mẫu, v.v. của node trong <strong>Bảng điều khiển</strong> xuất hiện ở bên phải.</li>
+ <li>Khi chỉnh sửa xong, nhấp vào nút <code>Lưu thay đổi</code> ở cuối bảng điều khiển để áp dụng các thay đổi cho node.</li>
+ </ol>
+
+ <h3>6.2. Sử dụng Slots (Biến)</h3>
+ <p>Slots là các biến được sử dụng để lưu trữ và tái sử dụng thông tin trong một kịch bản. Bạn có thể lưu trữ thông tin đầu vào của người dùng từ node <strong>Điền vào chỗ trống</strong> hoặc dữ liệu từ phản hồi của node <strong>API</strong> vào một slot.</p>
+ <p>Để sử dụng giá trị của một slot đã lưu trong các node khác (như Tin nhắn, API hoặc LLM), hãy sử dụng ký hiệu dấu ngoặc nhọn: <code>{'{tên_slot}'}</code>.</p>
+ <p><strong>Ví dụ:</strong> Nếu bạn đã lưu tên người dùng trong một slot có tên là <code>userName</code>, bạn có thể sử dụng nó trong một node Tin nhắn như sau: <code>Xin chào, {'{userName}'}! Chào mừng.</code></p>
+
+ <h3>6.3. Sử dụng Node API</h3>
+ <p>Node API cho phép tương tác động với các máy chủ bên ngoài.</p>
+ <ul>
+ <li><strong>Yêu cầu động</strong>: Sử dụng các slot để thực hiện các lệnh gọi API động. Trong các trường URL, Headers hoặc Body, bạn có thể chèn các giá trị từ các thông tin đầu vào trước đó của người dùng hoặc các phản hồi API bằng cách sử dụng ký hiệu dấu ngoặc nhọn (ví dụ: <code>https://api.example.com/users/{'{userId}'}</code>).</li>
+ <li><strong>Ánh xạ phản hồi</strong>: Sau khi gọi API thành công, bạn có thể trích xuất các giá trị từ phản hồi JSON và lưu chúng vào các slot mới hoặc hiện có. Trong phần "Ánh xạ phản hồi" của bộ điều khiển:
+  <ul>
+  <li><strong>Đường dẫn JSON</strong>: Chỉ định đường dẫn đến giá trị mong muốn trong phản hồi JSON (ví dụ: <code>data.user.name</code>).</li>
+  <li><strong>Tên Slot</strong>: Nhập tên của slot nơi bạn muốn lưu trữ giá trị được trích xuất (ví dụ: <code>userName</code>).</li>
+  </ul>
+ </li>
+ <li><strong>Phân nhánh thành công/thất bại</strong>: Node API có hai tay cầm nguồn ở phía bên phải của nó:
+  <ul>
+  <li><code>Khi thành công</code>: Kéo một kết nối từ tay cầm này đến node sẽ theo sau một lệnh gọi API thành công.</li>
+  <li><code>Khi có lỗi</code>: Kéo một kết nối từ tay cầm này đến node sẽ theo sau một lệnh gọi API không thành công (ví dụ: lỗi mạng, lỗi máy chủ).</li>
+  </ul>
+ </li>
+ </ul>
+
+ <h3>6.4. Sử dụng Node LLM</h3>
+ <p>Node LLM gửi một lời nhắc đến một mô hình ngôn ngữ lớn và hiển thị phản hồi ở định dạng phát trực tuyến. Bạn có thể tạo các lời nhắc động bằng cách kết hợp văn bản với các giá trị của slot.</p>
+ <ul>
+    <li><strong>Biến đầu ra</strong>: Bạn có thể lưu trữ toàn bộ văn bản được tạo từ LLM vào một slot. Chỉ định tên slot trong trường 'Biến đầu ra' trong bộ điều khiển.</li>
+    <li><strong>Phân nhánh có điều kiện</strong>: Bạn có thể phân nhánh luồng hội thoại dựa trên nội dung phản hồi của LLM.
+        <ul>
+            <li>Trong bộ điều khiển, nhấp vào '+ Thêm điều kiện' để thêm một nhánh mới.</li>
+            <li>Nhập một 'Từ khóa' cụ thể cho mỗi điều kiện.</li>
+            <li>Nếu từ khóa được tìm thấy trong văn bản do LLM tạo ra, cuộc hội thoại sẽ tiếp tục thông qua tay cầm tương ứng trên node.</li>
+            <li>Nếu không tìm thấy từ khóa nào, cuộc hội thoại sẽ tiếp tục thông qua tay cầm 'Mặc định'.</li>
+        </ul>
+    </li>
+ </ul>
+ <p><strong>Ví dụ:</strong></p>
+ <ol>
+  <li>Tạo một node <strong>Điền vào chỗ trống</strong> với nội dung "Bạn muốn biết thời tiết của thành phố nào?" và đặt tên slot là <code>city</code>.</li>
+  <li>Kết nối node này với một node <strong>LLM</strong>.</li>
+  <li>Trong bộ điều khiển của node LLM, đặt lời nhắc thành: <code>Hãy cho tôi biết về thời tiết ở {'{city}'}. Hãy đề cập xem trời có 'nắng', 'mưa' hay 'nhiều mây' không.</code> Đặt 'Biến đầu ra' thành <code>weather_report</code>.</li>
+  <li>Thêm hai điều kiện: một với từ khóa "nắng" và một với từ khóa "mưa".</li>
+  <li>Kết nối tay cầm "nắng" với một node tin nhắn có nội dung "Tuyệt vời! Hôm nay là một ngày nắng đẹp.", tay cầm "mưa" với một node có nội dung "Đừng quên mang theo ô của bạn!" và tay cầm "Mặc định" với một node có nội dung "Đây là dự báo thời tiết."</li>
+ </ol>
+ 
+ <h3>6.5. Kết nối Node</h3>
+ <ul>
+ <li>Nhấp vào các điểm kết nối (Handles) ở cạnh phải hoặc trái của các node và kéo đến các điểm kết nối của các node khác để kết nối các luồng hội thoại.</li>
+ <li><strong>Node Nhánh điều kiện/API/LLM</strong>: Mỗi nút (Nhánh), kết quả (Thành công/Lỗi) hoặc điều kiện đều có điểm kết nối riêng.</li>
+ </ul>
+
+ <h3>6.6. Xóa/Nhân bản Node và Kết nối</h3>
+ <ul>
+ <li><strong>Xóa Node</strong>: Nhấp vào nút <code>x</code> ở trên cùng bên phải của node.</li>
+ <li><strong>Xóa kết nối</strong>: Chỉ nhấp vào kết nối bạn muốn xóa trên canvas để chọn nó, sau đó nhấn <code>Backspace</code> hoặc <code>Delete</code> trên bàn phím của bạn.</li>
+ <li><strong>Nhân bản Node</strong>: Nhấp vào nút <code>+ Nhân bản Node</code> xuất hiện ở cuối bảng 'Thêm Node' bên trái khi bạn chọn node bạn muốn nhân bản.</li>
+ </ul>
+
+ <h3>6.7. Xuất/Nhập Node</h3>
+  <p>Bạn có thể sao chép các node từ một kịch bản và dán chúng vào một kịch bản khác, giúp dễ dàng tái sử dụng các luồng phức tạp.</p>
+  <ul>
+    <li><strong>Xuất Node</strong>:
+      <ol>
+        <li>Trên canvas, chọn một hoặc nhiều node bạn muốn sao chép. Bạn có thể chọn nhiều node bằng cách giữ phím <code>Shift</code> và nhấp vào chúng.</li>
+        <li>Trong bảng 'Thêm Node' bên trái, nhấp vào nút <code>Xuất Node</code>.</li>
+        <li>Các node đã chọn và các kết nối của chúng sẽ được sao chép vào khay nhớ tạm của bạn.</li>
+      </ol>
+    </li>
+    <li><strong>Nhập Node</strong>:
+      <ol>
+        <li>Điều hướng đến kịch bản nơi bạn muốn dán các node.</li>
+        <li>Trong bảng điều khiển bên trái, nhấp vào nút <code>Nhập Node</code>.</li>
+        <li>Các node từ khay nhớ tạm của bạn sẽ được dán vào canvas.</li>
+      </ol>
+    </li>
+  </ul>
+
+ <h3>6.8. Lưu và Kiểm tra</h3>
+ <ul>
+ <li><strong>Lưu</strong>: Nhấp vào biểu tượng <code><img src="/images/save.png" alt="save" style={{ width: '24px', height: '24px' }}/></code> ở trên cùng bên phải màn hình để lưu kịch bản hiện tại bạn đang làm việc vào máy chủ.</li>
+ <li><strong>Kiểm tra</strong>: Nhấp vào biểu tượng <code><img src="/images/chat_simulator.png" alt="chatbot" style={{ width: '24px', height: '24px' }}/></code> để mở trình mô phỏng và kiểm tra xem kịch bản có hoạt động như dự kiến không.</li>
+ </ul>
+</>
+);
+
+
 function HelpModal({ isOpen, onClose }) {
 if (!isOpen) return null;
 
@@ -378,11 +556,14 @@ return (
   >
   <option value="en">English</option>
   <option value="ko">한국어</option>
+  <option value="vi">Tiếng Việt</option>
   </select>
   
   <h1>Chatbot Scenario Editor User Manual</h1>
   
-  {language === 'en' ? <HelpManual /> : <HelpManual_ko />}
+  {language === 'en' && <HelpManual />}
+  {language === 'ko' && <HelpManual_ko />}
+  {language === 'vi' && <HelpManual_vi />}
  </div>
  </div>
 );

@@ -117,6 +117,9 @@ function Flow({ scenario, backend }) {
     { type: 'toast', label: '+ Toast' },
     { type: 'iframe', label: '+ iFrame' }, // --- 💡 [추가] ---
   ];
+  
+  // --- 💡 수정된 부분: 'fixedmenu'를 목록에서 필터링 ---
+  const visibleNodeButtons = nodeButtons.filter(button => button.type !== 'fixedmenu');
 
   return (
     <div className={styles.flowContainer}>
@@ -130,7 +133,8 @@ function Flow({ scenario, backend }) {
 
         {isColorSettingsVisible && (
             <div className={styles.colorSettingsPanel}>
-                {nodeButtons.map(({ type, label }) => (
+                {/* --- 💡 수정된 부분: 필터링된 목록 사용 --- */}
+                {visibleNodeButtons.map(({ type, label }) => (
                     <div key={type} className={styles.colorSettingItem}>
                         <span>{label.replace('+ ', '')}</span>
                         <div className={styles.colorInputs}>
@@ -150,7 +154,8 @@ function Flow({ scenario, backend }) {
             </div>
         )}
 
-        {nodeButtons.map(({ type, label }) => (
+        {/* --- 💡 수정된 부분: 필터링된 목록 사용 --- */}
+        {visibleNodeButtons.map(({ type, label }) => (
             <button 
                 key={type}
                 onClick={() => addNode(type)} 
