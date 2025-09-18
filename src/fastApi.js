@@ -23,14 +23,15 @@ const handleApiResponse = async (response) => {
 export const fetchScenarios = async () => {
     const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}`);
     const data = await handleApiResponse(response);
-    return data.scenarios || data;
+    // --- 💡 수정된 부분: API 응답이 어떤 형식이든 항상 배열을 반환하도록 보장 ---
+    return data?.scenarios || (Array.isArray(data) ? data : []);
 };
 
 export const createScenario = async ({ newScenarioName }) => {
     const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category_id: '111', name: newScenarioName }),
+        body: JSON.stringify({ category_id: 'DEV_1000_S_1_1_1', name: newScenarioName }),
     });
     return handleApiResponse(response);
 };
@@ -57,7 +58,6 @@ export const fetchScenarioData = async ({ scenarioId }) => {
     return handleApiResponse(response);
 };
 
-// --- 💡 수정된 부분 시작 ---
 export const saveScenarioData = async ({ scenario, data }) => {
     if (!scenario || !scenario.id) {
         throw new Error('No scenario selected to save.');
@@ -67,7 +67,7 @@ export const saveScenarioData = async ({ scenario, data }) => {
         ten_id: TENANT_ID,
         stg_id: STAGE_ID,
         category_id: "111",
-        name: scenario.name, // name 필드 추가
+        name: scenario.name,
         ...data,
     };
 
@@ -78,4 +78,3 @@ export const saveScenarioData = async ({ scenario, data }) => {
     });
     return handleApiResponse(response);
 };
-// --- 💡 수정된 부분 끝 ---

@@ -439,7 +439,7 @@ const useStore = create((set, get) => ({
       const payload = {
         ten_id: TENANT_ID,
         stg_id: STAGE_ID,
-        category_id: "111", // 필수 필드로 가정하고 추가
+        category_id: "DEV_1000_S_1_1_1", // 필수 필드로 가정하고 추가
         // name: "Scenario Name", // 이름은 PUT 요청 시 제외하거나, App.jsx에서 가져와야 함
         nodes,
         edges,

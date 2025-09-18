@@ -85,7 +85,7 @@ function App() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          category_id : '111',
+          category_id : 'DEV_1000_S_1_1_1',
           name: newScenarioName,
         }),
       });
