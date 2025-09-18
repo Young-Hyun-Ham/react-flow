@@ -407,7 +407,7 @@ const useStore = create((set, get) => ({
     if (!scenarioId) return;
     const TENANT_ID = '1000';
     const STAGE_ID = 'DEV';
-    const API_URL = `http://202.20.84.65:8082/api/v1/chat/scenarios/${TENANT_ID}/${STAGE_ID}/${scenarioId}`;
+    const API_URL = `https://202.20.84.65:8082/api/v1/chat/scenarios/${TENANT_ID}/${STAGE_ID}/${scenarioId}`;
     
     try {
       const response = await fetch(API_URL);
@@ -430,7 +430,7 @@ const useStore = create((set, get) => ({
     }
     const TENANT_ID = '1000';
     const STAGE_ID = 'DEV';
-    const API_BASE_URL = 'http://202.20.84.65:8082/api/v1/chat/scenarios';
+    const API_BASE_URL = 'https://202.20.84.65:8082/api/v1/chat/scenarios';
     try {
       const { nodes, edges } = get();
       // App.jsx의 scenarios 상태에서 현재 시나리오 이름을 찾아야 하지만,
