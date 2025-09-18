@@ -21,7 +21,7 @@ function App() {
   const fetchNodeColors = useStore((state) => state.fetchNodeColors);
   const fetchNodeTextColors = useStore((state) => state.fetchNodeTextColors);
 
-  const API_BASE_URL = 'https://202.20.84.65:7082/api/v1/chat/scenarios';
+  const API_BASE_URL = '/api/proxy/chat/scenarios';
   const TENANT_ID = '1000';
   const STAGE_ID = 'DEV';
 

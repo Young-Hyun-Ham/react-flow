@@ -51,7 +51,7 @@ const styles = {
 
 function ScenarioList({ onSelect, onAddScenario, scenarios, setScenarios }) {
   const [loading, setLoading] = useState(true);
-  const API_BASE_URL = 'https://202.20.84.65:7082/api/v1/chat/scenarios/1000/DEV';
+  const API_BASE_URL = '/api/proxy/chat/scenarios/1000/DEV';
 
   useEffect(() => {
     const fetchScenarios = async () => {
