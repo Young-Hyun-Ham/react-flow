@@ -19,7 +19,7 @@ function App() {
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [scenarios, setScenarios] = useState([]);
   const [isNewScenarioModalOpen, setIsNewScenarioModalOpen] = useState(false);
-  const [backend, setBackend] = useState('fastapi'); // 'firebase' or 'fastapi'
+  const [backend, setBackend] = useState('firebase'); // 'firebase' or 'fastapi'
 
   const fetchNodeColors = useStore((state) => state.fetchNodeColors);
   const fetchNodeTextColors = useStore((state) => state.fetchNodeTextColors);
