@@ -56,6 +56,31 @@ const validateInput = (value, validation) => {
   }
 };
 
+const evaluateCondition = (slotValue, operator, conditionValue) => {
+  const numSlotValue = parseFloat(slotValue);
+  const numConditionValue = parseFloat(conditionValue);
+
+  switch (operator) {
+    case '==':
+      return slotValue == conditionValue;
+    case '!=':
+      return slotValue != conditionValue;
+    case '>':
+      return !isNaN(numSlotValue) && !isNaN(numConditionValue) && numSlotValue > numConditionValue;
+    case '<':
+      return !isNaN(numSlotValue) && !isNaN(numConditionValue) && numSlotValue < numConditionValue;
+    case '>=':
+      return !isNaN(numSlotValue) && !isNaN(numConditionValue) && numSlotValue >= numConditionValue;
+    case '<=':
+      return !isNaN(numSlotValue) && !isNaN(numConditionValue) && numSlotValue <= numConditionValue;
+    case 'contains':
+      return slotValue && slotValue.toString().includes(conditionValue);
+    default:
+      return false;
+  }
+};
+
+
 const ExpandIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
@@ -147,6 +172,21 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
         }
     }
 
+    if (sourceNode && sourceNode.type === 'branch' && sourceNode.data.evaluationType === 'CONDITION') {
+        const conditions = sourceNode.data.conditions || [];
+        for (const condition of conditions) {
+            const slotValue = updatedSlots[condition.slot];
+            if (evaluateCondition(slotValue, condition.operator, condition.value)) {
+                const handleId = sourceNode.data.replies[conditions.indexOf(condition)]?.value;
+                if(handleId) {
+                  nextEdge = edges.find(edge => edge.source === sourceNodeId && edge.sourceHandle === handleId);
+                  if (nextEdge) break;
+                }
+            }
+        }
+    }
+
+
     if (!nextEdge) {
         if (sourceHandleId) {
             nextEdge = edges.find(
@@ -223,8 +263,14 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
         proceedToNextNode(null, nodeId, updatedSlots);
         return;
       }
+
+      if (node.type === 'branch' && node.data.evaluationType === 'CONDITION') {
+          proceedToNextNode(null, nodeId, updatedSlots);
+          return;
+      }
       
-      const isInteractive = node.type === 'form' || (node.type === 'branch' && node.data.replies?.length > 0) || node.type === 'slotfilling';
+      const isInteractive = node.type === 'form' || (node.type === 'branch' && node.data.evaluationType === 'BUTTON' && node.data.replies?.length > 0) || node.type === 'slotfilling';
+
       setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: !isInteractive || node.type === 'iframe', id: Date.now() }]);
     }
   }, [nodes, proceedToNextNode]);
@@ -359,7 +405,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
 
   useEffect(() => {
     const node = nodes.find(n => n.id === currentId);
-    if (node && (node.type === 'message' || node.type === 'iframe')) { // --- 💡 [수정] iframe 노드도 자동 진행되도록 ---
+    if (node && (node.type === 'message' || node.type === 'iframe')) {
       const nextEdge = edges.find((edge) => edge.source === node.id && !edge.sourceHandle);
       if (nextEdge) {
         const nextNode = nodes.find((n) => n.id === nextEdge.target);

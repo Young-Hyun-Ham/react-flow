@@ -279,6 +279,40 @@ function NodeController() {
       });
   };
 
+    const handleConditionChange = (index, part, value) => {
+    setLocalNode(prev => {
+      const newNode = { ...prev };
+      const newConditions = [...(newNode.data.conditions || [])];
+      newConditions[index] = { ...newConditions[index], [part]: value };
+      newNode.data.conditions = newConditions;
+      return newNode;
+    });
+  };
+
+  const addCondition = () => {
+    setLocalNode(prev => {
+      const newNode = { ...prev };
+      const newCondition = {
+        id: `cond-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        slot: '',
+        operator: '==',
+        value: ''
+      };
+      const newConditions = [...(newNode.data.conditions || []), newCondition];
+      newNode.data.conditions = newConditions;
+      return newNode;
+    });
+  };
+
+  const deleteCondition = (index) => {
+    setLocalNode(prev => {
+      const newNode = { ...prev };
+      const newConditions = newNode.data.conditions.filter((_, i) => i !== index);
+      newNode.data.conditions = newConditions;
+      return newNode;
+    });
+  };
+
   const localAddElement = (elementType) => {
     setLocalNode(prev => {
         const newNode = { ...prev };
@@ -537,13 +571,13 @@ function NodeController() {
   const renderLlmControls = () => {
     const { data } = localNode;
 
-    const handleConditionChange = (index, value) => {
+    const handleLlmConditionChange = (index, value) => {
       const newConditions = [...(data.conditions || [])];
       newConditions[index] = { ...newConditions[index], keyword: value };
       handleLocalDataChange('conditions', newConditions);
     };
-
-    const addCondition = () => {
+  
+    const addLlmCondition = () => {
       const newCondition = {
         id: `cond-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         keyword: 'New Keyword',
@@ -551,8 +585,8 @@ function NodeController() {
       const newConditions = [...(data.conditions || []), newCondition];
       handleLocalDataChange('conditions', newConditions);
     };
-
-    const deleteCondition = (index) => {
+  
+    const deleteLlmCondition = (index) => {
       const newConditions = (data.conditions || []).filter((_, i) => i !== index);
       handleLocalDataChange('conditions', newConditions);
     };
@@ -585,13 +619,13 @@ function NodeController() {
                 <input
                   className={styles.quickReplyInput}
                   value={cond.keyword}
-                  onChange={(e) => handleConditionChange(index, e.target.value)}
+                  onChange={(e) => handleLlmConditionChange(index, e.target.value)}
                   placeholder="Keyword to match"
                 />
-                <button onClick={() => deleteCondition(index)} className={styles.deleteReplyButton}>×</button>
+                <button onClick={() => deleteLlmCondition(index)} className={styles.deleteReplyButton}>×</button>
               </div>
             ))}
-            <button onClick={addCondition} className={styles.addReplyButton}>
+            <button onClick={addLlmCondition} className={styles.addReplyButton}>
               + Add Condition
             </button>
           </div>
@@ -627,7 +661,6 @@ function NodeController() {
     );
   };
   
-  // --- 💡 [추가된 부분 시작] ---
   const renderIframeControls = () => {
     const { data } = localNode;
     return (
@@ -661,7 +694,6 @@ function NodeController() {
       </>
     );
   };
-  // --- 👆 [여기까지] ---
 
   const renderDefaultControls = () => {
     const { type, data } = localNode;
@@ -686,34 +718,81 @@ function NodeController() {
           </div>
         )}
 
-        {(type === 'message' || type === 'slotfilling' || type === 'branch' || type === 'fixedmenu') && (
+        {type === 'branch' && (
           <div className={styles.formGroup}>
-            <label>{type === 'branch' ? 'Branches' : (type === 'fixedmenu' ? 'Menus' : 'Quick Replies')}</label>
+            <label>Evaluation Type</label>
+            <select value={data.evaluationType || 'BUTTON'} onChange={(e) => handleLocalDataChange('evaluationType', e.target.value)}>
+              <option value="BUTTON">Button Click</option>
+              <option value="CONDITION">Slot Condition</option>
+            </select>
+          </div>
+        )}
+
+        {type === 'branch' && data.evaluationType === 'CONDITION' ? (
+          <div className={styles.formGroup}>
+            <label>Conditions</label>
             <div className={styles.repliesContainer}>
-              {data.replies?.map((reply, index) => (
-                <div key={reply.value || index} className={styles.quickReply}>
+              {(data.conditions || []).map((cond, index) => (
+                <div key={cond.id} className={styles.quickReply}>
                   <input
                     className={styles.quickReplyInput}
-                    value={reply.display}
-                    onChange={(e) => localUpdateReply(index, 'display', e.target.value)}
-                    placeholder="Display text"
+                    value={cond.slot}
+                    onChange={(e) => handleConditionChange(index, 'slot', e.target.value)}
+                    placeholder="Slot Name"
                   />
-                  {type !== 'branch' && type !== 'fixedmenu' && (
-                    <input
-                      className={styles.quickReplyInput}
-                      value={reply.value}
-                      onChange={(e) => localUpdateReply(index, 'value', e.target.value)}
-                      placeholder="Actual value"
-                    />
-                  )}
-                  <button onClick={() => localDeleteReply(index)} className={styles.deleteReplyButton}>×</button>
+                  <select value={cond.operator} onChange={(e) => handleConditionChange(index, 'operator', e.target.value)}>
+                    <option value="==">==</option>
+                    <option value="!=">!=</option>
+                    <option value=">">&gt;</option>
+                    <option value="<">&lt;</option>
+                    <option value=">=">&gt;=</option>
+                    <option value="<=">&lt;=</option>
+                    <option value="contains">contains</option>
+                  </select>
+                  <input
+                    className={styles.quickReplyInput}
+                    value={cond.value}
+                    onChange={(e) => handleConditionChange(index, 'value', e.target.value)}
+                    placeholder="Value to compare"
+                  />
+                  <button onClick={() => deleteCondition(index)} className={styles.deleteReplyButton}>×</button>
                 </div>
               ))}
-              <button onClick={() => localAddReply()} className={styles.addReplyButton}>
-                {type === 'branch' ? '+ Add Branch' : (type === 'fixedmenu' ? '+ Add Menu' : '+ Add Reply')}
+              <button onClick={addCondition} className={styles.addReplyButton}>
+                + Add Condition
               </button>
             </div>
           </div>
+        ) : (
+           (type === 'message' || type === 'slotfilling' || type === 'branch' || type === 'fixedmenu') && (
+            <div className={styles.formGroup}>
+              <label>{type === 'branch' ? 'Branches' : (type === 'fixedmenu' ? 'Menus' : 'Quick Replies')}</label>
+              <div className={styles.repliesContainer}>
+                {data.replies?.map((reply, index) => (
+                  <div key={reply.value || index} className={styles.quickReply}>
+                    <input
+                      className={styles.quickReplyInput}
+                      value={reply.display}
+                      onChange={(e) => localUpdateReply(index, 'display', e.target.value)}
+                      placeholder="Display text"
+                    />
+                    {type !== 'branch' && type !== 'fixedmenu' && (
+                      <input
+                        className={styles.quickReplyInput}
+                        value={reply.value}
+                        onChange={(e) => localUpdateReply(index, 'value', e.target.value)}
+                        placeholder="Actual value"
+                      />
+                    )}
+                    <button onClick={() => localDeleteReply(index)} className={styles.deleteReplyButton}>×</button>
+                  </div>
+                ))}
+                <button onClick={() => localAddReply()} className={styles.addReplyButton}>
+                  {type === 'branch' ? '+ Add Branch' : (type === 'fixedmenu' ? '+ Add Menu' : '+ Add Reply')}
+                </button>
+              </div>
+            </div>
+           )
         )}
       </>
     );
@@ -729,7 +808,6 @@ function NodeController() {
         return renderLlmControls();
       case 'toast':
         return renderToastControls();
-      // --- 💡 [수정] iframe case 추가 ---
       case 'iframe':
         return renderIframeControls();
       default:

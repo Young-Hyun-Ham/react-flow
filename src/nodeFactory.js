@@ -1,3 +1,5 @@
+// src/nodeFactory.js
+
 export const createNodeData = (type) => {
   const baseData = {
     id: `${type}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
@@ -18,8 +20,20 @@ export const createNodeData = (type) => {
         responseMapping: [],
         errorMappingEnabled: true,
       };
+    // --- 💡 [수정된 부분 시작] ---
     case 'branch':
-      return { ...baseData, content: 'Enter your conditional branch question.', replies: [{ display: 'Condition 1', value: `cond_${Date.now()}` }, { display: 'Condition 2', value: `cond_${Date.now() + 1}` }] };
+      return { 
+        ...baseData, 
+        evaluationType: 'BUTTON', // 'BUTTON' or 'CONDITION'
+        conditions: [{
+          id: `cond-${Date.now()}`,
+          slot: '',
+          operator: '==',
+          value: ''
+        }],
+        replies: [{ display: 'Condition 1', value: `cond_${Date.now()}` }, { display: 'Condition 2', value: `cond_${Date.now() + 1}` }] 
+      };
+    // --- 💡 [수정된 부분 끝] ---
     case 'form':
       return {
         ...baseData,
@@ -45,7 +59,6 @@ export const createNodeData = (type) => {
         message: 'This is a toast message.',
         toastType: 'info' // info, success, error
       };
-    // --- 💡 [추가된 부분] ---
     case 'iframe':
       return {
         ...baseData,
@@ -53,7 +66,6 @@ export const createNodeData = (type) => {
         width: '250',
         height: '200'
       };
-    // --- 👆 [여기까지] ---
     default:
       return baseData;
   }
