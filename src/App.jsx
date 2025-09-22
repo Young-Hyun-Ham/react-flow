@@ -9,11 +9,14 @@ import NewScenarioModal from './NewScenarioModal';
 import ApiDocs from './ApiDocs';
 import useStore from './store';
 import * as backendService from './backendService';
+import PasswordModal from './PasswordModal'; // --- 💡 수정된 부분: PasswordModal import ---
 import './App.css';
 
 function App() {
   const [user, setUser] = useState(null); // 로그인 비활성화를 위해 기본값을 null로 설정
   const [loading, setLoading] = useState(false); // 로딩 상태 비활성화
+  // --- 💡 수정된 부분: 비밀번호 인증 상태 추가 ---
+  const [isAuthenticated, setIsAuthenticated] = useState(sessionStorage.getItem('isAuthenticated') === 'true');
   const [selectedScenario, setSelectedScenario] = useState(null);
   const [view, setView] = useState('list');
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
@@ -58,6 +61,12 @@ function App() {
 
     return () => unsubscribe();
   }, [fetchNodeColors, fetchNodeTextColors]);
+  
+  // --- 💡 수정된 부분: 비밀번호 인증 핸들러 ---
+  const handleAuthentication = () => {
+    sessionStorage.setItem('isAuthenticated', 'true');
+    setIsAuthenticated(true);
+  };
 
   const handleLogout = async () => {
     // 로그아웃 버튼을 눌렀을 때의 동작 (현재는 로그인 기능이 비활성화되어 있으므로 user 상태를 null로만 변경)
@@ -112,10 +121,10 @@ function App() {
     return <div className="loading-screen">Loading...</div>;
   }
   
-  // --- 💡 수정된 부분: 로그인 화면을 보여주는 대신 바로 앱을 렌더링 ---
-  // if (!user) {
-  //   return <Login />;
-  // }
+  // --- 💡 수정된 부분: 인증되지 않았다면 PasswordModal 렌더링 ---
+  if (!isAuthenticated) {
+    return <PasswordModal onAuthenticate={handleAuthentication} />;
+  }
 
   return (
     <div className="app-container">
