@@ -15,8 +15,8 @@ import './App.css';
 function App() {
   const [user, setUser] = useState(null); // 로그인 비활성화를 위해 기본값을 null로 설정
   const [loading, setLoading] = useState(false); // 로딩 상태 비활성화
-  // --- 💡 수정된 부분: 비밀번호 인증 상태 추가 ---
-  const [isAuthenticated, setIsAuthenticated] = useState(sessionStorage.getItem('isAuthenticated') === 'true');
+  // --- 💡 수정된 부분: 비밀번호 인증 상태 초기값을 true로 변경 ---
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [selectedScenario, setSelectedScenario] = useState(null);
   const [view, setView] = useState('list');
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
