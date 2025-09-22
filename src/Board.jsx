@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { db, storage } from './firebase';
-// --- 💡 수정된 부분: updateDoc import 추가 ---
 import { collection, addDoc, query, onSnapshot, serverTimestamp, orderBy, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import styles from './Board.module.css';
@@ -19,7 +18,6 @@ function Board({ user }) {
   const [newPostText, setNewPostText] = useState('');
   const [fileToUpload, setFileToUpload] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  // --- 💡 추가된 부분: 수정 관련 상태 ---
   const [editingPostId, setEditingPostId] = useState(null);
   const [editText, setEditText] = useState('');
 
@@ -45,6 +43,11 @@ function Board({ user }) {
 
   const handlePostSubmit = async (e) => {
     e.preventDefault();
+    // --- 💡 수정된 부분: 로그인하지 않은 사용자는 제출 불가 ---
+    if (!user) {
+      alert("Please log in to write a post.");
+      return;
+    }
     if (!newPostText.trim() && !fileToUpload) {
       alert("Please enter some text or select a file.");
       return;
@@ -97,6 +100,11 @@ function Board({ user }) {
   };
 
   const handleDeletePost = async (post) => {
+    // --- 💡 수정된 부분: 로그인하지 않은 사용자는 삭제 불가 ---
+    if (!user) {
+      alert("Please log in to delete a post.");
+      return;
+    }
     if (post.authorId !== user.uid) {
       alert("You can only delete your own posts.");
       return;
@@ -118,8 +126,12 @@ function Board({ user }) {
     }
   };
 
-  // --- 💡 추가된 부분: 수정 관련 함수들 ---
   const handleEditClick = (post) => {
+    // --- 💡 수정된 부분: 로그인하지 않은 사용자는 수정 모드 진입 불가 ---
+    if (!user) {
+        alert("Please log in to edit a post.");
+        return;
+    }
     setEditingPostId(post.id);
     setEditText(post.text);
   };
@@ -146,31 +158,38 @@ function Board({ user }) {
 
   return (
     <div className={styles.boardContainer}>
-      <form className={styles.postForm} onSubmit={handlePostSubmit}>
-        <textarea
-          className={styles.textarea}
-          value={newPostText}
-          onChange={(e) => setNewPostText(e.target.value)}
-          placeholder="What's on your mind?"
-        />
-        <div className={styles.formActions}>
-          <div>
-            <label htmlFor="fileInput" className={styles.fileInputLabel}>
-              <ImageIcon /> Add Photo/File
-            </label>
-            <input
-              id="fileInput"
-              type="file"
-              className={styles.fileInput}
-              onChange={handleFileChange}
-            />
-            {fileToUpload && <span className={styles.fileName}>{fileToUpload.name}</span>}
+      {/* --- 💡 수정된 부분: 로그인 상태에 따라 글쓰기 폼 렌더링 --- */}
+      {user ? (
+        <form className={styles.postForm} onSubmit={handlePostSubmit}>
+          <textarea
+            className={styles.textarea}
+            value={newPostText}
+            onChange={(e) => setNewPostText(e.target.value)}
+            placeholder="What's on your mind?"
+          />
+          <div className={styles.formActions}>
+            <div>
+              <label htmlFor="fileInput" className={styles.fileInputLabel}>
+                <ImageIcon /> Add Photo/File
+              </label>
+              <input
+                id="fileInput"
+                type="file"
+                className={styles.fileInput}
+                onChange={handleFileChange}
+              />
+              {fileToUpload && <span className={styles.fileName}>{fileToUpload.name}</span>}
+            </div>
+            <button type="submit" className={styles.submitButton} disabled={isLoading}>
+              {isLoading ? 'Posting...' : 'Post'}
+            </button>
           </div>
-          <button type="submit" className={styles.submitButton} disabled={isLoading}>
-            {isLoading ? 'Posting...' : 'Post'}
-          </button>
+        </form>
+      ) : (
+        <div className={styles.postForm} style={{textAlign: 'center', padding: '30px'}}>
+            <p>Please log in to write posts.</p>
         </div>
-      </form>
+      )}
 
       {posts.length === 0 && !isLoading && <div className={styles.loading}>No posts yet. Be the first!</div>}
 
@@ -188,7 +207,6 @@ function Board({ user }) {
                 </div>
               </div>
               {user && user.uid === post.authorId && (
-                // --- 💡 수정된 부분: 수정/삭제 버튼 그룹 ---
                 <div className={styles.buttonGroup}>
                    <button onClick={() => handleEditClick(post)} className={styles.editButton}>
                     수정
@@ -199,7 +217,6 @@ function Board({ user }) {
                 </div>
               )}
             </div>
-            {/* --- 💡 수정된 부분: 수정 모드/일반 모드 조건부 렌더링 --- */}
             <div className={styles.postContent}>
               {editingPostId === post.id ? (
                 <div className={styles.editForm}>
