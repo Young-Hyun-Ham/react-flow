@@ -40,7 +40,7 @@ function BranchNode({ id, data }) {
                   <Handle
                     type="source"
                     position={Position.Right}
-                    id={data.replies?.[index]?.value} // Use corresponding reply value for handle id
+                    id={data.replies?.[index]?.value}
                     style={{ top: '50%', transform: 'translateY(-50%)', right: '-25px', background: '#555' }}
                   />
                 </div>

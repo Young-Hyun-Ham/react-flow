@@ -300,6 +300,16 @@ function NodeController() {
       };
       const newConditions = [...(newNode.data.conditions || []), newCondition];
       newNode.data.conditions = newConditions;
+
+      // --- 💡 수정된 부분 시작 ---
+      const newReply = {
+        display: `Condition ${newConditions.length}`,
+        value: `cond_${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+      };
+      const newReplies = [...(newNode.data.replies || []), newReply];
+      newNode.data.replies = newReplies;
+      // --- 💡 수정된 부분 끝 ---
+
       return newNode;
     });
   };
@@ -309,6 +319,12 @@ function NodeController() {
       const newNode = { ...prev };
       const newConditions = newNode.data.conditions.filter((_, i) => i !== index);
       newNode.data.conditions = newConditions;
+      
+      // --- 💡 수정된 부분 시작 ---
+      const newReplies = newNode.data.replies.filter((_, i) => i !== index);
+      newNode.data.replies = newReplies;
+      // --- 💡 수정된 부분 끝 ---
+
       return newNode;
     });
   };
