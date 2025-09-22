@@ -75,6 +75,8 @@ const evaluateCondition = (slotValue, operator, conditionValue) => {
       return !isNaN(numSlotValue) && !isNaN(numConditionValue) && numSlotValue <= numConditionValue;
     case 'contains':
       return slotValue && slotValue.toString().includes(conditionValue);
+    case '!contains':
+      return !slotValue || !slotValue.toString().includes(conditionValue);
     default:
       return false;
   }

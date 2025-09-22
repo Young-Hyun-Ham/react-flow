@@ -764,6 +764,7 @@ function NodeController() {
                     <option value=">=">&gt;=</option>
                     <option value="<=">&lt;=</option>
                     <option value="contains">contains</option>
+                    <option value="!contains">!contains</option>
                   </select>
                   <input
                     className={styles.quickReplyInput}
