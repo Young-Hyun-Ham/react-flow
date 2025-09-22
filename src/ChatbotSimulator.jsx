@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import useStore from './store'; // --- 💡 수정된 부분: useStore import ---
 import styles from './ChatbotSimulator.module.css';
 
+// ... (evaluateCondition, interpolateMessage 등 헬퍼 함수들은 이전과 동일) ...
 const interpolateMessage = (message, slots) => {
   if (!message) return '';
   return message.replace(/\{([^}]+)\}/g, (match, key) => {
@@ -141,10 +143,13 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
   const [history, setHistory] = useState([]);
   const [currentId, setCurrentId] = useState(null);
   const [inputValue, setInputValue] = useState('');
-  const [slots, setSlots] = useState({});
   const [formData, setFormData] = useState({});
   const [fixedMenu, setFixedMenu] = useState(null);
   const historyRef = useRef(null);
+
+  // --- 💡 수정된 부분: Zustand 스토어에서 slots 상태와 업데이터 함수를 가져옴 ---
+  const slots = useStore((state) => state.slots);
+  const setSlots = useStore((state) => state.setSlots);
 
   const currentNode = nodes.find(n => n.id === currentId);
 

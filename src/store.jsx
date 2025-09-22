@@ -41,6 +41,9 @@ const useStore = create((set, get) => ({
   selectedNodeId: null,
   nodeColors: defaultColors,
   nodeTextColors: defaultTextColors,
+  slots: {}, // --- 💡 수정된 부분: 슬롯 상태 추가 ---
+
+  setSlots: (newSlots) => set({ slots: newSlots }), // --- 💡 수정된 부분: 슬롯 업데이트 함수 추가 ---
 
   fetchNodeColors: async () => {
     const docRef = doc(db, "settings", "nodeColors");

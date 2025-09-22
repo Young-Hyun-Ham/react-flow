@@ -11,10 +11,11 @@ import FixedMenuNode from './nodes/FixedMenuNode';
 import LinkNode from './nodes/LinkNode';
 import LlmNode from './nodes/LlmNode';
 import ToastNode from './nodes/ToastNode';
-import IframeNode from './nodes/IframeNode'; // --- 💡 [추가] ---
+import IframeNode from './nodes/IframeNode';
 import ChatbotSimulator from './ChatbotSimulator';
 import NodeController from './NodeController';
 import useStore from './store';
+import SlotDisplay from './SlotDisplay'; // --- 💡 수정된 부분: SlotDisplay import ---
 import styles from './Flow.module.css';
 
 const nodeTypes = {
@@ -27,7 +28,7 @@ const nodeTypes = {
   link: LinkNode,
   llm: LlmNode,
   toast: ToastNode,
-  iframe: IframeNode, // --- 💡 [추가] ---
+  iframe: IframeNode,
 };
 
 const SettingsIcon = () => (
@@ -188,6 +189,8 @@ function Flow({ scenario, backend }) {
       </div>
 
       <div className={styles.mainContent}>
+        {/* --- 💡 수정된 부분: SlotDisplay 컴포넌트 추가 --- */}
+        <SlotDisplay />
         <div className={styles.topRightControls}>
           <div onClick={() => saveScenario(backend, scenario)}>
             <img src="/images/save.png" alt="Save Icon" className={styles.saveButton}/>
