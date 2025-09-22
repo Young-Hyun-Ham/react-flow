@@ -3,8 +3,10 @@ import useStore from './store';
 import styles from './NodeController.module.css';
 import { db } from './firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import * as backendService from './backendService';
+import ApiTemplateModal from './ApiTemplateModal';
 
-
+// ... (ElementEditor 컴포넌트는 이전과 동일) ...
 function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange, onSetDefault, onSaveDefault }) {
   if (!element) {
     return <p className={styles.placeholder}>Please select an element to edit.</p>;
@@ -203,6 +205,22 @@ function NodeController() {
   const [selectedElementId, setSelectedElementId] = useState(null);
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
   const [isDirty, setIsDirty] = useState(false);
+  // --- 💡 수정된 부분 시작 ---
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [apiTemplates, setApiTemplates] = useState([]);
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const templates = await backendService.fetchApiTemplates();
+        setApiTemplates(templates);
+      } catch (error) {
+        console.error("Failed to fetch API templates:", error);
+      }
+    };
+    fetchTemplates();
+  }, []);
+  // --- 💡 수정된 부분 끝 ---
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
@@ -245,6 +263,36 @@ function NodeController() {
     updateNodeData(localNode.id, localNode.data);
     setIsDirty(false);
   };
+
+  // --- 💡 수정된 부분 시작 ---
+  const handleSaveTemplate = async (templateName) => {
+    const { method, url, headers, body, responseMapping } = localNode.data;
+    const newTemplate = { name: templateName, method, url, headers, body, responseMapping };
+    try {
+      const savedTemplate = await backendService.saveApiTemplate(newTemplate);
+      setApiTemplates(prev => [...prev, savedTemplate]);
+      setIsTemplateModalOpen(false);
+    } catch (error) {
+      console.error("Failed to save API template:", error);
+      alert("Failed to save template.");
+    }
+  };
+
+  const handleLoadTemplate = (template) => {
+    const { method, url, headers, body, responseMapping } = template;
+    setLocalNode(prev => ({
+      ...prev,
+      data: {
+        ...prev.data,
+        method,
+        url,
+        headers,
+        body,
+        responseMapping,
+      }
+    }));
+  };
+  // --- 💡 수정된 부분 끝 ---
 
   const localAddReply = () => {
     setLocalNode(prev => {
@@ -531,6 +579,13 @@ function NodeController() {
 
     return (
       <>
+        {/* --- 💡 수정된 부분 시작 --- */}
+        <div className={styles.templateActions}>
+          <button onClick={() => setIsTemplateModalOpen(true)}>Load from Template</button>
+          <button onClick={() => setIsTemplateModalOpen(true)}>Save as Template</button>
+        </div>
+        <div className={styles.separator} />
+        {/* --- 💡 수정된 부분 끝 --- */}
         <div className={styles.formGroup}>
           <label>Method</label>
           <select value={data.method || 'GET'} onChange={(e) => handleLocalDataChange('method', e.target.value)}>
@@ -834,6 +889,15 @@ function NodeController() {
 
   return (
     <div className={styles.controllerContainer}>
+        {/* --- 💡 수정된 부분 시작 --- */}
+        <ApiTemplateModal 
+            isOpen={isTemplateModalOpen}
+            onClose={() => setIsTemplateModalOpen(false)}
+            onSave={handleSaveTemplate}
+            onSelect={handleLoadTemplate}
+            templates={apiTemplates}
+        />
+        {/* --- 💡 수정된 부분 끝 --- */}
       <div className={styles.mainControls}>
         <h3>Type: {localNode.type}</h3>
         <div className={styles.form}>

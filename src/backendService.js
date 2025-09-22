@@ -6,7 +6,6 @@ const services = {
   fastapi: fastApi,
 };
 
-// --- 💡 추가된 부분 시작 ---
 const getService = (backend) => {
   const service = services[backend];
   if (!service) {
@@ -21,4 +20,9 @@ export const renameScenario = (backend, args) => getService(backend).renameScena
 export const deleteScenario = (backend, args) => getService(backend).deleteScenario(args);
 export const fetchScenarioData = (backend, args) => getService(backend).fetchScenarioData(args);
 export const saveScenarioData = (backend, args) => getService(backend).saveScenarioData(args);
-// --- 💡 추가된 부분 끝 ---
+
+// --- 💡 수정된 부분 시작 ---
+// FastAPI에는 템플릿 기능이 없으므로, firebaseApi를 직접 사용합니다.
+export const fetchApiTemplates = firebaseApi.fetchApiTemplates;
+export const saveApiTemplate = firebaseApi.saveApiTemplate;
+// --- 💡 수정된 부분 끝 ---

@@ -7,6 +7,7 @@ import {
   setDoc,
   deleteDoc,
   writeBatch,
+  addDoc, // --- 💡 수정된 부분: addDoc import 추가 ---
 } from 'firebase/firestore';
 
 export const fetchScenarios = async () => {
@@ -64,12 +65,24 @@ export const fetchScenarioData = async ({ scenarioId }) => {
   return { nodes: [], edges: [] };
 };
 
-// --- 💡 수정된 부분 시작 ---
 export const saveScenarioData = async ({ scenario, data }) => {
   if (!scenario || !scenario.id) {
     throw new Error('No scenario selected to save.');
   }
   const scenarioDocRef = doc(db, "scenarios", scenario.id);
   await setDoc(scenarioDocRef, data);
+};
+
+// --- 💡 수정된 부분 시작 ---
+export const fetchApiTemplates = async () => {
+  const templatesCollection = collection(db, 'apiTemplates');
+  const querySnapshot = await getDocs(templatesCollection);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+export const saveApiTemplate = async (templateData) => {
+  const templatesCollection = collection(db, 'apiTemplates');
+  const docRef = await addDoc(templatesCollection, templateData);
+  return { id: docRef.id, ...templateData };
 };
 // --- 💡 수정된 부분 끝 ---

@@ -298,3 +298,31 @@
 .saveNodeButton:hover {
     background-color: #2980b9;
 }
+
+/* --- 💡 수정된 부분 시작 --- */
+.templateActions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.templateActions button {
+  flex-grow: 1;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.templateActions button:first-child {
+  background-color: #2ecc71;
+  border: 1px solid #2ecc71;
+  color: white;
+}
+
+.templateActions button:last-child {
+  background-color: #e67e22;
+  border: 1px solid #e67e22;
+  color: white;
+}
+/* --- 💡 수정된 부분 끝 --- */
