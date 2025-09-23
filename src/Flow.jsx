@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import ReactFlow, { Controls, useReactFlow } from 'reactflow';
+import ReactFlow, { Controls, useReactFlow, MiniMap } from 'reactflow';
 import 'reactflow/dist/style.css';
 
 import MessageNode from './nodes/MessageNode';
@@ -15,7 +15,7 @@ import IframeNode from './nodes/IframeNode';
 import ChatbotSimulator from './ChatbotSimulator';
 import NodeController from './NodeController';
 import useStore from './store';
-import SlotDisplay from './SlotDisplay'; // --- 💡 수정된 부분: SlotDisplay import ---
+import SlotDisplay from './SlotDisplay';
 import styles from './Flow.module.css';
 
 const nodeTypes = {
@@ -116,10 +116,9 @@ function Flow({ scenario, backend }) {
     { type: 'fixedmenu', label: '+ Fixed Menu' },
     { type: 'link', label: '+ Link' },
     { type: 'toast', label: '+ Toast' },
-    { type: 'iframe', label: '+ iFrame' }, // --- 💡 [추가] ---
+    { type: 'iframe', label: '+ iFrame' },
   ];
   
-  // --- 💡 수정된 부분: 'fixedmenu'를 목록에서 필터링 ---
   const visibleNodeButtons = nodeButtons.filter(button => button.type !== 'fixedmenu');
 
   return (
@@ -134,7 +133,6 @@ function Flow({ scenario, backend }) {
 
         {isColorSettingsVisible && (
             <div className={styles.colorSettingsPanel}>
-                {/* --- 💡 수정된 부분: 필터링된 목록 사용 --- */}
                 {visibleNodeButtons.map(({ type, label }) => (
                     <div key={type} className={styles.colorSettingItem}>
                         <span>{label.replace('+ ', '')}</span>
@@ -155,7 +153,6 @@ function Flow({ scenario, backend }) {
             </div>
         )}
 
-        {/* --- 💡 수정된 부분: 필터링된 목록 사용 --- */}
         {visibleNodeButtons.map(({ type, label }) => (
             <button 
                 key={type}
@@ -189,7 +186,6 @@ function Flow({ scenario, backend }) {
       </div>
 
       <div className={styles.mainContent}>
-        {/* --- 💡 수정된 부분: SlotDisplay 컴포넌트 추가 --- */}
         <SlotDisplay />
         <div className={styles.topRightControls}>
           <div onClick={() => saveScenario(backend, scenario)}>
@@ -213,6 +209,9 @@ function Flow({ scenario, backend }) {
           onKeyDown={handleKeyDown}
         >
           <Controls />
+          {/* --- 💡 수정된 부분 시작 --- */}
+          <MiniMap nodeColor={(n) => nodeColors[n.type] || '#ddd'} nodeStrokeWidth={3} zoomable pannable />
+          {/* --- 💡 수정된 부분 끝 --- */}
         </ReactFlow>
       </div>
 
