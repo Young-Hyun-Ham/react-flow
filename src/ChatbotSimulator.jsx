@@ -58,6 +58,25 @@ const validateInput = (value, validation) => {
 };
 
 const evaluateCondition = (slotValue, operator, conditionValue) => {
+  // --- 💡 수정된 부분 시작 ---
+  const lowerCaseConditionValue = String(conditionValue).toLowerCase();
+  if (lowerCaseConditionValue === 'true' || lowerCaseConditionValue === 'false') {
+    const boolConditionValue = lowerCaseConditionValue === 'true';
+    
+    // slotValue를 boolean으로 변환 (문자열 'true'도 true로 인식)
+    const boolSlotValue = String(slotValue).toLowerCase() === 'true';
+
+    switch (operator) {
+      case '==':
+        return boolSlotValue === boolConditionValue;
+      case '!=':
+        return boolSlotValue !== boolConditionValue;
+      default:
+        return false; // boolean 타입에는 다른 연산자 부적합
+    }
+  }
+  // --- 💡 수정된 부분 끝 ---
+
   const numSlotValue = parseFloat(slotValue);
   const numConditionValue = parseFloat(conditionValue);
 
@@ -226,7 +245,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
         const loadingId = Date.now();
         setHistory(prev => [...prev, { type: 'loading', id: loadingId }]);
         setTimeout(() => {
-          const isInteractive = node.type === 'form' || (node.type === 'branch' && node.data.replies?.length > 0) || node.type === 'slotfilling';
+          const isInteractive = node.type === 'form' || (node.type === 'branch' && node.data.evaluationType === 'BUTTON' && node.data.replies?.length > 0) || node.type === 'slotfilling';
           setHistory(prev => prev.map(item => 
             item.id === loadingId 
               ? { type: 'bot', nodeId: node.id, isCompleted: !isInteractive, id: loadingId } 
@@ -721,7 +740,6 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
                 <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
                 <div className={`${styles.message} ${styles.botMessage}`}>
                   <div>{message}</div>
-                  {/* --- 💡 수정된 부분: evaluationType이 'BUTTON'일 때만 버튼을 렌더링 --- */}
                   {node.type === 'branch' && node.data.evaluationType === 'BUTTON' && (
                     <div className={styles.branchButtonsContainer}>
                       {node.data.replies?.map((reply) => (
@@ -783,7 +801,8 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
                 onMouseUp={quickRepliesSlider.onMouseUp}
                 onMouseMove={quickRepliesSlider.onMouseMove}
             >
-                {currentNode && (currentNode.data.replies || []).length > 0 && (currentNode.type === 'message' || currentNode.type === 'slotfilling' || currentNode.type === 'branch') &&
+                {currentNode && (currentNode.data.replies || []).length > 0 &&
+                    (currentNode.type === 'message' || currentNode.type === 'slotfilling' || (currentNode.type === 'branch' && currentNode.data.evaluationType !== 'CONDITION')) &&
                     (currentNode.data.replies || []).map((answer) => (
                         <button key={answer.value} className={styles.optionButton} onClick={() => handleOptionClick(answer)}>{answer.display}</button>
                     ))

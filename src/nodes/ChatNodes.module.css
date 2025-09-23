@@ -21,17 +21,35 @@
   color: white;
 }
 
-/* --- 👇 [추가] 헤더 좌측 아이콘+텍스트 정렬용 --- */
 .headerLeft {
     display: flex;
     align-items: center;
     gap: 8px;
 }
-/* --- 👆 [여기까지] --- */
 
 .headerTextContent {
   font-size: 0.8rem;
   font-weight: bold;
+}
+
+/* --- 💡 수정된 부분 시작 --- */
+.headerButtons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.playButton {
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.playButton:hover {
+  opacity: 0.8;
 }
 
 .deleteButton {
@@ -42,6 +60,8 @@
   font-size: 0.7rem;
   margin-right: -10px;
 }
+/* --- 💡 수정된 부분 끝 --- */
+
 .deleteButton:hover {
   opacity: 1;
 }
