@@ -3,6 +3,7 @@ import { db, storage } from './firebase';
 import { collection, addDoc, query, onSnapshot, serverTimestamp, orderBy, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import styles from './Board.module.css';
+import useAlert from './hooks/useAlert';
 
 // Simple SVG Icons for file types
 const FileIcon = () => (
@@ -20,6 +21,7 @@ function Board({ user }) {
   const [isLoading, setIsLoading] = useState(false);
   const [editingPostId, setEditingPostId] = useState(null);
   const [editText, setEditText] = useState('');
+  const { showAlert, showConfirm } = useAlert();
 
   // Fetch posts from Firestore in real-time
   useEffect(() => {
@@ -45,11 +47,11 @@ function Board({ user }) {
     e.preventDefault();
     // --- 💡 수정된 부분: 로그인하지 않은 사용자는 제출 불가 ---
     if (!user) {
-      alert("Please log in to write a post.");
+      showAlert("Please log in to write a post.");
       return;
     }
     if (!newPostText.trim() && !fileToUpload) {
-      alert("Please enter some text or select a file.");
+      showAlert("Please enter some text or select a file.");
       return;
     }
 
@@ -68,7 +70,7 @@ function Board({ user }) {
         fileType = fileToUpload.type.startsWith('image/') ? 'image' : 'file';
       } catch (error) {
         console.error("Error uploading file: ", error);
-        alert("File upload failed!");
+        showAlert("File upload failed!");
         setIsLoading(false);
         return;
       }
@@ -93,7 +95,7 @@ function Board({ user }) {
       }
     } catch (error) {
       console.error("Error adding document: ", error);
-      alert("Failed to create post.");
+      showAlert("Failed to create post.");
     } finally {
       setIsLoading(false);
     }
@@ -102,15 +104,16 @@ function Board({ user }) {
   const handleDeletePost = async (post) => {
     // --- 💡 수정된 부분: 로그인하지 않은 사용자는 삭제 불가 ---
     if (!user) {
-      alert("Please log in to delete a post.");
+      showAlert("Please log in to delete a post.");
       return;
     }
     if (post.authorId !== user.uid) {
-      alert("You can only delete your own posts.");
+      showAlert("You can only delete your own posts.");
       return;
     }
 
-    if (!window.confirm("정말로 이 게시물을 삭제하시겠습니까?")) {
+    const confirmed = await showConfirm("정말로 이 게시물을 삭제하시겠습니까?");
+    if (!confirmed) {
       return;
     }
 
@@ -122,14 +125,14 @@ function Board({ user }) {
       await deleteDoc(doc(db, 'posts', post.id));
     } catch (error) {
       console.error("Error deleting post: ", error);
-      alert("게시물 삭제에 실패했습니다.");
+      showAlert("게시물 삭제에 실패했습니다.");
     }
   };
 
   const handleEditClick = (post) => {
     // --- 💡 수정된 부분: 로그인하지 않은 사용자는 수정 모드 진입 불가 ---
     if (!user) {
-        alert("Please log in to edit a post.");
+        showAlert("Please log in to edit a post.");
         return;
     }
     setEditingPostId(post.id);
@@ -146,7 +149,7 @@ function Board({ user }) {
       setEditText('');
     } catch (error) {
       console.error("Error updating post: ", error);
-      alert("게시물 수정에 실패했습니다.");
+      showAlert("게시물 수정에 실패했습니다.");
     }
   };
 

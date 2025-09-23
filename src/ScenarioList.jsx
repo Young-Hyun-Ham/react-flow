@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import * as backendService from './backendService';
+import useAlert from './hooks/useAlert';
 
 const styles = {
   container: {
@@ -52,6 +53,7 @@ const styles = {
 
 function ScenarioList({ backend, onSelect, onAddScenario, scenarios, setScenarios }) {
   const [loading, setLoading] = useState(true);
+  const { showAlert, showConfirm } = useAlert();
 
   useEffect(() => {
     const fetchAndSetScenarios = async () => {
@@ -61,7 +63,7 @@ function ScenarioList({ backend, onSelect, onAddScenario, scenarios, setScenario
         setScenarios(scenarioList);
       } catch (error) {
         console.error("Error fetching scenarios:", error);
-        alert("시나리오 목록을 불러오는 데 실패했습니다.");
+        showAlert("Failed to load scenario list.");
       } finally {
         setLoading(false);
       }
@@ -74,29 +76,30 @@ function ScenarioList({ backend, onSelect, onAddScenario, scenarios, setScenario
     const newName = prompt("Enter the new scenario name:", oldScenario.name);
     if (newName && newName.trim() && newName !== oldScenario.name) {
       if (scenarios.some(s => s.name === newName)) {
-        alert("A scenario with that name already exists.");
+        showAlert("A scenario with that name already exists.");
         return;
       }
       try {
         await backendService.renameScenario(backend, { oldScenario, newName });
         setScenarios(prev => prev.map(s => (s.id === oldScenario.id ? { ...s, name: newName } : s)));
-        alert("Scenario renamed successfully.");
+        showAlert("Scenario renamed successfully.");
       } catch (error) {
         console.error("Error renaming scenario:", error);
-        alert(`Failed to rename scenario: ${error.message}`);
+        showAlert(`Failed to rename scenario: ${error.message}`);
       }
     }
   };
 
   const handleDeleteScenario = async (scenarioId) => {
-    if (window.confirm(`Are you sure you want to delete this scenario?`)) {
+    const confirmed = await showConfirm(`Are you sure you want to delete this scenario?`);
+    if (confirmed) {
       try {
         await backendService.deleteScenario(backend, { scenarioId });
         setScenarios(prev => prev.filter(s => s.id !== scenarioId));
-        alert("Scenario deleted successfully.");
+        showAlert("Scenario deleted successfully.");
       } catch (error) {
         console.error("Error deleting scenario:", error);
-        alert(`Failed to delete scenario: ${error.message}`);
+        showAlert(`Failed to delete scenario: ${error.message}`);
       }
     }
   };

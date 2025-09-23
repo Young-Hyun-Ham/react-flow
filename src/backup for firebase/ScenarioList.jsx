@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 // --- 💡 수정된 부분: Firebase 관련 모듈 import 정리 ---
 import { collection, getDocs, doc, getDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
+import useAlert from './hooks/useAlert';
 
 const styles = {
   container: {
@@ -55,6 +56,7 @@ const styles = {
 // --- 💡 수정된 부분: App.jsx로부터 props를 전달받도록 변경 ---
 function ScenarioList({ onSelect, onAddScenario, scenarios, setScenarios }) {
   const [loading, setLoading] = useState(true);
+  const { showAlert, showConfirm } = useAlert();
 
   useEffect(() => {
     const fetchScenarios = async () => {
@@ -80,7 +82,7 @@ function ScenarioList({ onSelect, onAddScenario, scenarios, setScenarios }) {
     const newId = prompt("Enter the new scenario name:", oldId);
     if (newId && newId !== oldId) {
       if (scenarios.includes(newId)) {
-        alert("A scenario with that name already exists. Please choose a different name.");
+        showAlert("A scenario with that name already exists. Please choose a different name.");
         return;
       }
       const oldDocRef = doc(db, "scenarios", oldId);
@@ -95,25 +97,25 @@ function ScenarioList({ onSelect, onAddScenario, scenarios, setScenarios }) {
           await batch.commit();
 
           setScenarios(prev => prev.map(id => (id === oldId ? newId : id)));
-          alert("Scenario name has been changed.");
+          showAlert("Scenario name has been changed.");
         }
       } catch (error) {
         console.error("Error renaming scenario: ", error);
-        alert("Failed to rename.");
+        showAlert("Failed to rename.");
       }
     }
   };
 
   const handleDeleteScenario = async (idToDelete) => {
-    if (window.confirm(`Are you sure you want to delete the '${idToDelete}' scenario?`)) {
+    if (showConfirm(`Are you sure you want to delete the '${idToDelete}' scenario?`)) {
       const docRef = doc(db, "scenarios", idToDelete);
       try {
         await deleteDoc(docRef);
         setScenarios(prev => prev.filter(id => id !== idToDelete));
-        alert("Scenario has been deleted.");
+        showAlert("Scenario has been deleted.");
       } catch (error) {
         console.error("Error deleting scenario: ", error);
-        alert("Failed to delete.");
+        showAlert("Failed to delete.");
       }
     }
   };

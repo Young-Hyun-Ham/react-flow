@@ -9,6 +9,7 @@ import NewScenarioModal from './NewScenarioModal';
 import ApiDocs from './ApiDocs';
 import useStore from './store';
 import * as backendService from './backendService';
+import { AlertProvider } from './context/AlertProvider';
 import './App.css';
 
 function App() {
@@ -117,82 +118,84 @@ function App() {
   
   // --- 💡 수정된 부분: 로그인 여부와 관계없이 앱을 항상 렌더링합니다. ---
   return (
-    <div className="app-container">
-      <header className="app-header">
-        <div className="header-title-container">
-          <h1>Chatbot Flow & Board</h1>
-          <button className="help-button" onClick={() => setIsHelpModalOpen(true)}>?</button>
-        </div>
-        <nav>
-          <button onClick={() => handleViewChange('list')} className={view === 'list' ? 'active' : ''}>
-            Scenario List
-          </button>
-          <button 
-            onClick={() => handleViewChange('flow')} 
-            className={view === 'flow' ? 'active' : ''}
-          >
-            Flow Editor
-          </button>
-          <button onClick={() => handleViewChange('board')} className={view === 'board' ? 'active' : ''}>
-            Board
-          </button>
-          <button onClick={() => handleViewChange('api')} className={view === 'api' ? 'active' : ''}>
-            API Docs
-          </button>
-        </nav>
-        <div className="user-profile">
-          <div className="backend-switch">
-            <span>Firebase</span>
-            <label className="switch">
-              <input type="checkbox" checked={backend === 'fastapi'} onChange={() => setBackend(prev => prev === 'firebase' ? 'fastapi' : 'firebase')} />
-              <span className="slider round"></span>
-            </label>
-            <span>FastAPI</span>
+    <AlertProvider>
+      <div className="app-container">
+        <header className="app-header">
+          <div className="header-title-container">
+            <h1>Chatbot Flow & Board</h1>
+            <button className="help-button" onClick={() => setIsHelpModalOpen(true)}>?</button>
           </div>
-          {/* --- 💡 수정된 부분: 로그인 상태에 따라 UI를 다르게 표시 --- */}
-          {user ? (
-            <>
-              <img src={user.photoURL} alt={user.displayName} className="user-avatar" />
-              <span>{user.displayName}</span>
-              <button onClick={handleLogout} className="logout-button">Logout</button>
-            </>
-          ) : (
-            <button onClick={handleLogin} className="logout-button">Login</button>
-          )}
-        </div>
-      </header>
-      <main className="app-main">
-        <div className={`view-container ${view !== 'list' ? 'hidden' : ''}`}>
-            <ScenarioList 
-                backend={backend}
-                onSelect={handleScenarioSelect} 
-                onAddScenario={handleAddNewScenario}
-                scenarios={scenarios}
-                setScenarios={setScenarios}
-            />
-        </div>
-        
-        {selectedScenario && (
-            <div className={`view-container ${view !== 'flow' ? 'hidden' : ''}`}>
-                <Flow scenario={selectedScenario} backend={backend} />
+          <nav>
+            <button onClick={() => handleViewChange('list')} className={view === 'list' ? 'active' : ''}>
+              Scenario List
+            </button>
+            <button 
+              onClick={() => handleViewChange('flow')} 
+              className={view === 'flow' ? 'active' : ''}
+            >
+              Flow Editor
+            </button>
+            <button onClick={() => handleViewChange('board')} className={view === 'board' ? 'active' : ''}>
+              Board
+            </button>
+            <button onClick={() => handleViewChange('api')} className={view === 'api' ? 'active' : ''}>
+              API Docs
+            </button>
+          </nav>
+          <div className="user-profile">
+            <div className="backend-switch">
+              <span>Firebase</span>
+              <label className="switch">
+                <input type="checkbox" checked={backend === 'fastapi'} onChange={() => setBackend(prev => prev === 'firebase' ? 'fastapi' : 'firebase')} />
+                <span className="slider round"></span>
+              </label>
+              <span>FastAPI</span>
             </div>
-        )}
-        
-        <div className={`view-container ${view !== 'board' ? 'hidden' : ''}`}>
-            <Board user={user} />
-        </div>
+            {/* --- 💡 수정된 부분: 로그인 상태에 따라 UI를 다르게 표시 --- */}
+            {user ? (
+              <>
+                <img src={user.photoURL} alt={user.displayName} className="user-avatar" />
+                <span>{user.displayName}</span>
+                <button onClick={handleLogout} className="logout-button">Logout</button>
+              </>
+            ) : (
+              <button onClick={handleLogin} className="logout-button">Login</button>
+            )}
+          </div>
+        </header>
+        <main className="app-main">
+          <div className={`view-container ${view !== 'list' ? 'hidden' : ''}`}>
+              <ScenarioList 
+                  backend={backend}
+                  onSelect={handleScenarioSelect} 
+                  onAddScenario={handleAddNewScenario}
+                  scenarios={scenarios}
+                  setScenarios={setScenarios}
+              />
+          </div>
+          
+          {selectedScenario && (
+              <div className={`view-container ${view !== 'flow' ? 'hidden' : ''}`}>
+                  <Flow scenario={selectedScenario} backend={backend} />
+              </div>
+          )}
+          
+          <div className={`view-container ${view !== 'board' ? 'hidden' : ''}`}>
+              <Board user={user} />
+          </div>
 
-        <div className={`view-container ${view !== 'api' ? 'hidden' : ''}`}>
-            <ApiDocs />
-        </div>
-      </main>
-      <HelpModal isOpen={isHelpModalOpen} onClose={() => setIsHelpModalOpen(false)} />
-      <NewScenarioModal 
-        isOpen={isNewScenarioModalOpen}
-        onClose={() => setIsNewScenarioModalOpen(false)}
-        onCreate={handleCreateScenario}
-      />
-    </div>
+          <div className={`view-container ${view !== 'api' ? 'hidden' : ''}`}>
+              <ApiDocs />
+          </div>
+        </main>
+        <HelpModal isOpen={isHelpModalOpen} onClose={() => setIsHelpModalOpen(false)} />
+        <NewScenarioModal 
+          isOpen={isNewScenarioModalOpen}
+          onClose={() => setIsNewScenarioModalOpen(false)}
+          onCreate={handleCreateScenario}
+        />
+      </div>
+    </AlertProvider>
   );
 }
 

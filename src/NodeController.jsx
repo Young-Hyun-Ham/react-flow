@@ -5,6 +5,7 @@ import { db } from './firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import * as backendService from './backendService';
 import ApiTemplateModal from './ApiTemplateModal';
+import useAlert from './hooks/useAlert';
 
 // ... (ElementEditor 컴포넌트는 이전과 동일) ...
 function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange, onSetDefault, onSaveDefault }) {
@@ -208,6 +209,7 @@ function NodeController() {
   // --- 💡 수정된 부분 시작 ---
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [apiTemplates, setApiTemplates] = useState([]);
+  const { showAlert } = useAlert(); 
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -274,7 +276,7 @@ function NodeController() {
       setIsTemplateModalOpen(false);
     } catch (error) {
       console.error("Failed to save API template:", error);
-      alert("Failed to save template.");
+      showAlert("Failed to save template.");
     }
   };
 

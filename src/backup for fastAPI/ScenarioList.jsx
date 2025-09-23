@@ -104,7 +104,7 @@ function ScenarioList({ onSelect, onAddScenario, scenarios, setScenarios }) {
 
   // --- 💡 수정된 부분: 시나리오 삭제 API 연동 로직 ---
   const handleDeleteScenario = async (scenarioId) => {
-    if (window.confirm(`Are you sure you want to delete this scenario?`)) {
+    if (showConfirm(`Are you sure you want to delete this scenario?`)) {
       try {
         const response = await fetch(`${API_BASE_URL}/${scenarioId}`, {
           method: 'DELETE',

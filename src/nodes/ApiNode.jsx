@@ -1,6 +1,7 @@
 import { Handle, Position } from 'reactflow';
 import styles from './ChatNodes.module.css';
 import useStore from '../store';
+import useAlert from '../hooks/useAlert';
 
 // --- 💡 추가된 부분: Play 아이콘 ---
 const PlayIcon = () => (
@@ -24,8 +25,8 @@ function ApiNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);
   const nodeColor = useStore((state) => state.nodeColors.api);
   const textColor = useStore((state) => state.nodeTextColors.api);
-  // --- 💡 추가된 부분 시작 ---
   const slots = useStore((state) => state.slots);
+  const { showAlert } = useAlert();
 
   const interpolateMessage = (message, slots) => {
     if (!message) return '';
@@ -59,10 +60,10 @@ function ApiNode({ id, data }) {
         throw new Error(`HTTP error! status: ${response.status}\n${JSON.stringify(result, null, 2)}`);
       }
 
-      alert(`API Test Success!\n\nResponse:\n${JSON.stringify(result, null, 2)}`);
+      showAlert(`API Test Success!\n\nResponse:\n${JSON.stringify(result, null, 2)}`);
     } catch (error) {
       console.error("API Test Error:", error);
-      alert(`API Test Failed:\n${error.message}`);
+      showAlert(`API Test Failed:\n${error.message}`);
     }
   };
   // --- 💡 추가된 부분 끝 ---

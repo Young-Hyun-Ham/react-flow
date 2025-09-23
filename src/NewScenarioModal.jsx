@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import styles from './NewScenarioModal.module.css';
+import useAlert from './hooks/useAlert';
 
 function NewScenarioModal({ isOpen, onClose, onCreate }) {
   const [scenarioName, setScenarioName] = useState('');
+  const { showAlert } = useAlert();
 
   if (!isOpen) {
     return null;
@@ -14,7 +16,7 @@ function NewScenarioModal({ isOpen, onClose, onCreate }) {
       onCreate(scenarioName.trim());
       setScenarioName(''); // 입력 필드 초기화
     } else {
-      alert('Please enter a scenario name.');
+      showAlert('Please enter a scenario name.');
     }
   };
 

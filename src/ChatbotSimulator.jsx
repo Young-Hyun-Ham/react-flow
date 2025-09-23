@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import useStore from './store';
 import styles from './ChatbotSimulator.module.css';
+import useAlert from './hooks/useAlert';
 
 const interpolateMessage = (message, slots) => {
   if (!message) return '';
@@ -164,6 +165,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
   const [formData, setFormData] = useState({});
   const [fixedMenu, setFixedMenu] = useState(null);
   const historyRef = useRef(null);
+  const { showAlert } = useAlert(); 
 
   const slots = useStore((state) => state.slots);
   const setSlots = useStore((state) => state.setSlots);
@@ -283,7 +285,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
 
       if (node.type === 'toast') {
         const message = interpolateMessage(node.data.message, updatedSlots);
-        alert(`[${node.data.toastType || 'info'}] ${message}`);
+        showAlert(`[${node.data.toastType || 'info'}] ${message}`);
         proceedToNextNode(null, nodeId, updatedSlots);
         return;
       }
@@ -510,7 +512,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
             } else if (element.validation?.type === 'custom' && element.validation?.startDate && element.validation?.endDate) {
                 alertMessage = `'${element.label}' must be between ${element.validation.startDate} and ${element.validation.endDate}.`;
             }
-          alert(alertMessage);
+          showAlert(alertMessage);
           return;
         }
       }
