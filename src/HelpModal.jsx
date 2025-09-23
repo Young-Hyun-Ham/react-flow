@@ -14,6 +14,7 @@ const HelpManual = () => (
  <li><strong>Flow Editor</strong>: The main workspace for visually creating and editing chatbot conversation flows.</li>
  <li><strong>Board</strong>: Provides a simple bulletin board feature to help communication between users.</li>
  <li><strong>API Docs</strong>: Displays the API specification for managing scenarios.</li>
+ <li><strong>Backend Switch</strong>: Located in the top-right header, this switch allows you to toggle between <strong>Firebase</strong> and <strong>FastAPI</strong> backends for scenario data storage and management.</li>
  </ul>
 
  <h2>2. Scenario Management</h2>
@@ -33,7 +34,7 @@ const HelpManual = () => (
  <h2>4. Flow Editor Screen Layout</h2>
  <ol>
  <li><strong>Node Addition Panel (Left)</strong>: Add various types of nodes that make up the scenario to the canvas.</li>
- <li><strong>Canvas (Center)</strong>: Space for placing nodes and connecting them to create actual conversation flows.</li>
+ <li><strong>Canvas (Center)</strong>: Space for placing nodes and connecting them to create actual conversation flows. A <strong>Minimap</strong> is available in the bottom-right corner for easy navigation.</li>
  <li><strong>Controller Panel (Right)</strong>: Activated when you select a node on the canvas, allowing you to edit the detailed content of that node.</li>
  <li><strong>Simulator (Right)</strong>: Can be activated by clicking the <code><img src="/images/chat_simulator.png" alt="chatbot" style={{ width: '24px', height: '24px' }}/></code> icon to test how your written scenario works in real-time as an actual chatbot.</li>
  </ol>
@@ -58,7 +59,7 @@ const HelpManual = () => (
   </tr>
   <tr>
   <td><strong>Condition Branch</strong></td>
-  <td>Divides the conversation flow into multiple branches based on user responses.</td>
+  <td>Divides the conversation flow into multiple branches based on user responses or slot values (including boolean <code>true</code>/<code>false</code>).</td>
   </tr>
   <tr>
   <td><strong>SlotFilling</strong></td>
@@ -103,6 +104,7 @@ const HelpManual = () => (
  <h3>6.3. Using the API Node</h3>
  <p>The API node allows for dynamic interaction with external servers.</p>
  <ul>
+ <li><strong>Individual API Test</strong>: Click the <strong>Play (▶)</strong> button on the top-right corner of the API node to test that specific API call immediately. It will use the current slot values for the request and show you the result in a pop-up modal.</li>
  <li><strong>Dynamic Requests</strong>: Use slots to make dynamic API calls. In the URL, Headers, or Body fields, you can insert values from previous user inputs or API responses using brace notation (e.g., <code>https://api.example.com/users/{'{userId}'}</code>).</li>
  <li><strong>Response Mapping</strong>: After a successful API call, you can extract values from the JSON response and save them into new or existing slots. In the "Response Mapping" section of the controller:
   <ul>
@@ -193,6 +195,7 @@ const HelpManual_ko = () => (
  <li><strong>Flow Editor</strong>: 챗봇 대화 흐름을 시각적으로 만들고 편집하는 기본 작업 공간입니다.</li>
  <li><strong>Board</strong>: 사용자 간 소통을 돕는 간단한 게시판 기능을 제공합니다.</li>
  <li><strong>API Docs</strong>: 시나리오 관리를 위한 API 명세를 보여줍니다.</li>
+ <li><strong>백엔드 전환 스위치</strong>: 우측 상단 헤더에 위치하며, 시나리오 데이터 저장 및 관리를 위한 백엔드를 <strong>Firebase</strong>와 <strong>FastAPI</strong> 중에서 선택할 수 있습니다.</li>
  </ul>
 
  <h2>2. 시나리오 관리</h2>
@@ -212,7 +215,7 @@ const HelpManual_ko = () => (
  <h2>4. Flow Editor 화면 구성</h2>
  <ol>
  <li><strong>노드 추가 패널 (좌측)</strong>: 시나리오를 구성하는 다양한 종류의 노드를 캔버스에 추가합니다.</li>
- <li><strong>캔버스 (중앙)</strong>: 노드를 배치하고 연결하여 실제 대화 흐름을 구성하는 공간입니다.</li>
+ <li><strong>캔버스 (중앙)</strong>: 노드를 배치하고 연결하여 실제 대화 흐름을 구성하는 공간입니다. 쉬운 탐색을 위해 우측 하단에 <strong>미니맵</strong>이 제공됩니다.</li>
  <li><strong>컨트롤러 패널 (우측)</strong>: 캔버스에서 노드를 선택하면 활성화되며, 해당 노드의 세부 내용을 편집할 수 있습니다.</li>
  <li><strong>시뮬레이터 (우측)</strong>: <code><img src="/images/chat_simulator.png" alt="chatbot" style={{ width: '24px', height: '24px' }}/></code> 아이콘을 클릭하여 활성화할 수 있으며, 작성한 시나리오가 실제 챗봇처럼 동작하는지 실시간으로 테스트할 수 있습니다.</li>
  </ol>
@@ -237,7 +240,7 @@ const HelpManual_ko = () => (
   </tr>
   <tr>
   <td><strong>조건<br />분기</strong></td>
-  <td>사용자의 답변에 따라 대화 흐름을 여러 갈래로 나눕니다.</td>
+  <td>사용자의 답변 또는 슬롯 값(boolean 타입 <code>true</code>/<code>false</code> 포함)에 따라 대화 흐름을 여러 갈래로 나눕니다.</td>
   </tr>
   <tr>
   <td><strong>슬롯<br />채우기</strong></td>
@@ -282,6 +285,7 @@ const HelpManual_ko = () => (
  <h3>6.3. API 노드 사용하기</h3>
  <p>API 노드를 사용하면 외부 서버와 동적으로 상호작용할 수 있습니다.</p>
  <ul>
+ <li><strong>개별 API 테스트</strong>: API 노드 우측 상단의 <strong>재생(▶) 버튼</strong>을 클릭하면 해당 API를 즉시 테스트할 수 있습니다. 현재 슬롯 값을 사용하여 요청을 보내고, 결과를 팝업 모달로 보여줍니다.</li>
  <li><strong>동적 요청</strong>: 슬롯을 사용하여 동적인 API를 호출할 수 있습니다. URL, Headers, Body 필드에 중괄호 표기법(예: <code>https://api.example.com/users/{'{userId}'}</code>)을 사용하여 이전 사용자 입력이나 다른 API 응답 값을 삽입할 수 있습니다.</li>
  <li><strong>응답 매핑</strong>: API가 성공적으로 호출된 후, JSON 응답에서 특정 값을 추출하여 새 슬롯이나 기존 슬롯에 저장할 수 있습니다. 컨트롤러의 "Response Mapping" 섹션에서 다음을 설정하세요:
   <ul>
@@ -372,6 +376,7 @@ const HelpManual_vi = () => (
  <li><strong>Trình chỉnh sửa luồng (Flow Editor)</strong>: Không gian làm việc chính để tạo và chỉnh sửa luồng hội thoại của chatbot một cách trực quan.</li>
  <li><strong>Bảng tin (Board)</strong>: Cung cấp tính năng bảng tin đơn giản để giúp người dùng giao tiếp với nhau.</li>
  <li><strong>Tài liệu API (API Docs)</strong>: Hiển thị thông số kỹ thuật API để quản lý các kịch bản.</li>
+ <li><strong>Công tắc Backend</strong>: Nằm ở tiêu đề trên cùng bên phải, công tắc này cho phép bạn chuyển đổi giữa các backend <strong>Firebase</strong> và <strong>FastAPI</strong> để lưu trữ và quản lý dữ liệu kịch bản.</li>
  </ul>
 
  <h2>2. Quản lý kịch bản</h2>
@@ -391,7 +396,7 @@ const HelpManual_vi = () => (
  <h2>4. Bố cục màn hình Trình chỉnh sửa luồng</h2>
  <ol>
  <li><strong>Bảng thêm Node (Bên trái)</strong>: Thêm các loại node khác nhau tạo nên kịch bản vào canvas.</li>
- <li><strong>Canvas (Ở giữa)</strong>: Không gian để đặt các node và kết nối chúng để tạo ra các luồng hội thoại thực tế.</li>
+ <li><strong>Canvas (Ở giữa)</strong>: Không gian để đặt các node và kết nối chúng để tạo ra các luồng hội thoại thực tế. Một <strong>Bản đồ thu nhỏ (Minimap)</strong> có sẵn ở góc dưới cùng bên phải để dễ dàng điều hướng.</li>
  <li><strong>Bảng điều khiển (Bên phải)</strong>: Được kích hoạt khi bạn chọn một node trên canvas, cho phép bạn chỉnh sửa nội dung chi tiết của node đó.</li>
  <li><strong>Trình mô phỏng (Bên phải)</strong>: Có thể được kích hoạt bằng cách nhấp vào biểu tượng <code><img src="/images/chat_simulator.png" alt="chatbot" style={{ width: '24px', height: '24px' }}/></code> để kiểm tra xem kịch bản bạn đã viết hoạt động như thế nào trong thời gian thực như một chatbot thực tế.</li>
  </ol>
@@ -416,7 +421,7 @@ const HelpManual_vi = () => (
   </tr>
   <tr>
   <td><strong>Nhánh điều kiện</strong></td>
-  <td>Chia luồng hội thoại thành nhiều nhánh dựa trên phản hồi của người dùng.</td>
+  <td>Chia luồng hội thoại thành nhiều nhánh dựa trên phản hồi của người dùng hoặc giá trị của slot (bao gồm cả giá trị boolean <code>true</code>/<code>false</code>).</td>
   </tr>
   <tr>
   <td><strong>Điền vào chỗ trống (SlotFilling)</strong></td>
@@ -461,6 +466,7 @@ const HelpManual_vi = () => (
  <h3>6.3. Sử dụng Node API</h3>
  <p>Node API cho phép tương tác động với các máy chủ bên ngoài.</p>
  <ul>
+ <li><strong>Kiểm tra API riêng lẻ</strong>: Nhấp vào nút <strong>Phát (▶)</strong> ở góc trên cùng bên phải của node API để kiểm tra lệnh gọi API cụ thể đó ngay lập tức. Nó sẽ sử dụng các giá trị slot hiện tại cho yêu cầu và hiển thị cho bạn kết quả trong một cửa sổ bật lên.</li>
  <li><strong>Yêu cầu động</strong>: Sử dụng các slot để thực hiện các lệnh gọi API động. Trong các trường URL, Headers hoặc Body, bạn có thể chèn các giá trị từ các thông tin đầu vào trước đó của người dùng hoặc các phản hồi API bằng cách sử dụng ký hiệu dấu ngoặc nhọn (ví dụ: <code>https://api.example.com/users/{'{userId}'}</code>).</li>
  <li><strong>Ánh xạ phản hồi</strong>: Sau khi gọi API thành công, bạn có thể trích xuất các giá trị từ phản hồi JSON và lưu chúng vào các slot mới hoặc hiện có. Trong phần "Ánh xạ phản hồi" của bộ điều khiển:
   <ul>
