@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import styles from './ApiTemplateModal.module.css';
 
-function ApiTemplateModal({ isOpen, onClose, onSave, onSelect, templates }) {
+function ApiTemplateModal({ isOpen, onClose, onSave, onSelect, onDelete, templates, isMulti, selectedApiCallName }) {
   const [templateName, setTemplateName] = useState('');
   const [error, setError] = useState('');
 
@@ -27,6 +27,19 @@ function ApiTemplateModal({ isOpen, onClose, onSave, onSelect, templates }) {
     onSelect(template);
     onClose();
   };
+  
+  const handleDelete = (e, templateId) => {
+    e.stopPropagation(); // 이벤트 버블링 방지
+    onDelete(templateId);
+  };
+
+  const saveInstruction = isMulti 
+    ? (selectedApiCallName ? `Save '${selectedApiCallName}' as a new template.` : 'Select an API call from the list to save it.')
+    : 'Save the current API configuration as a new template.';
+
+  const loadInstruction = isMulti
+    ? (selectedApiCallName ? `Load a template into '${selectedApiCallName}'.` : 'Select an API call from the list to load a template into it.')
+    : 'Load a template into the current API configuration.';
 
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
@@ -35,7 +48,8 @@ function ApiTemplateModal({ isOpen, onClose, onSave, onSelect, templates }) {
         <h2>API Templates</h2>
         
         <div className={styles.saveSection}>
-          <h3>Save Current as Template</h3>
+          <h3>Save as Template</h3>
+          <p className={styles.instructionText}>{saveInstruction}</p>
           <div className={styles.inputGroup}>
             <input
               type="text"
@@ -44,25 +58,32 @@ function ApiTemplateModal({ isOpen, onClose, onSave, onSelect, templates }) {
                 setTemplateName(e.target.value);
                 setError('');
               }}
-              placeholder="Enter template name"
+              placeholder="Enter new template name"
+              disabled={isMulti && !selectedApiCallName}
             />
-            <button onClick={handleSave}>Save</button>
+            <button onClick={handleSave} disabled={isMulti && !selectedApiCallName}>Save</button>
           </div>
           {error && <p className={styles.errorMessage}>{error}</p>}
         </div>
 
         <div className={styles.loadSection}>
           <h3>Load from Template</h3>
+          <p className={styles.instructionText}>{loadInstruction}</p>
           <div className={styles.templateList}>
             {templates.length > 0 ? (
               templates.map((template) => (
                 <div key={template.id} className={styles.templateItem}>
                   <span>{template.name}</span>
-                  <button onClick={() => handleSelect(template)}>Load</button>
+                  <div className={styles.buttonGroup}>
+                    <button onClick={() => handleSelect(template)} className={styles.loadButton}>Load</button>
+                    {/* --- 💡 수정된 부분 시작 --- */}
+                    <button onClick={(e) => handleDelete(e, template.id)} className={styles.deleteButton}>Delete</button>
+                    {/* --- 💡 수정된 부분 끝 --- */}
+                  </div>
                 </div>
               ))
             ) : (
-              <p>No saved templates.</p>
+              <p className={styles.placeholder}>No saved templates.</p>
             )}
           </div>
         </div>

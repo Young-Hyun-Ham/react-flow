@@ -73,7 +73,6 @@ export const saveScenarioData = async ({ scenario, data }) => {
   await setDoc(scenarioDocRef, data);
 };
 
-// --- 💡 수정된 부분 시작 ---
 export const fetchApiTemplates = async () => {
   const templatesCollection = collection(db, 'apiTemplates');
   const querySnapshot = await getDocs(templatesCollection);
@@ -85,4 +84,8 @@ export const saveApiTemplate = async (templateData) => {
   const docRef = await addDoc(templatesCollection, templateData);
   return { id: docRef.id, ...templateData };
 };
-// --- 💡 수정된 부분 끝 ---
+
+export const deleteApiTemplate = async (templateId) => {
+  const templateDocRef = doc(db, 'apiTemplates', templateId);
+  await deleteDoc(templateDocRef);
+};

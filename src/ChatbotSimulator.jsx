@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import useStore from './store';
 import styles from './ChatbotSimulator.module.css';
-import useAlert from './hooks/useAlert';
 
 const interpolateMessage = (message, slots) => {
   if (!message) return '';
@@ -59,12 +58,9 @@ const validateInput = (value, validation) => {
 };
 
 const evaluateCondition = (slotValue, operator, conditionValue) => {
-  // --- 💡 수정된 부분 시작 ---
   const lowerCaseConditionValue = String(conditionValue).toLowerCase();
   if (lowerCaseConditionValue === 'true' || lowerCaseConditionValue === 'false') {
     const boolConditionValue = lowerCaseConditionValue === 'true';
-    
-    // slotValue를 boolean으로 변환 (문자열 'true'도 true로 인식)
     const boolSlotValue = String(slotValue).toLowerCase() === 'true';
 
     switch (operator) {
@@ -73,10 +69,9 @@ const evaluateCondition = (slotValue, operator, conditionValue) => {
       case '!=':
         return boolSlotValue !== boolConditionValue;
       default:
-        return false; // boolean 타입에는 다른 연산자 부적합
+        return false;
     }
   }
-  // --- 💡 수정된 부분 끝 ---
 
   const numSlotValue = parseFloat(slotValue);
   const numConditionValue = parseFloat(conditionValue);
@@ -165,7 +160,6 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
   const [formData, setFormData] = useState({});
   const [fixedMenu, setFixedMenu] = useState(null);
   const historyRef = useRef(null);
-  const { showAlert } = useAlert(); 
 
   const slots = useStore((state) => state.slots);
   const setSlots = useStore((state) => state.setSlots);
@@ -285,7 +279,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
 
       if (node.type === 'toast') {
         const message = interpolateMessage(node.data.message, updatedSlots);
-        showAlert(`[${node.data.toastType || 'info'}] ${message}`);
+        alert(`[${node.data.toastType || 'info'}] ${message}`);
         proceedToNextNode(null, nodeId, updatedSlots);
         return;
       }
@@ -305,57 +299,83 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
     const loadingId = Date.now();
     setHistory(prev => [...prev, { type: 'loading', id: loadingId }]);
 
-    let isSuccess = false;
     let finalSlots = { ...currentSlots };
+    const { isMulti, apis } = node.data;
 
     try {
-      const { method, url, headers, body, responseMapping } = node.data;
-      
-      const interpolatedUrl = interpolateMessage(url, currentSlots);
-      const interpolatedHeaders = JSON.parse(interpolateMessage(headers || '{}', currentSlots));
-      const interpolatedBody = method !== 'GET' && body ? interpolateMessage(body, currentSlots) : undefined;
-
-      const options = {
-        method,
-        headers: interpolatedHeaders,
-        body: interpolatedBody,
-      };
-      
-      console.log("API Request:", { method, url: interpolatedUrl, headers: interpolatedHeaders, body: options.body });
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      const response = await fetch(interpolatedUrl, options);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
-      const newSlots = {};
-      if (responseMapping && responseMapping.length > 0) {
-        responseMapping.forEach(mapping => {
-          if (mapping.path && mapping.slot) {
-            const value = getNestedValue(result, mapping.path);
-            if (value !== undefined) {
-              newSlots[mapping.slot] = value;
+      let promises;
+      if (isMulti) {
+        promises = (apis || []).map(apiCall => {
+          const interpolatedUrl = interpolateMessage(apiCall.url, currentSlots);
+          const interpolatedHeaders = JSON.parse(interpolateMessage(apiCall.headers || '{}', currentSlots));
+          const interpolatedBody = apiCall.method !== 'GET' && apiCall.body ? interpolateMessage(apiCall.body, currentSlots) : undefined;
+          
+          return fetch(interpolatedUrl, {
+            method: apiCall.method,
+            headers: { 'Content-Type': 'application/json', ...interpolatedHeaders },
+            body: interpolatedBody,
+          }).then(response => {
+            if (!response.ok) {
+              return response.json().then(err => Promise.reject({ status: response.status, body: err, apiName: apiCall.name }));
             }
-          }
+            return response.json().then(data => ({ data, mapping: apiCall.responseMapping, apiName: apiCall.name }));
+          });
         });
       } else {
-        newSlots['api_response'] = JSON.stringify(result, null, 2);
+        const { method, url, headers, body } = node.data;
+        const interpolatedUrl = interpolateMessage(url, currentSlots);
+        const interpolatedHeaders = JSON.parse(interpolateMessage(headers || '{}', currentSlots));
+        const interpolatedBody = method !== 'GET' && body ? interpolateMessage(body, currentSlots) : undefined;
+        
+        promises = [
+          fetch(interpolatedUrl, {
+            method,
+            headers: { 'Content-Type': 'application/json', ...interpolatedHeaders },
+            body: interpolatedBody,
+          }).then(response => {
+            if (!response.ok) {
+              return response.json().then(err => Promise.reject({ status: response.status, body: err, apiName: 'API Call' }));
+            }
+            return response.json().then(data => ({ data, mapping: node.data.responseMapping, apiName: 'API Call' }));
+          })
+        ];
       }
+      
+      const results = await Promise.allSettled(promises);
+      
+      const failedCalls = results.filter(r => r.status === 'rejected');
+      if (failedCalls.length > 0) {
+        const firstError = failedCalls[0].reason;
+        throw new Error(`API call '${firstError.apiName}' failed with status ${firstError.status}`);
+      }
+      
+      const newSlots = {};
+      results.forEach(result => {
+        if (result.status === 'fulfilled') {
+          const { data, mapping } = result.value;
+          if (mapping && mapping.length > 0) {
+            mapping.forEach(m => {
+              if (m.path && m.slot) {
+                const value = getNestedValue(data, m.path);
+                if (value !== undefined) newSlots[m.slot] = value;
+              }
+            });
+          } else {
+             newSlots[`api_response_${result.value.apiName.replace(/\s+/g, '_')}`] = data;
+          }
+        }
+      });
       
       finalSlots = { ...currentSlots, ...newSlots };
       setSlots(finalSlots);
-      isSuccess = true;
 
-      const resultMessage = `API call successful. Mapped data to slots.`;
       setHistory(prev => prev.map(item => 
         item.id === loadingId 
-          ? { type: 'bot', message: resultMessage, id: loadingId }
+          ? { type: 'bot', message: `All API calls successful.`, id: loadingId }
           : item
       ));
+      
+      proceedToNextNode('onSuccess', node.id, finalSlots);
 
     } catch (error) {
       console.error("API Error:", error);
@@ -364,8 +384,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
           ? { type: 'bot', message: `Error: ${error.message}`, id: loadingId }
           : item
       ));
-    } finally {
-      proceedToNextNode(isSuccess ? 'onSuccess' : 'onError', node.id, finalSlots);
+      proceedToNextNode('onError', node.id, finalSlots);
     }
   }, [proceedToNextNode, setSlots]);
 
@@ -512,7 +531,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
             } else if (element.validation?.type === 'custom' && element.validation?.startDate && element.validation?.endDate) {
                 alertMessage = `'${element.label}' must be between ${element.validation.startDate} and ${element.validation.endDate}.`;
             }
-          showAlert(alertMessage);
+          alert(alertMessage);
           return;
         }
       }

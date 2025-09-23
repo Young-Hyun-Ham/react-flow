@@ -21,8 +21,7 @@ export const deleteScenario = (backend, args) => getService(backend).deleteScena
 export const fetchScenarioData = (backend, args) => getService(backend).fetchScenarioData(args);
 export const saveScenarioData = (backend, args) => getService(backend).saveScenarioData(args);
 
-// --- 💡 수정된 부분 시작 ---
 // FastAPI에는 템플릿 기능이 없으므로, firebaseApi를 직접 사용합니다.
 export const fetchApiTemplates = firebaseApi.fetchApiTemplates;
 export const saveApiTemplate = firebaseApi.saveApiTemplate;
-// --- 💡 수정된 부분 끝 ---
+export const deleteApiTemplate = firebaseApi.deleteApiTemplate; // --- 💡 추가된 부분 ---

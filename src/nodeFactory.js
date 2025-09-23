@@ -11,16 +11,20 @@ export const createNodeData = (type) => {
     case 'slotfilling':
       return { ...baseData, content: 'Enter your question.', slot: 'newSlot', replies: [] };
     case 'api':
+      // --- 💡 수정된 부분 시작 ---
       return {
         ...baseData,
+        isMulti: false, // Multi-API 모드 비활성화가 기본값
+        // 단일 API 기본 구조
         method: 'GET',
         url: '',
         headers: '{}',
         body: '{}',
         responseMapping: [],
-        errorMappingEnabled: true,
+        // 다중 API를 위한 배열 (초기에는 비어있음)
+        apis: [],
       };
-    // --- 💡 [수정된 부분 시작] ---
+    // --- 💡 수정된 부분 끝 ---
     case 'branch':
       return { 
         ...baseData, 
@@ -33,7 +37,6 @@ export const createNodeData = (type) => {
         }],
         replies: [{ display: 'Condition 1', value: `cond_${Date.now()}` }, { display: 'Condition 2', value: `cond_${Date.now() + 1}` }] 
       };
-    // --- 💡 [수정된 부분 끝] ---
     case 'form':
       return {
         ...baseData,

@@ -3,23 +3,11 @@ import styles from './ChatNodes.module.css';
 import useStore from '../store';
 import useAlert from '../hooks/useAlert';
 
-// --- 💡 추가된 부분: Play 아이콘 ---
 const PlayIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M5 3l14 9-14 9V3z"></path>
-  </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5 3l14 9-14 9V3z"></path>
+    </svg>
 );
-
-const getTextColorByBackgroundColor = (hexColor) => {
-    if (!hexColor) return 'white';
-    const c = hexColor.substring(1);
-    const rgb = parseInt(c, 16);
-    const r = (rgb >> 16) & 0xff;
-    const g = (rgb >>  8) & 0xff;
-    const b = (rgb >>  0) & 0xff;
-    const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-    return luma < 128 ? 'white' : 'black';
-}
 
 function ApiNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);
@@ -27,6 +15,8 @@ function ApiNode({ id, data }) {
   const textColor = useStore((state) => state.nodeTextColors.api);
   const slots = useStore((state) => state.slots);
   const { showAlert } = useAlert();
+  const apiCount = data.apis?.length || 0;
+  const isMulti = data.isMulti;
 
   const interpolateMessage = (message, slots) => {
     if (!message) return '';
@@ -37,19 +27,16 @@ function ApiNode({ id, data }) {
 
   const handleApiTest = async (e) => {
     e.stopPropagation();
+    if (isMulti) return; // Multi 모드일 때는 컨트롤러에서 개별 테스트
     try {
       const { method, url, headers, body } = data;
-      
       const interpolatedUrl = interpolateMessage(url, slots);
       const interpolatedHeaders = JSON.parse(interpolateMessage(headers || '{}', slots));
       const interpolatedBody = method !== 'GET' && body ? interpolateMessage(body, slots) : undefined;
 
       const options = {
         method,
-        headers: {
-            'Content-Type': 'application/json',
-            ...interpolatedHeaders
-        },
+        headers: { 'Content-Type': 'application/json', ...interpolatedHeaders },
         body: interpolatedBody,
       };
 
@@ -60,69 +47,54 @@ function ApiNode({ id, data }) {
         throw new Error(`HTTP error! status: ${response.status}\n${JSON.stringify(result, null, 2)}`);
       }
 
-      showAlert(`API Test Success!\n\nResponse:\n${JSON.stringify(result, null, 2)}`);
+      await showAlert(`API Test Success!\n\nResponse:\n${JSON.stringify(result, null, 2)}`);
     } catch (error) {
       console.error("API Test Error:", error);
-      showAlert(`API Test Failed:\n${error.message}`);
+      await showAlert(`API Test Failed:\n${error.message}`);
     }
   };
-  // --- 💡 추가된 부분 끝 ---
 
   return (
     <div className={styles.nodeWrapper}>
       <Handle type="target" position={Position.Left} />
       <div className={styles.nodeHeader} style={{ backgroundColor: nodeColor, color: textColor }}>
-        <span className={styles.headerTextContent}>API</span>
-        {/* --- 💡 수정된 부분 시작 --- */}
+        <span className={styles.headerTextContent}>
+          {isMulti ? `API (${apiCount} calls)` : 'API'}
+        </span>
         <div className={styles.headerButtons}>
-            <button onClick={handleApiTest} className={styles.playButton} title="Test API" style={{ color: textColor }}>
-                <PlayIcon />
-            </button>
+            {!isMulti && (
+              <button onClick={handleApiTest} className={styles.playButton} title="Test API" style={{ color: textColor }}>
+                  <PlayIcon />
+              </button>
+            )}
             <button onClick={(e) => { e.stopPropagation(); deleteNode(id); }} className={styles.deleteButton} style={{ backgroundColor: nodeColor, color: textColor }}>X</button>
         </div>
-        {/* --- 💡 수정된 부분 끝 --- */}
       </div>
       <div className={styles.nodeBody}>
-        <div className={styles.section}>
-          <span className={styles.sectionTitle}>Method</span>
-          <input
-            className={styles.textInput}
-            value={data.method || 'GET'}
-            readOnly
-          />
-        </div>
-        <div className={styles.section}>
-          <span className={styles.sectionTitle}>URL</span>
-          <textarea
-            className={styles.textInput}
-            value={data.url}
-            readOnly
-            rows={2}
-          />
-        </div>
-        {data.responseMapping && data.responseMapping.length > 0 && (
+        {isMulti ? (
           <div className={styles.section}>
-            <span className={styles.sectionTitle}>Response Mapping</span>
-            <div className={styles.previewBox}>
-              {data.responseMapping.length} item(s) configured
-            </div>
+            {data.apis?.map(api => (
+                <div key={api.id} className={styles.previewBox}>
+                    {api.name || 'API Call'}
+                </div>
+            ))}
           </div>
+        ) : (
+          <>
+            <div className={styles.section}>
+              <span className={styles.sectionTitle}>Method</span>
+              <input className={styles.textInput} value={data.method || 'GET'} readOnly />
+            </div>
+            <div className={styles.section}>
+              <span className={styles.sectionTitle}>URL</span>
+              <textarea className={styles.textInput} value={data.url} readOnly rows={2} />
+            </div>
+          </>
         )}
       </div>
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="onSuccess"
-        style={{ top: '35%', background: '#2ecc71' }}
-      />
+      <Handle type="source" position={Position.Right} id="onSuccess" style={{ top: '35%', background: '#2ecc71' }} />
       <span style={{ position: 'absolute', right: '-70px', top: '35%', transform: 'translateY(-50%)', fontSize: '0.7rem', color: '#2ecc71' }}>On Success</span>
-      
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="onError"
-        style={{ top: '65%', background: '#e74c3c' }}
-      />
+      <Handle type="source" position={Position.Right} id="onError" style={{ top: '65%', background: '#e74c3c' }} />
       <span style={{ position: 'absolute', right: '-60px', top: '65%', transform: 'translateY(-50%)', fontSize: '0.7rem', color: '#e74c3c' }}>On Error</span>
     </div>
   );
