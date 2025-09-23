@@ -55,7 +55,7 @@ const HelpManual = () => (
   </tr>
   <tr>
   <td><strong>Form</strong></td>
-  <td>A form for receiving structured data input from users. (e.g., name, date, checkboxes, etc.)</td>
+  <td>A form for receiving structured data input from users. (e.g., name, date, checkboxes, etc.). Dropbox options can be dynamically populated from a slot.</td>
   </tr>
   <tr>
   <td><strong>Condition Branch</strong></td>
@@ -67,7 +67,7 @@ const HelpManual = () => (
   </tr>
   <tr>
   <td><strong>API</strong></td>
-  <td>Calls an external API. You can use slot values in the request and save parts of the JSON response back into slots. It also allows branching the flow based on API call success or failure.</td>
+  <td>Calls an external API. You can use slot values in the request and save parts of the JSON response back into slots. It also allows branching the flow based on API call success or failure and supports sending multiple API requests in parallel.</td>
   </tr>
   <tr>
   <td><strong>LLM</strong></td>
@@ -100,11 +100,31 @@ const HelpManual = () => (
  <p>Slots are variables used to store and reuse information within a scenario. You can store user input from a <strong>SlotFilling</strong> node or data from an <strong>API</strong> node's response into a slot.</p>
  <p>To use a stored slot value in other nodes (like Message, API, or LLM), use brace notation: <code>{'{slotName}'}</code>.</p>
  <p><strong>Example:</strong> If you stored a user's name in a slot called <code>userName</code>, you can use it in a Message node like this: <code>Hello, {'{userName}'}! Welcome.</code></p>
+ 
+ <h4>6.2.1. Dynamic Dropbox Options (Slot Binding)</h4>
+ <p>In a <strong>Form</strong> node, you can dynamically populate the options of a <strong>Dropbox</strong> element from a slot that contains an array.</p>
+ <ul>
+    <li><strong>Data Format</strong>: The slot must contain an array. The array can be a simple array of strings (e.g., <code>["Apple", "Banana"]</code>) or an array of objects with <code>label</code> and <code>value</code> keys (e.g., <code>[{'{'}label: 'Choice A', value: 'a{'}'}, {'{'}label: 'Choice B', value: 'b{'}'}]</code>).</li>
+    <li><strong>Setup</strong>:
+        <ol>
+            <li>Select the Dropbox element in the Form Node controller.</li>
+            <li>In the 'Options Slot' input field, enter the name of the slot that holds the array (e.g., <code>fruit_list</code>).</li>
+            <li>When the simulator runs, the Dropbox will be filled with options from that slot. The manually entered 'Options (Fallback)' will be used if the specified slot is empty or not an array.</li>
+        </ol>
+    </li>
+ </ul>
 
  <h3>6.3. Using the API Node</h3>
  <p>The API node allows for dynamic interaction with external servers.</p>
  <ul>
  <li><strong>Individual API Test</strong>: Click the <strong>Play (▶)</strong> button on the top-right corner of the API node to test that specific API call immediately. It will use the current slot values for the request and show you the result in a pop-up modal.</li>
+ <li><strong>Multi API Request</strong>: You can send multiple API requests in parallel within a single API node.
+    <ul>
+        <li>Toggle the 'Enable Multi API' checkbox in the controller.</li>
+        <li>Click '+ Add API Call' to add multiple requests. Each request can be configured with its own name, method, URL, and other settings.</li>
+        <li>The node will proceed to the 'On Success' branch only after all API calls have completed successfully. If any one of them fails, it will proceed to the 'On Error' branch.</li>
+    </ul>
+ </li>
  <li><strong>Dynamic Requests</strong>: Use slots to make dynamic API calls. In the URL, Headers, or Body fields, you can insert values from previous user inputs or API responses using brace notation (e.g., <code>https://api.example.com/users/{'{userId}'}</code>).</li>
  <li><strong>Response Mapping</strong>: After a successful API call, you can extract values from the JSON response and save them into new or existing slots. In the "Response Mapping" section of the controller:
   <ul>
@@ -236,7 +256,7 @@ const HelpManual_ko = () => (
   </tr>
   <tr>
   <td><strong>폼</strong></td>
-  <td>사용자로부터 정형화된 데이터 입력을 받기 위한 양식입니다. (예: 이름, 날짜, 체크박스 등)</td>
+  <td>사용자로부터 정형화된 데이터 입력을 받기 위한 양식입니다. (예: 이름, 날짜, 체크박스 등). Dropbox의 선택지를 슬롯을 통해 동적으로 구성할 수 있습니다.</td>
   </tr>
   <tr>
   <td><strong>조건<br />분기</strong></td>
@@ -248,7 +268,7 @@ const HelpManual_ko = () => (
   </tr>
   <tr>
   <td><strong>API</strong></td>
-  <td>외부 API를 호출합니다. 요청 시 슬롯 값을 사용할 수 있으며, JSON 응답의 일부를 다시 슬롯에 저장할 수 있습니다. API 호출 성공/실패에 따라 흐름을 분기할 수도 있습니다.</td>
+  <td>외부 API를 호출합니다. 요청 시 슬롯 값을 사용할 수 있으며, JSON 응답의 일부를 다시 슬롯에 저장할 수 있습니다. API 호출 성공/실패 분기 및 다중 API 병렬 요청을 지원합니다.</td>
   </tr>
   <tr>
   <td><strong>LLM</strong></td>
@@ -281,11 +301,31 @@ const HelpManual_ko = () => (
  <p>슬롯은 시나리오 내에서 정보를 저장하고 재사용하기 위한 변수입니다. <strong>슬롯 채우기</strong> 노드를 통해 받은 사용자 입력이나 <strong>API</strong> 노드의 응답 데이터 등을 슬롯에 저장할 수 있습니다.</p>
  <p>저장된 슬롯 값은 다른 노드(메시지, API, LLM 등)에서 중괄호 표기법(<code>{'{슬롯이름}'}</code>)을 사용하여 불러올 수 있습니다.</p>
  <p><strong>예시:</strong> <code>userName</code>이라는 슬롯에 사용자 이름을 저장했다면, 메시지 노드에서 <code>안녕하세요, {'{userName}'}님!</code> 과 같이 사용할 수 있습니다.</p>
+ 
+ <h4>6.2.1. 동적 Dropbox 옵션 (슬롯 바인딩)</h4>
+ <p><strong>Form</strong> 노드에서, 배열을 담고 있는 슬롯을 이용하여 <strong>Dropbox</strong> 요소의 선택지를 동적으로 채울 수 있습니다.</p>
+ <ul>
+    <li><strong>데이터 형식</strong>: 슬롯은 반드시 배열 형태여야 합니다. 단순 문자열 배열(예: <code>["사과", "바나나"]</code>)이거나, <code>label</code>과 <code>value</code> 키를 가진 객체 배열(예: <code>[{'{'}label: '선택 A', value: 'a{'}'}, {'{'}label: '선택 B', value: 'b{'}'}]</code>) 형식 모두 지원합니다.</li>
+    <li><strong>설정 방법</strong>:
+        <ol>
+            <li>Form 노드 컨트롤러에서 Dropbox 요소를 선택합니다.</li>
+            <li>'Options Slot' 입력 필드에 배열을 담고 있는 슬롯의 이름을 입력합니다(예: <code>fruit_list</code>).</li>
+            <li>시뮬레이터가 실행될 때, 해당 슬롯의 값으로 Dropbox의 선택지가 채워집니다. 만약 지정된 슬롯이 비어있거나 배열이 아니면, 수동으로 입력된 'Options (Fallback)'이 대신 사용됩니다.</li>
+        </ol>
+    </li>
+ </ul>
 
  <h3>6.3. API 노드 사용하기</h3>
  <p>API 노드를 사용하면 외부 서버와 동적으로 상호작용할 수 있습니다.</p>
  <ul>
  <li><strong>개별 API 테스트</strong>: API 노드 우측 상단의 <strong>재생(▶) 버튼</strong>을 클릭하면 해당 API를 즉시 테스트할 수 있습니다. 현재 슬롯 값을 사용하여 요청을 보내고, 결과를 팝업 모달로 보여줍니다.</li>
+ <li><strong>다중 API 요청</strong>: 하나의 API 노드 내에서 여러 개의 API를 병렬로 요청할 수 있습니다.
+    <ul>
+        <li>컨트롤러에서 'Enable Multi API' 체크박스를 활성화합니다.</li>
+        <li>'+ Add API Call' 버튼을 눌러 여러 요청을 추가합니다. 각 요청은 고유한 이름, 메서드, URL 등의 설정을 가집니다.</li>
+        <li>노드는 모든 API 호출이 성공적으로 완료되었을 때만 'On Success' 브랜치로 진행합니다. 하나라도 실패하면 'On Error' 브랜치로 진행됩니다.</li>
+    </ul>
+ </li>
  <li><strong>동적 요청</strong>: 슬롯을 사용하여 동적인 API를 호출할 수 있습니다. URL, Headers, Body 필드에 중괄호 표기법(예: <code>https://api.example.com/users/{'{userId}'}</code>)을 사용하여 이전 사용자 입력이나 다른 API 응답 값을 삽입할 수 있습니다.</li>
  <li><strong>응답 매핑</strong>: API가 성공적으로 호출된 후, JSON 응답에서 특정 값을 추출하여 새 슬롯이나 기존 슬롯에 저장할 수 있습니다. 컨트롤러의 "Response Mapping" 섹션에서 다음을 설정하세요:
   <ul>
@@ -417,7 +457,7 @@ const HelpManual_vi = () => (
   </tr>
   <tr>
   <td><strong>Biểu mẫu</strong></td>
-  <td>Một biểu mẫu để nhận dữ liệu có cấu trúc từ người dùng (ví dụ: tên, ngày tháng, hộp kiểm, v.v.).</td>
+  <td>Một biểu mẫu để nhận dữ liệu có cấu trúc từ người dùng (ví dụ: tên, ngày tháng, hộp kiểm, v.v.). Các tùy chọn Dropbox có thể được điền động từ một slot.</td>
   </tr>
   <tr>
   <td><strong>Nhánh điều kiện</strong></td>
@@ -429,7 +469,7 @@ const HelpManual_vi = () => (
   </tr>
   <tr>
   <td><strong>API</strong></td>
-  <td>Gọi một API bên ngoài. Bạn có thể sử dụng các giá trị của slot trong yêu cầu và lưu các phần của phản hồi JSON trở lại vào các slot. Nó cũng cho phép phân nhánh luồng dựa trên việc gọi API thành công hay thất bại.</td>
+  <td>Gọi một API bên ngoài. Bạn có thể sử dụng các giá trị của slot trong yêu cầu và lưu các phần của phản hồi JSON trở lại vào các slot. Nó cũng cho phép phân nhánh luồng dựa trên việc gọi API thành công hay thất bại và hỗ trợ gửi nhiều yêu cầu API song song.</td>
   </tr>
   <tr>
   <td><strong>LLM</strong></td>
@@ -462,11 +502,31 @@ const HelpManual_vi = () => (
  <p>Slots là các biến được sử dụng để lưu trữ và tái sử dụng thông tin trong một kịch bản. Bạn có thể lưu trữ thông tin đầu vào của người dùng từ node <strong>Điền vào chỗ trống</strong> hoặc dữ liệu từ phản hồi của node <strong>API</strong> vào một slot.</p>
  <p>Để sử dụng giá trị của một slot đã lưu trong các node khác (như Tin nhắn, API hoặc LLM), hãy sử dụng ký hiệu dấu ngoặc nhọn: <code>{'{tên_slot}'}</code>.</p>
  <p><strong>Ví dụ:</strong> Nếu bạn đã lưu tên người dùng trong một slot có tên là <code>userName</code>, bạn có thể sử dụng nó trong một node Tin nhắn như sau: <code>Xin chào, {'{userName}'}! Chào mừng.</code></p>
-
+ 
+ <h4>6.2.1. Tùy chọn Dropbox động (Liên kết Slot)</h4>
+ <p>Trong một node <strong>Biểu mẫu</strong>, bạn có thể tự động điền các tùy chọn của một phần tử <strong>Dropbox</strong> từ một slot chứa một mảng.</p>
+ <ul>
+    <li><strong>Định dạng dữ liệu</strong>: Slot phải chứa một mảng. Mảng có thể là một mảng chuỗi đơn giản (ví dụ: <code>["Táo", "Chuối"]</code>) hoặc một mảng các đối tượng có khóa <code>label</code> và <code>value</code> (ví dụ: <code>[{"{"}label: 'Lựa chọn A', value: 'a{"}"}, {"{"}label: 'Lựa chọn B', value: 'b{"}"}]</code>).</li>
+    <li><strong>Cài đặt</strong>:
+        <ol>
+            <li>Chọn phần tử Dropbox trong bộ điều khiển Node Biểu mẫu.</li>
+            <li>Trong trường nhập 'Options Slot', nhập tên của slot chứa mảng (ví dụ: <code>fruit_list</code>).</li>
+            <li>Khi trình mô phỏng chạy, Dropbox sẽ được điền với các tùy chọn từ slot đó. Các 'Tùy chọn (Dự phòng)' được nhập thủ công sẽ được sử dụng nếu slot được chỉ định trống hoặc không phải là một mảng.</li>
+        </ol>
+    </li>
+ </ul>
+ 
  <h3>6.3. Sử dụng Node API</h3>
  <p>Node API cho phép tương tác động với các máy chủ bên ngoài.</p>
  <ul>
  <li><strong>Kiểm tra API riêng lẻ</strong>: Nhấp vào nút <strong>Phát (▶)</strong> ở góc trên cùng bên phải của node API để kiểm tra lệnh gọi API cụ thể đó ngay lập tức. Nó sẽ sử dụng các giá trị slot hiện tại cho yêu cầu và hiển thị cho bạn kết quả trong một cửa sổ bật lên.</li>
+ <li><strong>Yêu cầu API đa nhiệm</strong>: Bạn có thể gửi nhiều yêu cầu API song song trong một node API duy nhất.
+    <ul>
+        <li>Chuyển đổi hộp kiểm 'Enable Multi API' trong bộ điều khiển.</li>
+        <li>Nhấp vào '+ Add API Call' để thêm nhiều yêu cầu. Mỗi yêu cầu có thể được cấu hình với tên, phương thức, URL và các cài đặt khác.</li>
+        <li>Node sẽ chỉ tiếp tục đến nhánh 'On Success' sau khi tất cả các lệnh gọi API đã hoàn thành thành công. Nếu bất kỳ một trong số chúng không thành công, nó sẽ tiếp tục đến nhánh 'On Error'.</li>
+    </ul>
+ </li>
  <li><strong>Yêu cầu động</strong>: Sử dụng các slot để thực hiện các lệnh gọi API động. Trong các trường URL, Headers hoặc Body, bạn có thể chèn các giá trị từ các thông tin đầu vào trước đó của người dùng hoặc các phản hồi API bằng cách sử dụng ký hiệu dấu ngoặc nhọn (ví dụ: <code>https://api.example.com/users/{'{userId}'}</code>).</li>
  <li><strong>Ánh xạ phản hồi</strong>: Sau khi gọi API thành công, bạn có thể trích xuất các giá trị từ phản hồi JSON và lưu chúng vào các slot mới hoặc hiện có. Trong phần "Ánh xạ phản hồi" của bộ điều khiển:
   <ul>

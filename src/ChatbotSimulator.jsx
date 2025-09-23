@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import useStore from './store';
 import styles from './ChatbotSimulator.module.css';
 
+// ... (다른 함수들은 그대로 유지)
 const interpolateMessage = (message, slots) => {
   if (!message) return '';
   return message.replace(/\{([^}]+)\}/g, (match, key) => {
@@ -303,88 +304,76 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
     const { isMulti, apis } = node.data;
 
     try {
-      let promises;
-      if (isMulti) {
-        promises = (apis || []).map(apiCall => {
-          const interpolatedUrl = interpolateMessage(apiCall.url, currentSlots);
-          const interpolatedHeaders = JSON.parse(interpolateMessage(apiCall.headers || '{}', currentSlots));
-          const interpolatedBody = apiCall.method !== 'GET' && apiCall.body ? interpolateMessage(apiCall.body, currentSlots) : undefined;
-          
-          return fetch(interpolatedUrl, {
-            method: apiCall.method,
-            headers: { 'Content-Type': 'application/json', ...interpolatedHeaders },
-            body: interpolatedBody,
-          }).then(response => {
-            if (!response.ok) {
-              return response.json().then(err => Promise.reject({ status: response.status, body: err, apiName: apiCall.name }));
+        const createApiPromise = (apiCall) => {
+            // --- 💡 수정된 부분 시작 ---
+            let interpolatedUrl = interpolateMessage(apiCall.url, currentSlots);
+            // URL이 'https://random-word-api.herokuapp.com'으로 시작하면 프록시 경로로 변경
+            if (interpolatedUrl.startsWith('https://random-word-api.herokuapp.com')) {
+                interpolatedUrl = interpolatedUrl.replace('https://random-word-api.herokuapp.com', '/api/random-word');
             }
-            return response.json().then(data => ({ data, mapping: apiCall.responseMapping, apiName: apiCall.name }));
-          });
-        });
-      } else {
-        const { method, url, headers, body } = node.data;
-        const interpolatedUrl = interpolateMessage(url, currentSlots);
-        const interpolatedHeaders = JSON.parse(interpolateMessage(headers || '{}', currentSlots));
-        const interpolatedBody = method !== 'GET' && body ? interpolateMessage(body, currentSlots) : undefined;
-        
-        promises = [
-          fetch(interpolatedUrl, {
-            method,
-            headers: { 'Content-Type': 'application/json', ...interpolatedHeaders },
-            body: interpolatedBody,
-          }).then(response => {
-            if (!response.ok) {
-              return response.json().then(err => Promise.reject({ status: response.status, body: err, apiName: 'API Call' }));
-            }
-            return response.json().then(data => ({ data, mapping: node.data.responseMapping, apiName: 'API Call' }));
-          })
-        ];
-      }
-      
-      const results = await Promise.allSettled(promises);
-      
-      const failedCalls = results.filter(r => r.status === 'rejected');
-      if (failedCalls.length > 0) {
-        const firstError = failedCalls[0].reason;
-        throw new Error(`API call '${firstError.apiName}' failed with status ${firstError.status}`);
-      }
-      
-      const newSlots = {};
-      results.forEach(result => {
-        if (result.status === 'fulfilled') {
-          const { data, mapping } = result.value;
-          if (mapping && mapping.length > 0) {
-            mapping.forEach(m => {
-              if (m.path && m.slot) {
-                const value = getNestedValue(data, m.path);
-                if (value !== undefined) newSlots[m.slot] = value;
-              }
-            });
-          } else {
-             newSlots[`api_response_${result.value.apiName.replace(/\s+/g, '_')}`] = data;
-          }
-        }
-      });
-      
-      finalSlots = { ...currentSlots, ...newSlots };
-      setSlots(finalSlots);
+            // --- 💡 수정된 부분 끝 ---
 
-      setHistory(prev => prev.map(item => 
-        item.id === loadingId 
-          ? { type: 'bot', message: `All API calls successful.`, id: loadingId }
-          : item
-      ));
+            const interpolatedHeaders = JSON.parse(interpolateMessage(apiCall.headers || '{}', currentSlots));
+            const interpolatedBody = apiCall.method !== 'GET' && apiCall.body ? interpolateMessage(apiCall.body, currentSlots) : undefined;
+            
+            return fetch(interpolatedUrl, {
+                method: apiCall.method,
+                headers: { 'Content-Type': 'application/json', ...interpolatedHeaders },
+                body: interpolatedBody,
+            }).then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => Promise.reject({ status: response.status, body: err, apiName: apiCall.name }));
+                }
+                return response.json().then(data => ({ data, mapping: apiCall.responseMapping, apiName: apiCall.name }));
+            });
+        };
+
+        const promises = isMulti ? (apis || []).map(createApiPromise) : [createApiPromise(node.data)];
+        
+        const results = await Promise.allSettled(promises);
       
-      proceedToNextNode('onSuccess', node.id, finalSlots);
+        const failedCalls = results.filter(r => r.status === 'rejected');
+        if (failedCalls.length > 0) {
+            const firstError = failedCalls[0].reason;
+            throw new Error(`API call '${firstError.apiName}' failed with status ${firstError.status}`);
+        }
+      
+        const newSlots = {};
+        results.forEach(result => {
+            if (result.status === 'fulfilled') {
+                const { data, mapping, apiName } = result.value;
+                if (mapping && mapping.length > 0) {
+                    mapping.forEach(m => {
+                        if (m.path && m.slot) {
+                            const value = getNestedValue(data, m.path);
+                            if (value !== undefined) newSlots[m.slot] = value;
+                        }
+                    });
+                } else {
+                    newSlots[`api_response_${(apiName || 'response').replace(/\s+/g, '_')}`] = data;
+                }
+            }
+        });
+      
+        finalSlots = { ...currentSlots, ...newSlots };
+        setSlots(finalSlots);
+
+        setHistory(prev => prev.map(item => 
+            item.id === loadingId 
+            ? { type: 'bot', message: `All API calls successful.`, id: loadingId }
+            : item
+        ));
+      
+        proceedToNextNode('onSuccess', node.id, finalSlots);
 
     } catch (error) {
-      console.error("API Error:", error);
-      setHistory(prev => prev.map(item => 
-        item.id === loadingId 
-          ? { type: 'bot', message: `Error: ${error.message}`, id: loadingId }
-          : item
-      ));
-      proceedToNextNode('onError', node.id, finalSlots);
+        console.error("API Error:", error);
+        setHistory(prev => prev.map(item => 
+            item.id === loadingId 
+            ? { type: 'bot', message: `Error: ${error.message}`, id: loadingId }
+            : item
+        ));
+        proceedToNextNode('onError', node.id, finalSlots);
     }
   }, [proceedToNextNode, setSlots]);
 
@@ -708,19 +697,24 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
                             <label htmlFor={`${el.id}-${opt}`}>{opt}</label>
                           </div>
                         ))}
-                        {el.type === 'dropbox' && (
-                          <select
-                            className={styles.formInput}
-                            value={formData[el.name] || ''}
-                            onChange={(e) => handleFormInputChange(el.name, e.target.value)}
-                            disabled={item.isCompleted}
-                          >
-                            <option value="" disabled>Select...</option>
-                            {el.options?.map(opt => (
-                              <option key={opt} value={opt}>{opt}</option>
-                            ))}
-                          </select>
-                        )}
+                        {el.type === 'dropbox' && (() => {
+                          const options = Array.isArray(slots[el.optionsSlot]) ? slots[el.optionsSlot] : el.options;
+                          return (
+                            <select
+                              className={styles.formInput}
+                              value={formData[el.name] || ''}
+                              onChange={(e) => handleFormInputChange(el.name, e.target.value)}
+                              disabled={item.isCompleted}
+                            >
+                              <option value="" disabled>Select...</option>
+                              {(options || []).map(opt => {
+                                const optionValue = typeof opt === 'object' && opt.value !== undefined ? opt.value : opt;
+                                const optionLabel = typeof opt === 'object' && opt.label !== undefined ? opt.label : opt;
+                                return <option key={optionValue} value={optionValue}>{optionLabel}</option>;
+                              })}
+                            </select>
+                          );
+                        })()}
                         {el.type === 'grid' && (
                           <table className={styles.formGridTable}>
                             <tbody>

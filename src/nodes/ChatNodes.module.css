@@ -279,3 +279,12 @@
   color: #333;
   box-sizing: border-box;
 }
+
+.slotBindingInfo {
+  font-size: 0.7rem;
+  color: #007aff;
+  text-align: center;
+  font-style: italic;
+  margin-top: -2px;
+  margin-bottom: 2px;
+}

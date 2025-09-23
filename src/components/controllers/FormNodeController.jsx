@@ -1,9 +1,137 @@
 import { useState } from 'react';
 import styles from '../../NodeController.module.css';
-import { createFormElement } from '../../nodeFactory'; // 💡 1. createFormElement 함수를 import 합니다.
+import { createFormElement } from '../../nodeFactory';
 
-// ElementEditor 컴포넌트 (ApiNodeController.jsx에서 가져와도 되고, 별도 파일로 분리해도 좋습니다)
-// ...
+// ElementEditor 컴포넌트
+function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange }) {
+  const handleInputChange = (field, value) => {
+    onUpdate(index, { ...element, [field]: value });
+  };
+
+  const handleValidationChange = (field, value) => {
+    onUpdate(index, { ...element, validation: { ...element.validation, [field]: value } });
+  };
+  
+  const handleOptionChange = (optIndex, value) => {
+    const newOptions = [...element.options];
+    newOptions[optIndex] = value;
+    onUpdate(index, { ...element, options: newOptions });
+  };
+
+  const addOption = () => {
+    const newOptions = [...(element.options || []), `Option ${ (element.options || []).length + 1 }`];
+    onUpdate(index, { ...element, options: newOptions });
+  };
+
+  const deleteOption = (optIndex) => {
+    const newOptions = element.options.filter((_, i) => i !== optIndex);
+    onUpdate(index, { ...element, options: newOptions });
+  };
+
+  return (
+    <div className={styles.elementEditor}>
+      <h4>Edit {element.type}</h4>
+      <div className={styles.formGroup}>
+        <label>Label</label>
+        <input type="text" value={element.label || ''} onChange={(e) => handleInputChange('label', e.target.value)} />
+      </div>
+      <div className={styles.formGroup}>
+        <label>Name (Slot Key)</label>
+        <input type="text" value={element.name || ''} onChange={(e) => handleInputChange('name', e.target.value)} />
+      </div>
+
+      {element.type === 'input' && (
+        <>
+          <div className={styles.formGroup}>
+            <label>Placeholder</label>
+            <input type="text" value={element.placeholder || ''} onChange={(e) => handleInputChange('placeholder', e.target.value)} />
+          </div>
+          <div className={styles.formGroup}>
+            <label>Validation</label>
+            <select value={element.validation?.type || 'text'} onChange={(e) => handleValidationChange('type', e.target.value)}>
+              <option value="text">Text</option>
+              <option value="email">Email</option>
+              <option value="phone number">Phone Number</option>
+              <option value="custom">Custom (Regex)</option>
+            </select>
+          </div>
+          {element.validation?.type === 'custom' && (
+             <div className={styles.formGroup}>
+              <label>Regex</label>
+              <input type="text" value={element.validation?.regex || ''} onChange={(e) => handleValidationChange('regex', e.target.value)} />
+            </div>
+          )}
+        </>
+      )}
+
+      {/* --- 💡 수정된 부분 시작 --- */}
+      {(element.type === 'checkbox' || element.type === 'dropbox') && (
+        <>
+          {element.type === 'dropbox' && (
+            <div className={styles.formGroup}>
+              <label>Options Slot</label>
+              <input
+                type="text"
+                placeholder="Bind to array in slot"
+                value={element.optionsSlot || ''}
+                onChange={(e) => handleInputChange('optionsSlot', e.target.value)}
+              />
+            </div>
+          )}
+          <div className={styles.formGroup}>
+            <label>Options (Fallback)</label>
+            <div className={styles.repliesContainer}>
+              {(element.options || []).map((opt, i) => (
+                <div key={i} className={styles.quickReply}>
+                  <input className={styles.quickReplyInput} value={opt} onChange={(e) => handleOptionChange(i, e.target.value)} disabled={!!element.optionsSlot} />
+                  <button onClick={() => deleteOption(i)} className={styles.deleteReplyButton} disabled={!!element.optionsSlot}>×</button>
+                </div>
+              ))}
+              <button onClick={addOption} className={styles.addReplyButton} disabled={!!element.optionsSlot}>+ Add Option</button>
+            </div>
+          </div>
+        </>
+      )}
+      {/* --- 💡 수정된 부분 끝 --- */}
+
+      {element.type === 'grid' && (
+        <>
+          <div className={styles.gridControls}>
+            <div className={styles.formGroup}>
+              <label>Rows</label>
+              <input type="number" value={element.rows || 2} onChange={(e) => handleInputChange('rows', parseInt(e.target.value) || 1)} />
+            </div>
+             <div className={styles.formGroup}>
+              <label>Columns</label>
+              <input type="number" value={element.columns || 2} onChange={(e) => handleInputChange('columns', parseInt(e.target.value) || 1)} />
+            </div>
+          </div>
+          <div className={styles.formGroup}>
+            <label>Grid Content</label>
+            <div className={styles.gridContentEditor} style={{ gridTemplateColumns: `repeat(${element.columns || 2}, 1fr)`}}>
+              {Array.from({ length: (element.rows || 2) * (element.columns || 2) }).map((_, i) => {
+                const rowIndex = Math.floor(i / (element.columns || 2));
+                const colIndex = i % (element.columns || 2);
+                return (
+                   <textarea
+                    key={i}
+                    className={styles.gridCellEditor}
+                    value={element.data?.[i] || ''}
+                    onChange={(e) => onGridCellChange(index, rowIndex, colIndex, e.target.value)}
+                  />
+                )
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
+      <div className={styles.editorActions}>
+        <button className={styles.deleteElementButton} onClick={() => onDelete(index)}>Delete Element</button>
+      </div>
+    </div>
+  );
+}
 
 function FormNodeController({ localNode, setLocalNode }) {
     const [selectedElementId, setSelectedElementId] = useState(null);
@@ -16,7 +144,6 @@ function FormNodeController({ localNode, setLocalNode }) {
         }));
     };
 
-    // 💡 2. 아래의 주석 처리된 함수들의 구현부를 추가합니다.
     const localAddElement = (elementType) => {
       const newElement = createFormElement(elementType);
       setLocalNode(prev => ({
@@ -50,31 +177,31 @@ function FormNodeController({ localNode, setLocalNode }) {
     };
 
     const localMoveElement = (startIndex, endIndex) => {
-      setLocalNode(prev => {
-        const newElements = [...prev.data.elements];
-        const [removed] = newElements.splice(startIndex, 1);
-        newElements.splice(endIndex, 0, removed);
-        return {
-          ...prev,
-          data: { ...prev.data, elements: newElements }
-        };
-      });
+        setLocalNode(prev => {
+            const newElements = [...prev.data.elements];
+            const [removed] = newElements.splice(startIndex, 1);
+            newElements.splice(endIndex, 0, removed);
+            return {
+              ...prev,
+              data: { ...prev.data, elements: newElements }
+            };
+        });
     };
     
     const localUpdateGridCell = (elementIndex, rowIndex, colIndex, value) => {
-      setLocalNode(prev => {
-        const newElements = JSON.parse(JSON.stringify(prev.data.elements));
-        const gridElement = newElements[elementIndex];
-        if (gridElement && gridElement.type === 'grid') {
-          const index = rowIndex * gridElement.columns + colIndex;
-          gridElement.data[index] = value;
-          return {
-            ...prev,
-            data: { ...prev.data, elements: newElements }
-          };
-        }
-        return prev;
-      });
+        setLocalNode(prev => {
+            const newElements = JSON.parse(JSON.stringify(prev.data.elements));
+            const gridElement = newElements[elementIndex];
+            if (gridElement && gridElement.type === 'grid') {
+              const index = rowIndex * gridElement.columns + colIndex;
+              gridElement.data[index] = value;
+              return {
+                ...prev,
+                data: { ...prev.data, elements: newElements }
+              };
+            }
+            return prev;
+        });
     };
 
     const handleDragStart = (e, index) => {
@@ -83,15 +210,13 @@ function FormNodeController({ localNode, setLocalNode }) {
     
     const handleDragOver = (e, index) => {
       e.preventDefault();
-      // Optionally add a visual indicator
     };
     
     const handleDragLeave = (e) => {
-      // Optionally remove the visual indicator
     };
     
     const handleDrop = (e, index) => {
-      if (draggedItemIndex === null) return;
+      if (draggedItemIndex === null || draggedItemIndex === index) return;
       localMoveElement(draggedItemIndex, index);
       setDraggedItemIndex(null);
     };
@@ -163,123 +288,6 @@ function FormNodeController({ localNode, setLocalNode }) {
           />
       )}
     </>
-  );
-}
-
-// 💡 3. ElementEditor 컴포넌트가 파일 내에 없다면 아래 코드를 추가해주세요.
-// (만약 별도 파일로 관리하고 있다면 해당 파일에서 export/import 해서 사용하시면 됩니다.)
-function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange }) {
-  const handleInputChange = (field, value) => {
-    onUpdate(index, { ...element, [field]: value });
-  };
-
-  const handleValidationChange = (field, value) => {
-    onUpdate(index, { ...element, validation: { ...element.validation, [field]: value } });
-  };
-  
-  const handleOptionChange = (optIndex, value) => {
-    const newOptions = [...element.options];
-    newOptions[optIndex] = value;
-    onUpdate(index, { ...element, options: newOptions });
-  };
-
-  const addOption = () => {
-    const newOptions = [...(element.options || []), `Option ${ (element.options || []).length + 1 }`];
-    onUpdate(index, { ...element, options: newOptions });
-  };
-
-  const deleteOption = (optIndex) => {
-    const newOptions = element.options.filter((_, i) => i !== optIndex);
-    onUpdate(index, { ...element, options: newOptions });
-  };
-
-  return (
-    <div className={styles.elementEditor}>
-      <h4>Edit {element.type}</h4>
-      <div className={styles.formGroup}>
-        <label>Label</label>
-        <input type="text" value={element.label || ''} onChange={(e) => handleInputChange('label', e.target.value)} />
-      </div>
-      <div className={styles.formGroup}>
-        <label>Name (Slot Key)</label>
-        <input type="text" value={element.name || ''} onChange={(e) => handleInputChange('name', e.target.value)} />
-      </div>
-
-      {element.type === 'input' && (
-        <>
-          <div className={styles.formGroup}>
-            <label>Placeholder</label>
-            <input type="text" value={element.placeholder || ''} onChange={(e) => handleInputChange('placeholder', e.target.value)} />
-          </div>
-          <div className={styles.formGroup}>
-            <label>Validation</label>
-            <select value={element.validation?.type || 'text'} onChange={(e) => handleValidationChange('type', e.target.value)}>
-              <option value="text">Text</option>
-              <option value="email">Email</option>
-              <option value="phone number">Phone Number</option>
-              <option value="custom">Custom (Regex)</option>
-            </select>
-          </div>
-          {element.validation?.type === 'custom' && (
-             <div className={styles.formGroup}>
-              <label>Regex</label>
-              <input type="text" value={element.validation?.regex || ''} onChange={(e) => handleValidationChange('regex', e.target.value)} />
-            </div>
-          )}
-        </>
-      )}
-
-      {(element.type === 'checkbox' || element.type === 'dropbox') && (
-        <div className={styles.formGroup}>
-          <label>Options</label>
-          <div className={styles.repliesContainer}>
-            {(element.options || []).map((opt, i) => (
-              <div key={i} className={styles.quickReply}>
-                <input className={styles.quickReplyInput} value={opt} onChange={(e) => handleOptionChange(i, e.target.value)} />
-                <button onClick={() => deleteOption(i)} className={styles.deleteReplyButton}>×</button>
-              </div>
-            ))}
-            <button onClick={addOption} className={styles.addReplyButton}>+ Add Option</button>
-          </div>
-        </div>
-      )}
-
-      {element.type === 'grid' && (
-        <>
-          <div className={styles.gridControls}>
-            <div className={styles.formGroup}>
-              <label>Rows</label>
-              <input type="number" value={element.rows || 2} onChange={(e) => handleInputChange('rows', parseInt(e.target.value) || 1)} />
-            </div>
-             <div className={styles.formGroup}>
-              <label>Columns</label>
-              <input type="number" value={element.columns || 2} onChange={(e) => handleInputChange('columns', parseInt(e.target.value) || 1)} />
-            </div>
-          </div>
-          <div className={styles.formGroup}>
-            <label>Grid Content</label>
-            <div className={styles.gridContentEditor} style={{ gridTemplateColumns: `repeat(${element.columns || 2}, 1fr)`}}>
-              {Array.from({ length: (element.rows || 2) * (element.columns || 2) }).map((_, i) => {
-                const rowIndex = Math.floor(i / (element.columns || 2));
-                const colIndex = i % (element.columns || 2);
-                return (
-                   <textarea
-                    key={i}
-                    className={styles.gridCellEditor}
-                    value={element.data?.[i] || ''}
-                    onChange={(e) => onGridCellChange(index, rowIndex, colIndex, e.target.value)}
-                  />
-                )
-              })}
-            </div>
-          </div>
-        </>
-      )}
-
-      <div className={styles.editorActions}>
-        <button className={styles.deleteElementButton} onClick={() => onDelete(index)}>Delete Element</button>
-      </div>
-    </div>
   );
 }
 

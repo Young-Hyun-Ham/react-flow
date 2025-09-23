@@ -77,10 +77,14 @@ function FormNode({ id, data }) {
             </div>
           </div>
         );
+        // --- 💡 수정된 부분 시작 ---
       case 'dropbox':
         return (
           <div key={element.id} className={styles.previewElement}>
             <label className={styles.previewLabel}>{element.label || 'Dropbox'}</label>
+            {element.optionsSlot && (
+              <div className={styles.slotBindingInfo}>Bound to: {`{${element.optionsSlot}}`}</div>
+            )}
             <select className={styles.previewInput} disabled>
               {(element.options && element.options.length > 0 ? element.options : ['Option 1', 'Option 2']).map((opt, i) => (
                 <option key={i}>{opt}</option>
@@ -88,6 +92,7 @@ function FormNode({ id, data }) {
             </select>
           </div>
         );
+        // --- 💡 수정된 부분 끝 ---
       default:
         return null;
     }

@@ -102,7 +102,9 @@ export const createFormElement = (elementType) => {
             newElement = { id: newId, type: 'checkbox', name: '', label: 'New Checkbox', options: [], defaultValue: [] };
             break;
         case 'dropbox':
-            newElement = { id: newId, type: 'dropbox', name: '', label: 'New Dropbox', options: [], defaultValue: '' };
+            // --- 💡 수정된 부분 시작 ---
+            newElement = { id: newId, type: 'dropbox', name: '', label: 'New Dropbox', options: [], optionsSlot: '', defaultValue: '' };
+            // --- 💡 수정된 부분 끝 ---
             break;
         default:
             newElement = { id: newId, type: elementType };
