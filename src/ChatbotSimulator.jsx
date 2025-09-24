@@ -161,6 +161,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
   const [formData, setFormData] = useState({});
   const [fixedMenu, setFixedMenu] = useState(null);
   const historyRef = useRef(null);
+  const [isStarted, setIsStarted] = useState(false);
 
   const slots = useStore((state) => state.slots);
   const setSlots = useStore((state) => state.setSlots);
@@ -419,6 +420,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
   }, [proceedToNextNode, setSlots]);
   
   const startSimulation = useCallback(() => {
+    setIsStarted(true);
     const edgeTargets = new Set(edges.map((edge) => edge.target));
     const startNode = nodes.find((node) => !edgeTargets.has(node.id));
 
@@ -434,10 +436,12 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
   }, [nodes, edges, addBotMessage, setSlots]);
 
   useEffect(() => {
-    startSimulation();
-  }, [startSimulation]);
+    setIsStarted(false);
+    setHistory([]);
+  }, [nodes, edges]);
 
   useEffect(() => {
+    if (!isStarted) return;
     const node = nodes.find(n => n.id === currentId);
     if (node && (node.type === 'message' || node.type === 'iframe')) {
       const nextEdge = edges.find((edge) => edge.source === node.id && !edge.sourceHandle);
@@ -452,7 +456,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
         }
       }
     }
-  }, [currentId, nodes, edges, addBotMessage, slots]);
+  }, [currentId, nodes, edges, addBotMessage, slots, isStarted]);
 
   const completeCurrentInteraction = () => {
     setHistory(prev => prev.map(item =>
@@ -567,7 +571,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
           )}
           {isVisible && (
             <button className={styles.headerRestartButton} onClick={startSimulation}>
-              Restart
+              Start
             </button>
           )}
         </div>
@@ -586,210 +590,218 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
         </div>
       )}
       <div className={styles.history} ref={historyRef}>
-        {history.map((item, index) => {
-          if (item.type === 'bot_streaming') {
-            return (
-              <div key={item.id} className={styles.messageRow}>
-                <img 
-                  src={item.isStreaming ? "/images/avatar-loading.png" : "/images/avatar.png"} 
-                  alt="Chatbot Avatar" 
-                  className={styles.avatar} 
-                />
-                <div className={`${styles.message} ${styles.botMessage}`}>{item.content}</div>
-              </div>
-            );
-          }
-          if (item.type === 'loading') {
-            return (
-              <div key={item.id} className={styles.messageRow}>
-                <img src="/images/avatar-loading.png" alt="Chatbot Avatar" className={styles.avatar} />
-                <div className={`${styles.message} ${styles.botMessage}`}>
-                  <img src="/images/Loading.gif" alt="Loading..." style={{ width: '80px', height: '60px' }} />
-                </div>
-              </div>
-            );
-          }
-
-          if (item.type === 'bot' && item.nodeId) {
-            const node = nodes.find(n => n.id === item.nodeId);
-            if (!node) return null;
-
-            if (node.type === 'iframe') {
+        {!isStarted ? (
+          <div className={styles.startScreen}>
+            {/* <button className={styles.startButton} onClick={startSimulation}>
+              Start Conversation
+            </button> */}
+          </div>
+        ) : (
+          history.map((item, index) => {
+            if (item.type === 'bot_streaming') {
               return (
-                <div key={item.id || index} className={styles.messageRow}>
-                  <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
-                  <div className={`${styles.message} ${styles.botMessage} ${styles.iframeContainer}`}>
-                    <iframe
-                      src={interpolateMessage(node.data.url, slots)}
-                      width={node.data.width || '100%'}
-                      height={node.data.height || '250'}
-                      style={{ border: 'none', borderRadius: '18px' }}
-                      title="chatbot-iframe"
-                    ></iframe>
-                  </div>
+                <div key={item.id} className={styles.messageRow}>
+                  <img 
+                    src={item.isStreaming ? "/images/avatar-loading.png" : "/images/avatar.png"} 
+                    alt="Chatbot Avatar" 
+                    className={styles.avatar} 
+                  />
+                  <div className={`${styles.message} ${styles.botMessage}`}>{item.content}</div>
                 </div>
               );
             }
-
-            if (node.type === 'link') {
+            if (item.type === 'loading') {
               return (
-                <div key={item.id || index} className={styles.messageRow}>
-                  <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
+                <div key={item.id} className={styles.messageRow}>
+                  <img src="/images/avatar-loading.png" alt="Chatbot Avatar" className={styles.avatar} />
                   <div className={`${styles.message} ${styles.botMessage}`}>
-                    <span>Opening link in a new tab: </span>
-                    <a href={node.data.content} target="_blank" rel="noopener noreferrer">{node.data.display || node.data.content}</a>
+                    <img src="/images/Loading.gif" alt="Loading..." style={{ width: '80px', height: '60px' }} />
                   </div>
                 </div>
               );
             }
 
-            if (node.type === 'form') {
-              return (
-                <div key={item.id || index} className={styles.messageRow}>
-                  <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
-                  <div className={`${styles.message} ${styles.botMessage} ${styles.formContainer}`}>
-                    <h3>{node.data.title}</h3>
-                    {node.data.elements?.map(el => {
-                      const dateProps = {};
-                      if (el.type === 'date') {
-                          if (el.validation?.type === 'today after') {
-                              dateProps.min = new Date().toISOString().split('T')[0];
-                          } else if (el.validation?.type === 'today before') {
-                              dateProps.max = new Date().toISOString().split('T')[0];
-                          } else if (el.validation?.type === 'custom') {
-                              if(el.validation.startDate) dateProps.min = el.validation.startDate;
-                              if(el.validation.endDate) dateProps.max = el.validation.endDate;
-                          }
-                      }
-                      return (
-                      <div key={el.id} className={styles.formElement}>
-                        <label className={styles.formLabel}>{el.label}</label>
-                        {el.type === 'input' && (
-                          <input
-                            type={el.validation?.type === 'email' ? 'email' : 'text'}
-                            className={styles.formInput}
-                            placeholder={el.placeholder}
-                            value={formData[el.name] || ''}
-                            onChange={(e) => handleFormInputChange(el.name, e.target.value)}
-                            disabled={item.isCompleted}
-                          />
-                        )}
-                        {el.type === 'date' && (
-                           <input
-                            type="date"
-                            className={styles.formInput}
-                            value={formData[el.name] || ''}
-                            onChange={(e) => handleFormInputChange(el.name, e.target.value)}
-                            disabled={item.isCompleted}
-                            {...dateProps}
-                          />
-                        )}
-                        {el.type === 'checkbox' && el.options?.map(opt => (
-                          <div key={opt} className={styles.checkboxOption}>
+            if (item.type === 'bot' && item.nodeId) {
+              const node = nodes.find(n => n.id === item.nodeId);
+              if (!node) return null;
+
+              if (node.type === 'iframe') {
+                return (
+                  <div key={item.id || index} className={styles.messageRow}>
+                    <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
+                    <div className={`${styles.message} ${styles.botMessage} ${styles.iframeContainer}`}>
+                      <iframe
+                        src={interpolateMessage(node.data.url, slots)}
+                        width={node.data.width || '100%'}
+                        height={node.data.height || '250'}
+                        style={{ border: 'none', borderRadius: '18px' }}
+                        title="chatbot-iframe"
+                      ></iframe>
+                    </div>
+                  </div>
+                );
+              }
+
+              if (node.type === 'link') {
+                return (
+                  <div key={item.id || index} className={styles.messageRow}>
+                    <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
+                    <div className={`${styles.message} ${styles.botMessage}`}>
+                      <span>Opening link in a new tab: </span>
+                      <a href={node.data.content} target="_blank" rel="noopener noreferrer">{node.data.display || node.data.content}</a>
+                    </div>
+                  </div>
+                );
+              }
+
+              if (node.type === 'form') {
+                return (
+                  <div key={item.id || index} className={styles.messageRow}>
+                    <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
+                    <div className={`${styles.message} ${styles.botMessage} ${styles.formContainer}`}>
+                      <h3>{node.data.title}</h3>
+                      {node.data.elements?.map(el => {
+                        const dateProps = {};
+                        if (el.type === 'date') {
+                            if (el.validation?.type === 'today after') {
+                                dateProps.min = new Date().toISOString().split('T')[0];
+                            } else if (el.validation?.type === 'today before') {
+                                dateProps.max = new Date().toISOString().split('T')[0];
+                            } else if (el.validation?.type === 'custom') {
+                                if(el.validation.startDate) dateProps.min = el.validation.startDate;
+                                if(el.validation.endDate) dateProps.max = el.validation.endDate;
+                            }
+                        }
+                        return (
+                        <div key={el.id} className={styles.formElement}>
+                          <label className={styles.formLabel}>{el.label}</label>
+                          {el.type === 'input' && (
                             <input
-                              type="checkbox"
-                              id={`${el.id}-${opt}`}
-                              value={opt}
-                              checked={(formData[el.name] || []).includes(opt)}
-                              onChange={(e) => handleFormMultiInputChange(el.name, opt, e.target.checked)}
+                              type={el.validation?.type === 'email' ? 'email' : 'text'}
+                              className={styles.formInput}
+                              placeholder={el.placeholder}
+                              value={formData[el.name] || ''}
+                              onChange={(e) => handleFormInputChange(el.name, e.target.value)}
                               disabled={item.isCompleted}
                             />
-                            <label htmlFor={`${el.id}-${opt}`}>{opt}</label>
-                          </div>
-                        ))}
-                        {el.type === 'dropbox' && (() => {
-                          const options = Array.isArray(slots[el.optionsSlot]) ? slots[el.optionsSlot] : el.options;
-                          return (
-                            <select
+                          )}
+                          {el.type === 'date' && (
+                            <input
+                              type="date"
                               className={styles.formInput}
                               value={formData[el.name] || ''}
                               onChange={(e) => handleFormInputChange(el.name, e.target.value)}
                               disabled={item.isCompleted}
-                            >
-                              <option value="" disabled>Select...</option>
-                              {(options || []).map(opt => {
-                                const optionValue = typeof opt === 'object' && opt.value !== undefined ? opt.value : opt;
-                                const optionLabel = typeof opt === 'object' && opt.label !== undefined ? opt.label : opt;
-                                return <option key={optionValue} value={optionValue}>{optionLabel}</option>;
-                              })}
-                            </select>
-                          );
-                        })()}
-                        {el.type === 'grid' && (
-                          <table className={styles.formGridTable}>
-                            <tbody>
-                              {[...Array(el.rows || 2)].map((_, rowIndex) => (
-                                <tr key={rowIndex}>
-                                  {[...Array(el.columns || 2)].map((_, colIndex) => {
-                                    const cellIndex = rowIndex * (el.columns || 2) + colIndex;
-                                    const cellData = el.data[cellIndex] || '';
-                                    return (
-                                      <td key={colIndex}>
-                                        {interpolateMessage(cellData, slots)}
-                                      </td>
-                                    );
-                                  })}
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        )}
+                              {...dateProps}
+                            />
+                          )}
+                          {el.type === 'checkbox' && el.options?.map(opt => (
+                            <div key={opt} className={styles.checkboxOption}>
+                              <input
+                                type="checkbox"
+                                id={`${el.id}-${opt}`}
+                                value={opt}
+                                checked={(formData[el.name] || []).includes(opt)}
+                                onChange={(e) => handleFormMultiInputChange(el.name, opt, e.target.checked)}
+                                disabled={item.isCompleted}
+                              />
+                              <label htmlFor={`${el.id}-${opt}`}>{opt}</label>
+                            </div>
+                          ))}
+                          {el.type === 'dropbox' && (() => {
+                            const options = Array.isArray(slots[el.optionsSlot]) ? slots[el.optionsSlot] : el.options;
+                            return (
+                              <select
+                                className={styles.formInput}
+                                value={formData[el.name] || ''}
+                                onChange={(e) => handleFormInputChange(el.name, e.target.value)}
+                                disabled={item.isCompleted}
+                              >
+                                <option value="" disabled>Select...</option>
+                                {(options || []).map(opt => {
+                                  const optionValue = typeof opt === 'object' && opt.value !== undefined ? opt.value : opt;
+                                  const optionLabel = typeof opt === 'object' && opt.label !== undefined ? opt.label : opt;
+                                  return <option key={optionValue} value={optionValue}>{optionLabel}</option>;
+                                })}
+                              </select>
+                            );
+                          })()}
+                          {el.type === 'grid' && (
+                            <table className={styles.formGridTable}>
+                              <tbody>
+                                {[...Array(el.rows || 2)].map((_, rowIndex) => (
+                                  <tr key={rowIndex}>
+                                    {[...Array(el.columns || 2)].map((_, colIndex) => {
+                                      const cellIndex = rowIndex * (el.columns || 2) + colIndex;
+                                      const cellData = el.data[cellIndex] || '';
+                                      return (
+                                        <td key={colIndex}>
+                                          {interpolateMessage(cellData, slots)}
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          )}
+                        </div>
+                      )})}
+                      <div className={styles.formButtonContainer}>
+                        <button className={styles.formDefaultButton} onClick={handleFormDefault} disabled={item.isCompleted}>
+                          Default
+                        </button>
+                        <button className={styles.formSubmitButton} onClick={handleFormSubmit} disabled={item.isCompleted}>
+                          Submit
+                        </button>
                       </div>
-                    )})}
-                    <div className={styles.formButtonContainer}>
-                      <button className={styles.formDefaultButton} onClick={handleFormDefault} disabled={item.isCompleted}>
-                        Default
-                      </button>
-                      <button className={styles.formSubmitButton} onClick={handleFormSubmit} disabled={item.isCompleted}>
-                        Submit
-                      </button>
                     </div>
+                  </div>
+                );
+              }
+
+              const message = interpolateMessage(node.data.content || node.data.label, slots);
+              return (
+                <div key={item.id || index} className={styles.messageRow}>
+                  <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
+                  <div className={`${styles.message} ${styles.botMessage}`}>
+                    <div>{message}</div>
+                    {node.type === 'branch' && node.data.evaluationType === 'BUTTON' && (
+                      <div className={styles.branchButtonsContainer}>
+                        {node.data.replies?.map((reply) => (
+                          <button
+                            key={reply.value}
+                            className={styles.branchButton}
+                            onClick={() => handleOptionClick(reply)}
+                            disabled={item.isCompleted}
+                          >
+                            {reply.display}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
             }
-
-            const message = interpolateMessage(node.data.content || node.data.label, slots);
-            return (
-              <div key={item.id || index} className={styles.messageRow}>
-                <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
-                <div className={`${styles.message} ${styles.botMessage}`}>
-                  <div>{message}</div>
-                  {node.type === 'branch' && node.data.evaluationType === 'BUTTON' && (
-                    <div className={styles.branchButtonsContainer}>
-                      {node.data.replies?.map((reply) => (
-                        <button
-                          key={reply.value}
-                          className={styles.branchButton}
-                          onClick={() => handleOptionClick(reply)}
-                          disabled={item.isCompleted}
-                        >
-                          {reply.display}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          }
-          if (item.type === 'user') {
-            return (
-              <div key={index} className={`${styles.messageRow} ${styles.userRow}`}>
-                <div className={`${styles.message} ${styles.userMessage}`}>{item.message}</div>
-              </div>
-            );
-          }
-          if (item.type === 'bot' && item.message) {
-            return (
-                <div key={item.id || index} className={styles.messageRow}>
-                  <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
-                  <div className={`${styles.message} ${styles.botMessage}`}>{item.message}</div>
+            if (item.type === 'user') {
+              return (
+                <div key={index} className={`${styles.messageRow} ${styles.userRow}`}>
+                  <div className={`${styles.message} ${styles.userMessage}`}>{item.message}</div>
                 </div>
               );
-          }
-          return null;
-        })}
+            }
+            if (item.type === 'bot' && item.message) {
+              return (
+                  <div key={item.id || index} className={styles.messageRow}>
+                    <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
+                    <div className={`${styles.message} ${styles.botMessage}`}>{item.message}</div>
+                  </div>
+                );
+            }
+            return null;
+          })
+        )}
       </div>
       <div className={styles.options}>
         <div className={styles.inputRow}>
@@ -801,6 +813,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleTextInputSend()}
                     placeholder="Ask about this Booking Master Page"
+                    disabled={!isStarted}
                 />
             </div>
         </div>
@@ -816,7 +829,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
                 onMouseUp={quickRepliesSlider.onMouseUp}
                 onMouseMove={quickRepliesSlider.onMouseMove}
             >
-                {currentNode && (currentNode.data.replies || []).length > 0 &&
+                {isStarted && currentNode && (currentNode.data.replies || []).length > 0 &&
                     (currentNode.type === 'message' || currentNode.type === 'slotfilling' || (currentNode.type === 'branch' && currentNode.data.evaluationType !== 'CONDITION')) &&
                     (currentNode.data.replies || []).map((answer) => (
                         <button key={answer.value} className={styles.optionButton} onClick={() => handleOptionClick(answer)}>{answer.display}</button>
