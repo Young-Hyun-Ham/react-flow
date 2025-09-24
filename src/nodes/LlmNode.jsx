@@ -1,24 +1,38 @@
 import { Handle, Position } from 'reactflow';
 import styles from './ChatNodes.module.css';
 import useStore from '../store';
+import { AnchorIcon } from '../components/Icons';
 
 function LlmNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);
+  const anchorNodeId = useStore((state) => state.anchorNodeId);
+  const setAnchorNodeId = useStore((state) => state.setAnchorNodeId);
   const updateNodeData = useStore((state) => state.updateNodeData);
   const nodeColor = useStore((state) => state.nodeColors.llm);
   const textColor = useStore((state) => state.nodeTextColors.llm);
+
+  const isAnchored = anchorNodeId === id;
 
   const onOutputVarChange = (e) => {
     updateNodeData(id, { outputVar: e.target.value });
   };
 
   return (
-    <div className={styles.nodeWrapper}>
+    <div className={`${styles.nodeWrapper} ${isAnchored ? styles.anchored : ''}`}>
       <Handle type="target" position={Position.Left} />
 
       <div className={styles.nodeHeader} style={{ backgroundColor: nodeColor, color: textColor }}>
         <span className={styles.headerTextContent}>LLM</span>
-        <button onClick={(e) => { e.stopPropagation(); deleteNode(id); }} className={styles.deleteButton} style={{ backgroundColor: nodeColor, color: textColor }}>X</button>
+        <div className={styles.headerButtons}>
+            <button
+              onClick={(e) => { e.stopPropagation(); setAnchorNodeId(id); }}
+              className={`${styles.anchorButton} ${isAnchored ? styles.active : ''}`}
+              title="Set as anchor"
+            >
+              <AnchorIcon />
+            </button>
+            <button onClick={(e) => { e.stopPropagation(); deleteNode(id); }} className={styles.deleteButton} style={{ backgroundColor: nodeColor, color: textColor }}>X</button>
+        </div>
       </div>
       
       <div className={styles.nodeBody}>

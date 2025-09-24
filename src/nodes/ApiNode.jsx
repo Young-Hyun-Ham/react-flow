@@ -2,21 +2,20 @@ import { Handle, Position } from 'reactflow';
 import styles from './ChatNodes.module.css';
 import useStore from '../store';
 import useAlert from '../hooks/useAlert';
-
-const PlayIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M5 3l14 9-14 9V3z"></path>
-    </svg>
-);
+import { AnchorIcon, PlayIcon } from '../components/Icons';
 
 function ApiNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);
+  const anchorNodeId = useStore((state) => state.anchorNodeId);
+  const setAnchorNodeId = useStore((state) => state.setAnchorNodeId);
   const nodeColor = useStore((state) => state.nodeColors.api);
   const textColor = useStore((state) => state.nodeTextColors.api);
   const slots = useStore((state) => state.slots);
   const { showAlert } = useAlert();
   const apiCount = data.apis?.length || 0;
   const isMulti = data.isMulti;
+
+  const isAnchored = anchorNodeId === id;
 
   const interpolateMessage = (message, slots) => {
     if (!message) return '';
@@ -55,13 +54,20 @@ function ApiNode({ id, data }) {
   };
 
   return (
-    <div className={styles.nodeWrapper}>
+    <div className={`${styles.nodeWrapper} ${isAnchored ? styles.anchored : ''}`}>
       <Handle type="target" position={Position.Left} />
       <div className={styles.nodeHeader} style={{ backgroundColor: nodeColor, color: textColor }}>
         <span className={styles.headerTextContent}>
           {isMulti ? `API (${apiCount} calls)` : 'API'}
         </span>
         <div className={styles.headerButtons}>
+            <button
+              onClick={(e) => { e.stopPropagation(); setAnchorNodeId(id); }}
+              className={`${styles.anchorButton} ${isAnchored ? styles.active : ''}`}
+              title="Set as anchor"
+            >
+              <AnchorIcon />
+            </button>
             {!isMulti && (
               <button onClick={handleApiTest} className={styles.playButton} title="Test API" style={{ color: textColor }}>
                   <PlayIcon />

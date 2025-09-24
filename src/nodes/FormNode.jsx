@@ -1,24 +1,17 @@
 import { Handle, Position } from 'reactflow';
 import styles from './ChatNodes.module.css';
 import useStore from '../store';
-
-const getTextColorByBackgroundColor = (hexColor) => {
-    if (!hexColor) return 'white';
-    const c = hexColor.substring(1);
-    const rgb = parseInt(c, 16);
-    const r = (rgb >> 16) & 0xff;
-    const g = (rgb >>  8) & 0xff;
-    const b = (rgb >>  0) & 0xff;
-    const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-    return luma < 128 ? 'white' : 'black';
-}
+import { AnchorIcon } from '../components/Icons';
 
 function FormNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);
+  const anchorNodeId = useStore((state) => state.anchorNodeId);
+  const setAnchorNodeId = useStore((state) => state.setAnchorNodeId);
   const updateNodeData = useStore((state) => state.updateNodeData);
   const nodeColor = useStore((state) => state.nodeColors.form);
   const textColor = useStore((state) => state.nodeTextColors.form);
-  // const textColor = getTextColorByBackgroundColor(nodeColor);
+  
+  const isAnchored = anchorNodeId === id;
 
   const renderElementPreview = (element) => {
     switch (element.type) {
@@ -77,7 +70,6 @@ function FormNode({ id, data }) {
             </div>
           </div>
         );
-        // --- 💡 수정된 부분 시작 ---
       case 'dropbox':
         return (
           <div key={element.id} className={styles.previewElement}>
@@ -92,7 +84,6 @@ function FormNode({ id, data }) {
             </select>
           </div>
         );
-        // --- 💡 수정된 부분 끝 ---
       default:
         return null;
     }
@@ -100,12 +91,20 @@ function FormNode({ id, data }) {
 
 
   return (
-    <div className={`${styles.nodeWrapper} ${styles.formNodeWrapper}`}>
+    <div className={`${styles.nodeWrapper} ${styles.formNodeWrapper} ${isAnchored ? styles.anchored : ''}`}>
       <Handle type="target" position={Position.Left} />
       <div className={styles.nodeHeader} style={{ backgroundColor: nodeColor, color: textColor }}>
         <span className={styles.headerTextContent}>Form</span>
-        {/* --- 💡 수정된 부분: onClick 핸들러에 e.stopPropagation() 추가 --- */}
-        <button onClick={(e) => { e.stopPropagation(); deleteNode(id); }} className={styles.deleteButton} style={{ backgroundColor: nodeColor, color: textColor }}>X</button>
+        <div className={styles.headerButtons}>
+            <button
+              onClick={(e) => { e.stopPropagation(); setAnchorNodeId(id); }}
+              className={`${styles.anchorButton} ${isAnchored ? styles.active : ''}`}
+              title="Set as anchor"
+            >
+              <AnchorIcon />
+            </button>
+            <button onClick={(e) => { e.stopPropagation(); deleteNode(id); }} className={styles.deleteButton} style={{ backgroundColor: nodeColor, color: textColor }}>X</button>
+        </div>
       </div>
       <div className={styles.nodeBody}>
         <div className={styles.section}>

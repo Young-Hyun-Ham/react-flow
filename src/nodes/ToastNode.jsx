@@ -1,25 +1,19 @@
 import { Handle, Position } from 'reactflow';
 import styles from './ChatNodes.module.css';
 import useStore from '../store';
-
-// Toast 아이콘 SVG 컴포넌트
-const ToastIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-16a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2z" />
-        <path d="M4 9h16" />
-        <path d="M8 13h1" />
-        <path d="M12 13h1" />
-    </svg>
-);
-
+import { AnchorIcon, ToastIcon } from '../components/Icons';
 
 function ToastNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);
+  const anchorNodeId = useStore((state) => state.anchorNodeId);
+  const setAnchorNodeId = useStore((state) => state.setAnchorNodeId);
   const nodeColor = useStore((state) => state.nodeColors.toast);
   const textColor = useStore((state) => state.nodeTextColors.toast);
 
+  const isAnchored = anchorNodeId === id;
+
   return (
-    <div className={styles.nodeWrapper}>
+    <div className={`${styles.nodeWrapper} ${isAnchored ? styles.anchored : ''}`}>
       <Handle type="target" position={Position.Left} />
 
       <div className={styles.nodeHeader} style={{ backgroundColor: nodeColor, color: textColor }}>
@@ -27,13 +21,22 @@ function ToastNode({ id, data }) {
             <ToastIcon />
             <span className={styles.headerTextContent}>Toast</span>
         </div>
-        <button 
-          onClick={(e) => { e.stopPropagation(); deleteNode(id); }} 
-          className={styles.deleteButton} 
-          style={{ color: textColor }}
-        >
-          X
-        </button>
+        <div className={styles.headerButtons}>
+            <button
+              onClick={(e) => { e.stopPropagation(); setAnchorNodeId(id); }}
+              className={`${styles.anchorButton} ${isAnchored ? styles.active : ''}`}
+              title="Set as anchor"
+            >
+              <AnchorIcon />
+            </button>
+            <button 
+              onClick={(e) => { e.stopPropagation(); deleteNode(id); }} 
+              className={styles.deleteButton} 
+              style={{ color: textColor }}
+            >
+              X
+            </button>
+        </div>
       </div>
       
       <div className={styles.nodeBody}>

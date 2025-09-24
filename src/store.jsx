@@ -39,9 +39,16 @@ const useStore = create((set, get) => ({
   nodes: [],
   edges: [],
   selectedNodeId: null,
+  anchorNodeId: null,
   nodeColors: defaultColors,
   nodeTextColors: defaultTextColors,
   slots: {}, // --- 💡 수정된 부분: 슬롯 상태 추가 ---
+
+  setAnchorNodeId: (nodeId) => {
+    set((state) => ({
+      anchorNodeId: state.anchorNodeId === nodeId ? null : nodeId,
+    }));
+  },
 
   setSlots: (newSlots) => set({ slots: newSlots }), // --- 💡 수정된 부분: 슬롯 업데이트 함수 추가 ---
 

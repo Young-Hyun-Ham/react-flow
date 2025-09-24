@@ -1,25 +1,19 @@
 import { Handle, Position } from 'reactflow';
 import styles from './ChatNodes.module.css';
 import useStore from '../store';
-
-// Iframe 아이콘 SVG 컴포넌트
-const IframeIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="3" width="20" height="18" rx="2" />
-        <path d="M2 9h20" />
-        <path d="M9 2v2" />
-        <path d="M15 2v2" />
-    </svg>
-);
-
+import { AnchorIcon, IframeIcon } from '../components/Icons';
 
 function IframeNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);
+  const anchorNodeId = useStore((state) => state.anchorNodeId);
+  const setAnchorNodeId = useStore((state) => state.setAnchorNodeId);
   const nodeColor = useStore((state) => state.nodeColors.iframe);
   const textColor = useStore((state) => state.nodeTextColors.iframe);
 
+  const isAnchored = anchorNodeId === id;
+
   return (
-    <div className={styles.nodeWrapper} style={{width: data.width ? `${parseInt(data.width) + 40}px` : '300px'}}>
+    <div className={`${styles.nodeWrapper} ${isAnchored ? styles.anchored : ''}`} style={{width: data.width ? `${parseInt(data.width) + 40}px` : '300px'}}>
       <Handle type="target" position={Position.Left} />
 
       <div className={styles.nodeHeader} style={{ backgroundColor: nodeColor, color: textColor }}>
@@ -27,13 +21,22 @@ function IframeNode({ id, data }) {
             <IframeIcon />
             <span className={styles.headerTextContent}>iFrame</span>
         </div>
-        <button
-          onClick={(e) => { e.stopPropagation(); deleteNode(id); }}
-          className={styles.deleteButton}
-          style={{ color: textColor }}
-        >
-          X
-        </button>
+        <div className={styles.headerButtons}>
+            <button
+              onClick={(e) => { e.stopPropagation(); setAnchorNodeId(id); }}
+              className={`${styles.anchorButton} ${isAnchored ? styles.active : ''}`}
+              title="Set as anchor"
+            >
+              <AnchorIcon />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); deleteNode(id); }}
+              className={styles.deleteButton}
+              style={{ color: textColor }}
+            >
+              X
+            </button>
+        </div>
       </div>
 
       <div className={styles.nodeBody}>

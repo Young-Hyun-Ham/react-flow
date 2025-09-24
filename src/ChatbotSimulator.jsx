@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import useStore from './store';
 import styles from './ChatbotSimulator.module.css';
+import { ExpandIcon, CollapseIcon, AttachIcon } from './components/Icons';
 
-// ... (다른 함수들은 그대로 유지)
 const interpolateMessage = (message, slots) => {
   if (!message) return '';
   return message.replace(/\{([^}]+)\}/g, (match, key) => {
@@ -99,27 +99,6 @@ const evaluateCondition = (slotValue, operator, conditionValue) => {
   }
 };
 
-
-const ExpandIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-  </svg>
-);
-
-const CollapseIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7" />
-  </svg>
-);
-
-const AttachIcon = () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M12 8V16" stroke="#444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M8 12H16" stroke="#444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-);
-
 const useDraggableScroll = () => {
     const ref = useRef(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -165,6 +144,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
 
   const slots = useStore((state) => state.slots);
   const setSlots = useStore((state) => state.setSlots);
+  const anchorNodeId = useStore((state) => state.anchorNodeId);
 
   const currentNode = nodes.find(n => n.id === currentId);
 
@@ -177,6 +157,11 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
   }, [history]);
 
   const proceedToNextNode = useCallback((sourceHandleId, sourceNodeId, updatedSlots) => {
+    if (sourceNodeId === anchorNodeId) {
+        setCurrentId(null);
+        return;
+    }
+
     if (!sourceNodeId) return;
     
     const sourceNode = nodes.find(n => n.id === sourceNodeId);
@@ -234,7 +219,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
         }, 500);
       }
     }
-  }, [edges, nodes]);
+  }, [edges, nodes, anchorNodeId]);
 
   const addBotMessage = useCallback((nodeId, updatedSlots) => {
     const node = nodes.find(n => n.id === nodeId);
@@ -306,13 +291,10 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
 
     try {
         const createApiPromise = (apiCall) => {
-            // --- 💡 수정된 부분 시작 ---
             let interpolatedUrl = interpolateMessage(apiCall.url, currentSlots);
-            // URL이 'https://random-word-api.herokuapp.com'으로 시작하면 프록시 경로로 변경
             if (interpolatedUrl.startsWith('https://random-word-api.herokuapp.com')) {
                 interpolatedUrl = interpolatedUrl.replace('https://random-word-api.herokuapp.com', '/api/random-word');
             }
-            // --- 💡 수정된 부분 끝 ---
 
             const interpolatedHeaders = JSON.parse(interpolateMessage(apiCall.headers || '{}', currentSlots));
             const interpolatedBody = apiCall.method !== 'GET' && apiCall.body ? interpolateMessage(apiCall.body, currentSlots) : undefined;
@@ -419,10 +401,17 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
     }
   }, [proceedToNextNode, setSlots]);
   
-  const startSimulation = useCallback(() => {
+  const startSimulation = useCallback((startNodeId) => {
     setIsStarted(true);
-    const edgeTargets = new Set(edges.map((edge) => edge.target));
-    const startNode = nodes.find((node) => !edgeTargets.has(node.id));
+    let startNode;
+
+    if (startNodeId) {
+        startNode = nodes.find(n => n.id === startNodeId);
+    } else {
+        const edgeTargets = new Set(edges.map((edge) => edge.target));
+        startNode = nodes.find((node) => !edgeTargets.has(node.id));
+    }
+
 
     if (startNode) {
       const initialSlots = {};
@@ -444,6 +433,12 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
     if (!isStarted) return;
     const node = nodes.find(n => n.id === currentId);
     if (node && (node.type === 'message' || node.type === 'iframe')) {
+        
+        if (currentId === anchorNodeId) {
+            setCurrentId(null);
+            return;
+        }
+
       const nextEdge = edges.find((edge) => edge.source === node.id && !edge.sourceHandle);
       if (nextEdge) {
         const nextNode = nodes.find((n) => n.id === nextEdge.target);
@@ -456,7 +451,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
         }
       }
     }
-  }, [currentId, nodes, edges, addBotMessage, slots, isStarted]);
+  }, [currentId, nodes, edges, addBotMessage, slots, isStarted, anchorNodeId]);
 
   const completeCurrentInteraction = () => {
     setHistory(prev => prev.map(item =>
@@ -570,7 +565,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
             </div>
           )}
           {isVisible && (
-            <button className={styles.headerRestartButton} onClick={startSimulation}>
+            <button className={styles.headerRestartButton} onClick={() => startSimulation()}>
               Start
             </button>
           )}
@@ -592,9 +587,6 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
       <div className={styles.history} ref={historyRef}>
         {!isStarted ? (
           <div className={styles.startScreen}>
-            {/* <button className={styles.startButton} onClick={startSimulation}>
-              Start Conversation
-            </button> */}
           </div>
         ) : (
           history.map((item, index) => {

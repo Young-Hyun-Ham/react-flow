@@ -32,11 +32,31 @@
   font-weight: bold;
 }
 
-/* --- 💡 수정된 부분 시작 --- */
 .headerButtons {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.anchorButton {
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ccc; /* 기본 색상을 연하게 */
+  font-size: 1rem;
+  line-height: 1;
+}
+.anchorButton.active,
+.anchorButton:hover {
+  color: white; /* 활성화 및 호버 시 색상 변경 */
+}
+.nodeWrapper.anchored {
+    border: 2px solid #e74c3c; /* 앵커 설정 시 테두리 강조 */
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
 }
 
 .playButton {
@@ -60,7 +80,6 @@
   font-size: 0.7rem;
   margin-right: -10px;
 }
-/* --- 💡 수정된 부분 끝 --- */
 
 .deleteButton:hover {
   opacity: 1;
