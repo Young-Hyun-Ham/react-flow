@@ -1,476 +1,29 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import useStore from './store';
 import styles from './ChatbotSimulator.module.css';
-import { ExpandIcon, CollapseIcon, AttachIcon } from './components/Icons';
-
-const interpolateMessage = (message, slots) => {
-  if (!message) return '';
-  return message.replace(/\{([^}]+)\}/g, (match, key) => {
-    return slots.hasOwnProperty(key) ? slots[key] : match;
-  });
-};
-
-const getNestedValue = (obj, path) => {
-    if (!path) return undefined;
-    return path.split('.').reduce((acc, part) => acc && acc[part], obj);
-};
-
-const validateInput = (value, validation) => {
-  if (!validation) return true;
-
-  switch (validation.type) {
-    case 'email':
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-    case 'phone number':
-      return /^\d{2,3}-\d{3,4}-\d{4}$/.test(value);
-    case 'custom':
-        if (validation.regex) { // Input type custom
-            try {
-                return new RegExp(validation.regex).test(value);
-            } catch (e) {
-                console.error("Invalid regex:", validation.regex);
-                return false;
-            }
-        } else if (validation.startDate && validation.endDate) { // Date type custom
-            if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-            const selectedDate = new Date(value);
-            const startDate = new Date(validation.startDate);
-            const endDate = new Date(validation.endDate);
-            startDate.setHours(0, 0, 0, 0);
-            endDate.setHours(23, 59, 59, 999);
-            return selectedDate >= startDate && selectedDate <= endDate;
-        }
-        return true;
-    case 'today after':
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-      const selectedDateAfter = new Date(value);
-      const todayAfter = new Date();
-      todayAfter.setHours(0, 0, 0, 0);
-      return selectedDateAfter >= todayAfter;
-    case 'today before':
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-      const selectedDateBefore = new Date(value);
-      const todayBefore = new Date();
-      todayBefore.setHours(23, 59, 59, 999);
-      return selectedDateBefore <= todayBefore;
-    default:
-      return true;
-  }
-};
-
-const evaluateCondition = (slotValue, operator, conditionValue) => {
-  const lowerCaseConditionValue = String(conditionValue).toLowerCase();
-  if (lowerCaseConditionValue === 'true' || lowerCaseConditionValue === 'false') {
-    const boolConditionValue = lowerCaseConditionValue === 'true';
-    const boolSlotValue = String(slotValue).toLowerCase() === 'true';
-
-    switch (operator) {
-      case '==':
-        return boolSlotValue === boolConditionValue;
-      case '!=':
-        return boolSlotValue !== boolConditionValue;
-      default:
-        return false;
-    }
-  }
-
-  const numSlotValue = parseFloat(slotValue);
-  const numConditionValue = parseFloat(conditionValue);
-
-  switch (operator) {
-    case '==':
-      return slotValue == conditionValue;
-    case '!=':
-      return slotValue != conditionValue;
-    case '>':
-      return !isNaN(numSlotValue) && !isNaN(numConditionValue) && numSlotValue > numConditionValue;
-    case '<':
-      return !isNaN(numSlotValue) && !isNaN(numConditionValue) && numSlotValue < numConditionValue;
-    case '>=':
-      return !isNaN(numSlotValue) && !isNaN(numConditionValue) && numSlotValue >= numConditionValue;
-    case '<=':
-      return !isNaN(numSlotValue) && !isNaN(numConditionValue) && numSlotValue <= numConditionValue;
-    case 'contains':
-      return slotValue && slotValue.toString().includes(conditionValue);
-    case '!contains':
-      return !slotValue || !slotValue.toString().includes(conditionValue);
-    default:
-      return false;
-  }
-};
-
-const useDraggableScroll = () => {
-    const ref = useRef(null);
-    const [isDragging, setIsDragging] = useState(false);
-    const [startX, setStartX] = useState(0);
-    const [scrollLeft, setScrollLeft] = useState(0);
-
-    const onMouseDown = (e) => {
-        setIsDragging(true);
-        if (ref.current) {
-            setStartX(e.pageX - ref.current.offsetLeft);
-            setScrollLeft(ref.current.scrollLeft);
-        }
-    };
-
-    const onMouseLeave = () => {
-        setIsDragging(false);
-    };
-
-    const onMouseUp = () => {
-        setIsDragging(false);
-    };
-
-    const onMouseMove = (e) => {
-        if (!isDragging || !ref.current) return;
-        e.preventDefault();
-        const x = e.pageX - ref.current.offsetLeft;
-        const walk = (x - startX) * 2; // multiply for faster scroll
-        ref.current.scrollLeft = scrollLeft - walk;
-    };
-
-    return { ref, isDragging, onMouseDown, onMouseLeave, onMouseUp, onMouseMove };
-};
-
+import { useChatFlow } from './hooks/useChatFlow';
+import { validateInput } from './simulatorUtils';
+import SimulatorHeader from './components/simulator/SimulatorHeader';
+import MessageHistory from './components/simulator/MessageHistory';
+import UserInput from './components/simulator/UserInput';
 
 function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }) {
-  const [history, setHistory] = useState([]);
-  const [currentId, setCurrentId] = useState(null);
-  const [inputValue, setInputValue] = useState('');
+  const { history, setHistory, currentId, currentNode, fixedMenu, isStarted, startSimulation, proceedToNextNode } = useChatFlow(nodes, edges);
+  const { slots, setSlots } = useStore();
   const [formData, setFormData] = useState({});
-  const [fixedMenu, setFixedMenu] = useState(null);
-  const historyRef = useRef(null);
-  const [isStarted, setIsStarted] = useState(false);
-
-  const slots = useStore((state) => state.slots);
-  const setSlots = useStore((state) => state.setSlots);
-  const anchorNodeId = useStore((state) => state.anchorNodeId);
-
-  const currentNode = nodes.find(n => n.id === currentId);
-
-  const quickRepliesSlider = useDraggableScroll();
-
-  useEffect(() => {
-    if (historyRef.current) {
-      historyRef.current.scrollTop = historyRef.current.scrollHeight;
-    }
-  }, [history]);
-
-  const proceedToNextNode = useCallback((sourceHandleId, sourceNodeId, updatedSlots) => {
-    if (sourceNodeId === anchorNodeId) {
-        setCurrentId(null);
-        return;
-    }
-
-    if (!sourceNodeId) return;
-    
-    const sourceNode = nodes.find(n => n.id === sourceNodeId);
-    let nextEdge;
-
-    if (sourceNode && sourceNode.type === 'llm' && sourceNode.data.conditions?.length > 0) {
-        const llmOutput = updatedSlots[sourceNode.data.outputVar] || '';
-        
-        const matchedCondition = sourceNode.data.conditions.find(cond => 
-            llmOutput.toLowerCase().includes(cond.keyword.toLowerCase())
-        );
-
-        if (matchedCondition) {
-            nextEdge = edges.find(edge => edge.source === sourceNodeId && edge.sourceHandle === matchedCondition.id);
-        }
-    }
-
-    if (sourceNode && sourceNode.type === 'branch' && sourceNode.data.evaluationType === 'CONDITION') {
-        const conditions = sourceNode.data.conditions || [];
-        for (const condition of conditions) {
-            const slotValue = updatedSlots[condition.slot];
-            if (evaluateCondition(slotValue, condition.operator, condition.value)) {
-                const handleId = sourceNode.data.replies[conditions.indexOf(condition)]?.value;
-                if(handleId) {
-                  nextEdge = edges.find(edge => edge.source === sourceNodeId && edge.sourceHandle === handleId);
-                  if (nextEdge) break;
-                }
-            }
-        }
-    }
-
-
-    if (!nextEdge) {
-        if (sourceHandleId) {
-            nextEdge = edges.find(
-              (edge) => edge.source === sourceNodeId && edge.sourceHandle === sourceHandleId
-            );
-        } else {
-            nextEdge = edges.find((edge) => edge.source === sourceNodeId && edge.sourceHandle === 'default') || 
-                       edges.find((edge) => edge.source === sourceNodeId && !edge.sourceHandle);
-        }
-    }
-
-    if (nextEdge) {
-      const nextNode = nodes.find((node) => node.id === nextEdge.target);
-      if (nextNode) {
-        setCurrentId(nextNode.id);
-        setTimeout(() => addBotMessage(nextNode.id, updatedSlots), 500);
-      }
-    } else {
-      const sourceNode = nodes.find(n => n.id === sourceNodeId);
-      if(sourceNode?.type !== 'fixedmenu' && sourceNode?.type !== 'branch' && sourceNode?.type !== 'api') {
-        setTimeout(() => {
-          setCurrentId(null);
-        }, 500);
-      }
-    }
-  }, [edges, nodes, anchorNodeId]);
-
-  const addBotMessage = useCallback((nodeId, updatedSlots) => {
-    const node = nodes.find(n => n.id === nodeId);
-    if (node) {
-      if (node.id === 'branch-1754639034237-vsol31e') {
-        const loadingId = Date.now();
-        setHistory(prev => [...prev, { type: 'loading', id: loadingId }]);
-        setTimeout(() => {
-          const isInteractive = node.type === 'form' || (node.type === 'branch' && node.data.evaluationType === 'BUTTON' && node.data.replies?.length > 0) || node.type === 'slotfilling';
-          setHistory(prev => prev.map(item => 
-            item.id === loadingId 
-              ? { type: 'bot', nodeId: node.id, isCompleted: !isInteractive, id: loadingId } 
-              : item
-          ));
-        }, 2000);
-        return;
-      }
-      
-      if (node.type === 'api') {
-        handleApiNode(node, updatedSlots);
-        return;
-      }
-
-      if (node.type === 'llm') {
-        handleLlmNode(node, updatedSlots);
-        return;
-      }
-      
-      if (node.type === 'fixedmenu') {
-        setHistory([]);
-        setFixedMenu({ nodeId: node.id, ...node.data });
-        setCurrentId(node.id);
-        return;
-      }
-
-      if (node.type === 'link') {
-        setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: true, id: Date.now() }]);
-        if (node.data.content) {
-            window.open(node.data.content, '_blank', 'noopener,noreferrer');
-        }
-        proceedToNextNode(null, nodeId, updatedSlots);
-        return;
-      }
-
-      if (node.type === 'toast') {
-        const message = interpolateMessage(node.data.message, updatedSlots);
-        alert(`[${node.data.toastType || 'info'}] ${message}`);
-        proceedToNextNode(null, nodeId, updatedSlots);
-        return;
-      }
-
-      if (node.type === 'branch' && node.data.evaluationType === 'CONDITION') {
-          proceedToNextNode(null, nodeId, updatedSlots);
-          return;
-      }
-      
-      const isInteractive = node.type === 'form' || (node.type === 'branch' && node.data.evaluationType === 'BUTTON' && node.data.replies?.length > 0) || node.type === 'slotfilling';
-
-      setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: !isInteractive || node.type === 'iframe', id: Date.now() }]);
-    }
-  }, [nodes, proceedToNextNode]);
-
-  const handleApiNode = useCallback(async (node, currentSlots) => {
-    const loadingId = Date.now();
-    setHistory(prev => [...prev, { type: 'loading', id: loadingId }]);
-
-    let finalSlots = { ...currentSlots };
-    const { isMulti, apis } = node.data;
-
-    try {
-        const createApiPromise = (apiCall) => {
-            let interpolatedUrl = interpolateMessage(apiCall.url, currentSlots);
-            if (interpolatedUrl.startsWith('https://random-word-api.herokuapp.com')) {
-                interpolatedUrl = interpolatedUrl.replace('https://random-word-api.herokuapp.com', '/api/random-word');
-            }
-
-            const interpolatedHeaders = JSON.parse(interpolateMessage(apiCall.headers || '{}', currentSlots));
-            const interpolatedBody = apiCall.method !== 'GET' && apiCall.body ? interpolateMessage(apiCall.body, currentSlots) : undefined;
-            
-            return fetch(interpolatedUrl, {
-                method: apiCall.method,
-                headers: { 'Content-Type': 'application/json', ...interpolatedHeaders },
-                body: interpolatedBody,
-            }).then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => Promise.reject({ status: response.status, body: err, apiName: apiCall.name }));
-                }
-                return response.json().then(data => ({ data, mapping: apiCall.responseMapping, apiName: apiCall.name }));
-            });
-        };
-
-        const promises = isMulti ? (apis || []).map(createApiPromise) : [createApiPromise(node.data)];
-        
-        const results = await Promise.allSettled(promises);
-      
-        const failedCalls = results.filter(r => r.status === 'rejected');
-        if (failedCalls.length > 0) {
-            const firstError = failedCalls[0].reason;
-            throw new Error(`API call '${firstError.apiName}' failed with status ${firstError.status}`);
-        }
-      
-        const newSlots = {};
-        results.forEach(result => {
-            if (result.status === 'fulfilled') {
-                const { data, mapping, apiName } = result.value;
-                if (mapping && mapping.length > 0) {
-                    mapping.forEach(m => {
-                        if (m.path && m.slot) {
-                            const value = getNestedValue(data, m.path);
-                            if (value !== undefined) newSlots[m.slot] = value;
-                        }
-                    });
-                } else {
-                    newSlots[`api_response_${(apiName || 'response').replace(/\s+/g, '_')}`] = data;
-                }
-            }
-        });
-      
-        finalSlots = { ...currentSlots, ...newSlots };
-        setSlots(finalSlots);
-
-        setHistory(prev => prev.map(item => 
-            item.id === loadingId 
-            ? { type: 'bot', message: `All API calls successful.`, id: loadingId }
-            : item
-        ));
-      
-        proceedToNextNode('onSuccess', node.id, finalSlots);
-
-    } catch (error) {
-        console.error("API Error:", error);
-        setHistory(prev => prev.map(item => 
-            item.id === loadingId 
-            ? { type: 'bot', message: `Error: ${error.message}`, id: loadingId }
-            : item
-        ));
-        proceedToNextNode('onError', node.id, finalSlots);
-    }
-  }, [proceedToNextNode, setSlots]);
-
-  const handleLlmNode = useCallback(async (node, currentSlots) => {
-    const streamingMessageId = Date.now();
-    let accumulatedContent = '';
-    setHistory(prev => [...prev, { type: 'bot_streaming', id: streamingMessageId, content: '', isStreaming: true }]);
-
-    try {
-        const interpolatedPrompt = interpolateMessage(node.data.prompt, currentSlots);
-
-        const response = await fetch('https://musclecat.co.kr/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt: interpolatedPrompt }),
-        });
-
-        if (!response.body) throw new Error('ReadableStream not available');
-
-        const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
-
-        while (true) {
-            const { value, done } = await reader.read();
-            if (done) {
-              setHistory(prev => prev.map(item => item.id === streamingMessageId ? { ...item, isStreaming: false } : item));
-              break;
-            }
-            accumulatedContent += value;
-            setHistory(prev => prev.map(item => item.id === streamingMessageId ? { ...item, content: accumulatedContent } : item));
-        }
-    } catch (error) {
-        console.error("LLM Error:", error);
-        accumulatedContent = `Error: ${error.message}`;
-        setHistory(prev => prev.map(item => item.id === streamingMessageId ? { ...item, content: accumulatedContent, isStreaming: false } : item));
-    } finally {
-        let finalSlots = { ...currentSlots };
-        if (node.data.outputVar) {
-            finalSlots[node.data.outputVar] = accumulatedContent;
-            setSlots(finalSlots);
-        }
-        proceedToNextNode(null, node.id, finalSlots);
-    }
-  }, [proceedToNextNode, setSlots]);
-  
-  const startSimulation = useCallback((startNodeId) => {
-    setIsStarted(true);
-    let startNode;
-
-    if (startNodeId) {
-        startNode = nodes.find(n => n.id === startNodeId);
-    } else {
-        const edgeTargets = new Set(edges.map((edge) => edge.target));
-        startNode = nodes.find((node) => !edgeTargets.has(node.id));
-    }
-
-
-    if (startNode) {
-      const initialSlots = {};
-      setSlots(initialSlots);
-      setFormData({});
-      setFixedMenu(null);
-      setHistory([]);
-      setCurrentId(startNode.id);
-      addBotMessage(startNode.id, initialSlots);
-    }
-  }, [nodes, edges, addBotMessage, setSlots]);
-
-  useEffect(() => {
-    setIsStarted(false);
-    setHistory([]);
-  }, [nodes, edges]);
-
-  useEffect(() => {
-    if (!isStarted) return;
-    const node = nodes.find(n => n.id === currentId);
-    if (node && (node.type === 'message' || node.type === 'iframe')) {
-        
-        if (currentId === anchorNodeId) {
-            setCurrentId(null);
-            return;
-        }
-
-      const nextEdge = edges.find((edge) => edge.source === node.id && !edge.sourceHandle);
-      if (nextEdge) {
-        const nextNode = nodes.find((n) => n.id === nextEdge.target);
-        if (nextNode) {
-          const timer = setTimeout(() => {
-            setCurrentId(nextNode.id);
-            addBotMessage(nextNode.id, slots);
-          }, 1000);
-          return () => clearTimeout(timer);
-        }
-      }
-    }
-  }, [currentId, nodes, edges, addBotMessage, slots, isStarted, anchorNodeId]);
 
   const completeCurrentInteraction = () => {
-    setHistory(prev => prev.map(item =>
-      (item.nodeId === currentId) ? { ...item, isCompleted: true } : item
-    ));
+    setHistory(prev => prev.map(item => item.nodeId === currentId ? { ...item, isCompleted: true } : item));
   };
 
-  const handleTextInputSend = () => {
-    if (!inputValue.trim() || !currentNode) return;
-    setHistory((prev) => [...prev, { type: 'user', message: inputValue }]);
-
+  const handleTextInputSend = (text) => {
+    if (!currentNode) return;
+    setHistory(prev => [...prev, { type: 'user', message: text }]);
     let newSlots = { ...slots };
-    const currentSlot = currentNode.data.slot;
-    if (currentSlot) {
-      newSlots = { ...slots, [currentSlot]: inputValue };
+    if (currentNode.data.slot) {
+      newSlots[currentNode.data.slot] = text;
       setSlots(newSlots);
     }
-
-    setInputValue('');
     proceedToNextNode(null, currentId, newSlots);
   };
 
@@ -478,13 +31,12 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
     const sourceNode = nodes.find(n => n.id === sourceNodeId);
     if (!sourceNode) return;
 
-    setHistory((prev) => [...prev, { type: 'user', message: answer.display }]);
+    setHistory(prev => [...prev, { type: 'user', message: answer.display }]);
     completeCurrentInteraction();
 
     let newSlots = { ...slots };
-    const currentSlot = sourceNode.data.slot;
-    if (currentSlot && sourceNode.type === 'slotfilling') {
-      newSlots = { ...slots, [currentSlot]: answer.value };
+    if (sourceNode.data.slot && sourceNode.type === 'slotfilling') {
+      newSlots[sourceNode.data.slot] = answer.value;
       setSlots(newSlots);
     }
 
@@ -499,9 +51,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
   const handleFormMultiInputChange = (elementName, value, checked) => {
     setFormData(prev => {
       const existingValues = prev[elementName] || [];
-      const newValues = checked
-        ? [...existingValues, value]
-        : existingValues.filter(v => v !== value);
+      const newValues = checked ? [...existingValues, value] : existingValues.filter(v => v !== value);
       return { ...prev, [elementName]: newValues };
     });
   };
@@ -512,21 +62,15 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
         const value = formData[element.name] || '';
         if (!validateInput(value, element.validation)) {
             let alertMessage = `'${element.label}' input is not valid.`;
-            if (element.validation?.type === 'today after') {
-                alertMessage = `'${element.label}' must be today or a future date.`;
-            } else if (element.validation?.type === 'today before') {
-                alertMessage = `'${element.label}' must be today or a past date.`;
-            } else if (element.validation?.type === 'custom' && element.validation?.startDate && element.validation?.endDate) {
-                alertMessage = `'${element.label}' must be between ${element.validation.startDate} and ${element.validation.endDate}.`;
-            }
-          alert(alertMessage);
-          return;
+            if (element.validation?.type === 'today after') alertMessage = `'${element.label}' must be today or a future date.`;
+            else if (element.validation?.type === 'today before') alertMessage = `'${element.label}' must be today or a past date.`;
+            else if (element.validation?.type === 'custom' && element.validation?.startDate && element.validation?.endDate) alertMessage = `'${element.label}' must be between ${element.validation.startDate} and ${element.validation.endDate}.`;
+            alert(alertMessage);
+            return;
         }
       }
     }
-
     completeCurrentInteraction();
-    
     const newSlots = { ...slots, ...formData };
     setSlots(newSlots);
     setFormData({});
@@ -536,7 +80,6 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
   
   const handleFormDefault = () => {
     if (!currentNode || currentNode.type !== 'form') return;
-  
     const defaultData = {};
     currentNode.data.elements.forEach(element => {
       if (element.name && element.defaultValue !== undefined) {
@@ -548,29 +91,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
 
   return (
     <div className={`${styles.simulator} ${isExpanded ? styles.expanded : ''}`}>
-      <div className={`${styles.header} ${isExpanded ? styles.expanded : ''}`}>
-
-          <div className={styles.headerContent}>
-            <img src="/images/icon.png" alt="AI Chatbot Icon" className={styles.headerIcon} />
-            <div className={styles.headerTextContainer}>
-              <span className={styles.headerTitle}>AI ChatBot</span>
-              <span className={styles.headerSubtitle}>Booking Master</span>
-            </div>
-          </div>
-          
-        <div className={styles.headerButtons}>
-          {isVisible && (
-            <div className={styles.headerButton} onClick={() => setIsExpanded(!isExpanded)} title={isExpanded ? "Collapse" : "Expand"}>
-              <img src="/images/expand.png" alt="expand" className={!isExpanded ? styles.expandIcon : styles.collapseIcon} />
-            </div>
-          )}
-          {isVisible && (
-            <button className={styles.headerRestartButton} onClick={() => startSimulation()}>
-              Start
-            </button>
-          )}
-        </div>
-      </div>
+      <SimulatorHeader isVisible={isVisible} isExpanded={isExpanded} setIsExpanded={setIsExpanded} onStart={() => startSimulation()} />
       
       {fixedMenu && (
         <div className={styles.fixedMenuContainer}>
@@ -584,252 +105,31 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
           </div>
         </div>
       )}
-      <div className={styles.history} ref={historyRef}>
-        {!isStarted ? (
-          <div className={styles.startScreen}>
-          </div>
-        ) : (
-          history.map((item, index) => {
-            if (item.type === 'bot_streaming') {
-              return (
-                <div key={item.id} className={styles.messageRow}>
-                  <img 
-                    src={item.isStreaming ? "/images/avatar-loading.png" : "/images/avatar.png"} 
-                    alt="Chatbot Avatar" 
-                    className={styles.avatar} 
-                  />
-                  <div className={`${styles.message} ${styles.botMessage}`}>{item.content}</div>
-                </div>
-              );
-            }
-            if (item.type === 'loading') {
-              return (
-                <div key={item.id} className={styles.messageRow}>
-                  <img src="/images/avatar-loading.png" alt="Chatbot Avatar" className={styles.avatar} />
-                  <div className={`${styles.message} ${styles.botMessage}`}>
-                    <img src="/images/Loading.gif" alt="Loading..." style={{ width: '80px', height: '60px' }} />
-                  </div>
-                </div>
-              );
-            }
 
-            if (item.type === 'bot' && item.nodeId) {
-              const node = nodes.find(n => n.id === item.nodeId);
-              if (!node) return null;
-
-              if (node.type === 'iframe') {
-                return (
-                  <div key={item.id || index} className={styles.messageRow}>
-                    <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
-                    <div className={`${styles.message} ${styles.botMessage} ${styles.iframeContainer}`}>
-                      <iframe
-                        src={interpolateMessage(node.data.url, slots)}
-                        width={node.data.width || '100%'}
-                        height={node.data.height || '250'}
-                        style={{ border: 'none', borderRadius: '18px' }}
-                        title="chatbot-iframe"
-                      ></iframe>
-                    </div>
-                  </div>
-                );
-              }
-
-              if (node.type === 'link') {
-                return (
-                  <div key={item.id || index} className={styles.messageRow}>
-                    <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
-                    <div className={`${styles.message} ${styles.botMessage}`}>
-                      <span>Opening link in a new tab: </span>
-                      <a href={node.data.content} target="_blank" rel="noopener noreferrer">{node.data.display || node.data.content}</a>
-                    </div>
-                  </div>
-                );
-              }
-
-              if (node.type === 'form') {
-                return (
-                  <div key={item.id || index} className={styles.messageRow}>
-                    <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
-                    <div className={`${styles.message} ${styles.botMessage} ${styles.formContainer}`}>
-                      <h3>{node.data.title}</h3>
-                      {node.data.elements?.map(el => {
-                        const dateProps = {};
-                        if (el.type === 'date') {
-                            if (el.validation?.type === 'today after') {
-                                dateProps.min = new Date().toISOString().split('T')[0];
-                            } else if (el.validation?.type === 'today before') {
-                                dateProps.max = new Date().toISOString().split('T')[0];
-                            } else if (el.validation?.type === 'custom') {
-                                if(el.validation.startDate) dateProps.min = el.validation.startDate;
-                                if(el.validation.endDate) dateProps.max = el.validation.endDate;
-                            }
-                        }
-                        return (
-                        <div key={el.id} className={styles.formElement}>
-                          <label className={styles.formLabel}>{el.label}</label>
-                          {el.type === 'input' && (
-                            <input
-                              type={el.validation?.type === 'email' ? 'email' : 'text'}
-                              className={styles.formInput}
-                              placeholder={el.placeholder}
-                              value={formData[el.name] || ''}
-                              onChange={(e) => handleFormInputChange(el.name, e.target.value)}
-                              disabled={item.isCompleted}
-                            />
-                          )}
-                          {el.type === 'date' && (
-                            <input
-                              type="date"
-                              className={styles.formInput}
-                              value={formData[el.name] || ''}
-                              onChange={(e) => handleFormInputChange(el.name, e.target.value)}
-                              disabled={item.isCompleted}
-                              {...dateProps}
-                            />
-                          )}
-                          {el.type === 'checkbox' && el.options?.map(opt => (
-                            <div key={opt} className={styles.checkboxOption}>
-                              <input
-                                type="checkbox"
-                                id={`${el.id}-${opt}`}
-                                value={opt}
-                                checked={(formData[el.name] || []).includes(opt)}
-                                onChange={(e) => handleFormMultiInputChange(el.name, opt, e.target.checked)}
-                                disabled={item.isCompleted}
-                              />
-                              <label htmlFor={`${el.id}-${opt}`}>{opt}</label>
-                            </div>
-                          ))}
-                          {el.type === 'dropbox' && (() => {
-                            const options = Array.isArray(slots[el.optionsSlot]) ? slots[el.optionsSlot] : el.options;
-                            return (
-                              <select
-                                className={styles.formInput}
-                                value={formData[el.name] || ''}
-                                onChange={(e) => handleFormInputChange(el.name, e.target.value)}
-                                disabled={item.isCompleted}
-                              >
-                                <option value="" disabled>Select...</option>
-                                {(options || []).map(opt => {
-                                  const optionValue = typeof opt === 'object' && opt.value !== undefined ? opt.value : opt;
-                                  const optionLabel = typeof opt === 'object' && opt.label !== undefined ? opt.label : opt;
-                                  return <option key={optionValue} value={optionValue}>{optionLabel}</option>;
-                                })}
-                              </select>
-                            );
-                          })()}
-                          {el.type === 'grid' && (
-                            <table className={styles.formGridTable}>
-                              <tbody>
-                                {[...Array(el.rows || 2)].map((_, rowIndex) => (
-                                  <tr key={rowIndex}>
-                                    {[...Array(el.columns || 2)].map((_, colIndex) => {
-                                      const cellIndex = rowIndex * (el.columns || 2) + colIndex;
-                                      const cellData = el.data[cellIndex] || '';
-                                      return (
-                                        <td key={colIndex}>
-                                          {interpolateMessage(cellData, slots)}
-                                        </td>
-                                      );
-                                    })}
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          )}
-                        </div>
-                      )})}
-                      <div className={styles.formButtonContainer}>
-                        <button className={styles.formDefaultButton} onClick={handleFormDefault} disabled={item.isCompleted}>
-                          Default
-                        </button>
-                        <button className={styles.formSubmitButton} onClick={handleFormSubmit} disabled={item.isCompleted}>
-                          Submit
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-
-              const message = interpolateMessage(node.data.content || node.data.label, slots);
-              return (
-                <div key={item.id || index} className={styles.messageRow}>
-                  <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
-                  <div className={`${styles.message} ${styles.botMessage}`}>
-                    <div>{message}</div>
-                    {node.type === 'branch' && node.data.evaluationType === 'BUTTON' && (
-                      <div className={styles.branchButtonsContainer}>
-                        {node.data.replies?.map((reply) => (
-                          <button
-                            key={reply.value}
-                            className={styles.branchButton}
-                            onClick={() => handleOptionClick(reply)}
-                            disabled={item.isCompleted}
-                          >
-                            {reply.display}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            }
-            if (item.type === 'user') {
-              return (
-                <div key={index} className={`${styles.messageRow} ${styles.userRow}`}>
-                  <div className={`${styles.message} ${styles.userMessage}`}>{item.message}</div>
-                </div>
-              );
-            }
-            if (item.type === 'bot' && item.message) {
-              return (
-                  <div key={item.id || index} className={styles.messageRow}>
-                    <img src="/images/avatar.png" alt="Chatbot Avatar" className={styles.avatar} />
-                    <div className={`${styles.message} ${styles.botMessage}`}>{item.message}</div>
-                  </div>
-                );
-            }
-            return null;
-          })
-        )}
-      </div>
-      <div className={styles.options}>
-        <div className={styles.inputRow}>
-            <div className={styles.inputArea}>
-                <input
-                    type="text"
-                    className={styles.textInput}
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleTextInputSend()}
-                    placeholder="Ask about this Booking Master Page"
-                    disabled={!isStarted}
-                />
-            </div>
+      {!isStarted ? (
+        <div className={styles.history}>
+            <div className={styles.startScreen}></div>
         </div>
-        <div className={styles.buttonRow}>
-            <button className={styles.attachButton}>
-                <AttachIcon />
-            </button>
-            <div
-                ref={quickRepliesSlider.ref}
-                className={`${styles.quickRepliesContainer} ${quickRepliesSlider.isDragging ? styles.dragging : ''}`}
-                onMouseDown={quickRepliesSlider.onMouseDown}
-                onMouseLeave={quickRepliesSlider.onMouseLeave}
-                onMouseUp={quickRepliesSlider.onMouseUp}
-                onMouseMove={quickRepliesSlider.onMouseMove}
-            >
-                {isStarted && currentNode && (currentNode.data.replies || []).length > 0 &&
-                    (currentNode.type === 'message' || currentNode.type === 'slotfilling' || (currentNode.type === 'branch' && currentNode.data.evaluationType !== 'CONDITION')) &&
-                    (currentNode.data.replies || []).map((answer) => (
-                        <button key={answer.value} className={styles.optionButton} onClick={() => handleOptionClick(answer)}>{answer.display}</button>
-                    ))
-                }
-            </div>
-        </div>
-      </div>
+       ) : (
+         <MessageHistory
+            history={history}
+            nodes={nodes}
+            onOptionClick={handleOptionClick}
+            handleFormSubmit={handleFormSubmit}
+            handleFormDefault={handleFormDefault}
+            formData={formData}
+            handleFormInputChange={handleFormInputChange}
+            handleFormMultiInputChange={handleFormMultiInputChange}
+        />
+       )
+      }
+      
+      <UserInput 
+        currentNode={currentNode}
+        isStarted={isStarted}
+        onTextInputSend={handleTextInputSend}
+        onOptionClick={handleOptionClick}
+      />
     </div>
   );
 }
