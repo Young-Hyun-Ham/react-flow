@@ -4,9 +4,13 @@ import styles from './NodeController.module.css';
 import ApiNodeController from './components/controllers/ApiNodeController';
 import FormNodeController from './components/controllers/FormNodeController';
 import LlmNodeController from './components/controllers/LlmNodeController';
-import DefaultNodeController from './components/controllers/DefaultNodeController';
 import ToastNodeController from './components/controllers/ToastNodeController';
 import IframeNodeController from './components/controllers/IframeNodeController';
+import MessageNodeController from './components/controllers/MessageNodeController';
+import SlotFillingNodeController from './components/controllers/SlotFillingNodeController';
+import BranchNodeController from './components/controllers/BranchNodeController';
+import LinkNodeController from './components/controllers/LinkNodeController';
+import FixedMenuNodeController from './components/controllers/FixedMenuNodeController';
 
 function NodeController() {
   const { selectedNodeId, nodes, updateNodeData } = useStore();
@@ -50,6 +54,16 @@ function NodeController() {
   const renderContent = () => {
     const commonProps = { localNode, setLocalNode };
     switch(localNode.type) {
+      case 'message':
+        return <MessageNodeController {...commonProps} />;
+      case 'slotfilling':
+        return <SlotFillingNodeController {...commonProps} />;
+      case 'branch':
+        return <BranchNodeController {...commonProps} />;
+      case 'link':
+        return <LinkNodeController {...commonProps} />;
+      case 'fixedmenu':
+        return <FixedMenuNodeController {...commonProps} />;
       case 'form':
         return <FormNodeController {...commonProps} />;
       case 'api':
@@ -61,7 +75,7 @@ function NodeController() {
       case 'iframe':
         return <IframeNodeController {...commonProps} />;
       default:
-        return <DefaultNodeController {...commonProps} />;
+        return <p className={styles.placeholder}>This node type has no editable properties.</p>;
     }
   };
 

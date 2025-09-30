@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import useStore from '../../store';
 import styles from '../../ChatbotSimulator.module.css';
 import { interpolateMessage, validateInput } from '../../simulatorUtils';
