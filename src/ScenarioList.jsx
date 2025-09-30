@@ -28,10 +28,23 @@ const styles = {
     marginBottom: '10px',
     transition: 'background-color 0.2s',
   },
-  scenarioName: {
+  scenarioInfo: {
     flexGrow: 1,
     textAlign: 'left',
     cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px'
+  },
+  scenarioName: {
+    fontWeight: 'bold',
+  },
+  jobBadge: {
+    fontSize: '0.75rem',
+    padding: '3px 10px',
+    borderRadius: '12px',
+    fontWeight: '600',
+    border: '1px solid',
   },
   buttonGroup: {
     display: 'flex',
@@ -51,7 +64,22 @@ const styles = {
   }
 };
 
-function ScenarioList({ backend, onSelect, onAddScenario, scenarios, setScenarios }) {
+// Job 유형에 따라 다른 스타일을 반환하는 함수
+const getJobBadgeStyle = (job) => {
+    const baseStyle = styles.jobBadge;
+    switch (job) {
+        case 'Batch':
+            return { ...baseStyle, backgroundColor: '#e1eefb', color: '#3f7ff3', borderColor: '#b1d1f8' };
+        case 'Process':
+            return { ...baseStyle, backgroundColor: '#dff9e8', color: '#27854a', borderColor: '#b3e9c7' };
+        case 'Long Transaction':
+            return { ...baseStyle, backgroundColor: '#fef3d8', color: '#9d730a', borderColor: '#fce3a2' };
+        default:
+            return { ...baseStyle, backgroundColor: '#eee', color: '#333', borderColor: '#ddd' };
+    }
+};
+
+function ScenarioList({ backend, onSelect, onAddScenario, onEditScenario, scenarios, setScenarios }) {
   const [loading, setLoading] = useState(true);
   const { showAlert, showConfirm } = useAlert();
 
@@ -59,7 +87,12 @@ function ScenarioList({ backend, onSelect, onAddScenario, scenarios, setScenario
     const fetchAndSetScenarios = async () => {
       setLoading(true);
       try {
-        const scenarioList = await backendService.fetchScenarios(backend);
+        let scenarioList = await backendService.fetchScenarios(backend);
+        // job 속성이 없는 경우 'Process'를 기본값으로 설정
+        scenarioList = scenarioList.map(scenario => ({
+          ...scenario,
+          job: scenario.job || 'Process',
+        }));
         setScenarios(scenarioList);
       } catch (error) {
         console.error("Error fetching scenarios:", error);
@@ -71,24 +104,6 @@ function ScenarioList({ backend, onSelect, onAddScenario, scenarios, setScenario
 
     fetchAndSetScenarios();
   }, [backend, setScenarios]);
-
-  const handleRenameScenario = async (oldScenario) => {
-    const newName = prompt("Enter the new scenario name:", oldScenario.name);
-    if (newName && newName.trim() && newName !== oldScenario.name) {
-      if (scenarios.some(s => s.name === newName)) {
-        showAlert("A scenario with that name already exists.");
-        return;
-      }
-      try {
-        await backendService.renameScenario(backend, { oldScenario, newName });
-        setScenarios(prev => prev.map(s => (s.id === oldScenario.id ? { ...s, name: newName } : s)));
-        showAlert("Scenario renamed successfully.");
-      } catch (error) {
-        console.error("Error renaming scenario:", error);
-        showAlert(`Failed to rename scenario: ${error.message}`);
-      }
-    }
-  };
 
   const handleDeleteScenario = async (scenarioId) => {
     const confirmed = await showConfirm(`Are you sure you want to delete this scenario?`);
@@ -114,16 +129,17 @@ function ScenarioList({ backend, onSelect, onAddScenario, scenarios, setScenario
       <ul style={styles.list}>
         {scenarios.map(scenario => (
           <li key={scenario.id} style={styles.listItem}>
-            <span
+            <div
+                style={styles.scenarioInfo}
                 onClick={() => onSelect(scenario)}
-                style={styles.scenarioName}
                 onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'}
                 onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'}
             >
-              {scenario.name}
-            </span>
+              <span style={styles.scenarioName}>{scenario.name}</span>
+              <span style={getJobBadgeStyle(scenario.job)}>{scenario.job}</span>
+            </div>
             <div style={styles.buttonGroup}>
-              <button onClick={() => handleRenameScenario(scenario)} style={styles.actionButton}>Edit</button>
+              <button onClick={() => onEditScenario(scenario)} style={styles.actionButton}>Edit</button>
               <button onClick={() => handleDeleteScenario(scenario.id)} style={{...styles.actionButton, color: 'red'}}>Delete</button>
             </div>
           </li>

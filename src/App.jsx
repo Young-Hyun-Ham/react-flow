@@ -5,7 +5,7 @@ import ScenarioList from './ScenarioList';
 import Board from './Board';
 import Login from './Login';
 import HelpModal from './HelpModal';
-import NewScenarioModal from './NewScenarioModal';
+import ScenarioModal from './ScenarioModal'; // Renamed from NewScenarioModal
 import ApiDocs from './ApiDocs';
 import useStore from './store';
 import * as backendService from './backendService';
@@ -19,7 +19,8 @@ function App() {
   const [view, setView] = useState('list');
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [scenarios, setScenarios] = useState([]);
-  const [isNewScenarioModalOpen, setIsNewScenarioModalOpen] = useState(false);
+  const [isScenarioModalOpen, setIsScenarioModalOpen] = useState(false);
+  const [editingScenario, setEditingScenario] = useState(null); // State to hold scenario being edited
   const [backend, setBackend] = useState('firebase');
 
   const fetchNodeColors = useStore((state) => state.fetchNodeColors);
@@ -78,25 +79,42 @@ function App() {
     setView('flow');
   };
   
-  const handleAddNewScenario = () => {
-    setIsNewScenarioModalOpen(true);
+  const handleOpenAddScenarioModal = () => {
+    setEditingScenario(null);
+    setIsScenarioModalOpen(true);
   };
 
-  const handleCreateScenario = async (newScenarioName) => {
-    if (scenarios.some(s => s.name === newScenarioName)) {
-      alert("A scenario with that name already exists. Please choose a different name.");
-      return;
-    }
+  const handleOpenEditScenarioModal = (scenario) => {
+    setEditingScenario(scenario);
+    setIsScenarioModalOpen(true);
+  };
+
+  const handleSaveScenario = async ({ name, job }) => {
     try {
-      const newScenario = await backendService.createScenario(backend, { newScenarioName });
-      alert(`Scenario '${newScenario.name}' has been created.`);
-      setScenarios(prev => [...prev, newScenario]);
-      setSelectedScenario(newScenario);
-      setView('flow');
-      setIsNewScenarioModalOpen(false);
+      if (editingScenario) { // Edit mode
+        if (name !== editingScenario.name && scenarios.some(s => s.name === name)) {
+          alert("A scenario with that name already exists.");
+          return;
+        }
+        await backendService.renameScenario(backend, { oldScenario: editingScenario, newName: name, job });
+        setScenarios(prev => prev.map(s => (s.id === editingScenario.id ? { ...s, name, job } : s)));
+        alert('Scenario updated successfully.');
+      } else { // Create mode
+        if (scenarios.some(s => s.name === name)) {
+          alert("A scenario with that name already exists.");
+          return;
+        }
+        const newScenario = await backendService.createScenario(backend, { newScenarioName: name, job });
+        setScenarios(prev => [...prev, newScenario]);
+        setSelectedScenario(newScenario);
+        setView('flow');
+        alert(`Scenario '${newScenario.name}' has been created.`);
+      }
+      setIsScenarioModalOpen(false);
+      setEditingScenario(null);
     } catch (error) {
-      console.error("Error creating new scenario: ", error);
-      alert(`Failed to create scenario: ${error.message}`);
+      console.error("Error saving scenario: ", error);
+      alert(`Failed to save scenario: ${error.message}`);
     }
   };
 
@@ -105,7 +123,7 @@ function App() {
         if (selectedScenario) {
             setView('flow');
         } else {
-            handleAddNewScenario();
+            handleOpenAddScenarioModal();
         }
     } else {
         setView(targetView);
@@ -116,7 +134,6 @@ function App() {
     return <div className="loading-screen">Loading...</div>;
   }
   
-  // --- 💡 수정된 부분: 로그인 여부와 관계없이 앱을 항상 렌더링합니다. ---
   return (
     <AlertProvider>
       <div className="app-container">
@@ -132,6 +149,7 @@ function App() {
             <button 
               onClick={() => handleViewChange('flow')} 
               className={view === 'flow' ? 'active' : ''}
+              disabled={!selectedScenario && view !== 'flow'}
             >
               Flow Editor
             </button>
@@ -151,7 +169,6 @@ function App() {
               </label>
               <span>FastAPI</span>
             </div>
-            {/* --- 💡 수정된 부분: 로그인 상태에 따라 UI를 다르게 표시 --- */}
             {user ? (
               <>
                 <img src={user.photoURL} alt={user.displayName} className="user-avatar" />
@@ -168,17 +185,18 @@ function App() {
               <ScenarioList 
                   backend={backend}
                   onSelect={handleScenarioSelect} 
-                  onAddScenario={handleAddNewScenario}
+                  onAddScenario={handleOpenAddScenarioModal}
+                  onEditScenario={handleOpenEditScenarioModal}
                   scenarios={scenarios}
                   setScenarios={setScenarios}
               />
           </div>
           
-          {selectedScenario && (
-              <div className={`view-container ${view !== 'flow' ? 'hidden' : ''}`}>
-                  <Flow scenario={selectedScenario} backend={backend} />
-              </div>
-          )}
+          <div className={`view-container ${view !== 'flow' ? 'hidden' : ''}`}>
+            {selectedScenario && (
+              <Flow scenario={selectedScenario} backend={backend} />
+            )}
+          </div>
           
           <div className={`view-container ${view !== 'board' ? 'hidden' : ''}`}>
               <Board user={user} />
@@ -189,10 +207,11 @@ function App() {
           </div>
         </main>
         <HelpModal isOpen={isHelpModalOpen} onClose={() => setIsHelpModalOpen(false)} />
-        <NewScenarioModal 
-          isOpen={isNewScenarioModalOpen}
-          onClose={() => setIsNewScenarioModalOpen(false)}
-          onCreate={handleCreateScenario}
+        <ScenarioModal 
+          isOpen={isScenarioModalOpen}
+          onClose={() => { setIsScenarioModalOpen(false); setEditingScenario(null); }}
+          onSave={handleSaveScenario}
+          scenario={editingScenario}
         />
       </div>
     </AlertProvider>

@@ -7,47 +7,64 @@ import {
   setDoc,
   deleteDoc,
   writeBatch,
-  addDoc, // --- 💡 수정된 부분: addDoc import 추가 ---
+  addDoc,
+  updateDoc,
 } from 'firebase/firestore';
 
 export const fetchScenarios = async () => {
   const scenariosCollection = collection(db, 'scenarios');
   const querySnapshot = await getDocs(scenariosCollection);
-  // Firestore는 문서 ID 목록만 반환하므로 FastAPI 형식에 맞게 변환
-  return querySnapshot.docs.map((doc) => ({ id: doc.id, name: doc.id }));
+  return querySnapshot.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      name: data.name || doc.id, // name 속성이 없으면 doc.id를 사용
+      ...data,
+    };
+  });
 };
 
-export const createScenario = async ({ newScenarioName }) => {
+export const createScenario = async ({ newScenarioName, job }) => {
   const newScenarioRef = doc(db, 'scenarios', newScenarioName);
   const docSnap = await getDoc(newScenarioRef);
   if (docSnap.exists()) {
     throw new Error('A scenario with that name already exists.');
   }
-  await setDoc(newScenarioRef, { nodes: [], edges: [] });
-  // 반환값을 FastAPI 형식과 맞춤
-  return { id: newScenarioName, name: newScenarioName, nodes: [], edges: [] };
+  // 생성 시에는 name 속성을 데이터에 포함
+  await setDoc(newScenarioRef, { name: newScenarioName, job, nodes: [], edges: [] });
+  return { id: newScenarioName, name: newScenarioName, job, nodes: [], edges: [] };
 };
 
-export const renameScenario = async ({ oldScenario, newName }) => {
-  const oldDocRef = doc(db, 'scenarios', oldScenario.name);
-  const newDocRef = doc(db, 'scenarios', newName);
-
-  const newDocSnap = await getDoc(newDocRef);
-  if (newDocSnap.exists()) {
-    throw new Error('A scenario with that name already exists.');
-  }
-
-  const oldDocSnap = await getDoc(oldDocRef);
-  if (oldDocSnap.exists()) {
-    const batch = writeBatch(db);
-    batch.set(newDocRef, oldDocSnap.data());
-    batch.delete(oldDocRef);
-    await batch.commit();
-  } else {
-    throw new Error('Original scenario not found.');
-  }
+export const renameScenario = async ({ oldScenario, newName, job }) => {
+    // ID로 문서를 참조하도록 수정 (name 대신 id 사용)
+    const oldDocRef = doc(db, 'scenarios', oldScenario.id);
+  
+    if (oldScenario.name !== newName) {
+      // 이름이 변경되면 새 ID로 문서를 만들고 기존 문서는 삭제
+      const newDocRef = doc(db, 'scenarios', newName);
+      const newDocSnap = await getDoc(newDocRef);
+      if (newDocSnap.exists()) {
+        throw new Error('A scenario with that name already exists.');
+      }
+  
+      const oldDocSnap = await getDoc(oldDocRef);
+      if (oldDocSnap.exists()) {
+        const batch = writeBatch(db);
+        // 새 데이터에 name과 job을 명확히 설정
+        const newData = { ...oldDocSnap.data(), name: newName, job };
+        batch.set(newDocRef, newData);
+        batch.delete(oldDocRef);
+        await batch.commit();
+      } else {
+        throw new Error('Original scenario not found.');
+      }
+    } else {
+      // 이름 변경 없이 job 속성만 업데이트
+      await updateDoc(oldDocRef, { job });
+    }
 };
 
+// ... (deleteScenario, fetchScenarioData, saveScenarioData, and template functions remain the same)
 export const deleteScenario = async ({ scenarioId }) => {
   const docRef = doc(db, 'scenarios', scenarioId);
   await deleteDoc(docRef);

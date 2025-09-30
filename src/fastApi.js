@@ -27,20 +27,20 @@ export const fetchScenarios = async () => {
     return data?.scenarios || (Array.isArray(data) ? data : []);
 };
 
-export const createScenario = async ({ newScenarioName }) => {
+export const createScenario = async ({ newScenarioName, job }) => {
     const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category_id: 'DEV_1000_S_1_1_1', name: newScenarioName }),
+        body: JSON.stringify({ category_id: 'DEV_1000_S_1_1_1', name: newScenarioName, job: job }),
     });
     return handleApiResponse(response);
 };
 
-export const renameScenario = async ({ oldScenario, newName }) => {
+export const renameScenario = async ({ oldScenario, newName, job }) => {
     const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}/${oldScenario.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName }),
+        body: JSON.stringify({ name: newName, job: job }),
     });
     return handleApiResponse(response);
 };
