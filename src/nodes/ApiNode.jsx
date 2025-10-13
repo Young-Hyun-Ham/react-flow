@@ -3,6 +3,7 @@ import styles from './ChatNodes.module.css';
 import useStore from '../store';
 import useAlert from '../hooks/useAlert';
 import { AnchorIcon, PlayIcon } from '../components/Icons';
+import * as backendService from '../backendService'; // 💡[추가된 부분]
 
 function ApiNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);
@@ -10,42 +11,18 @@ function ApiNode({ id, data }) {
   const setAnchorNodeId = useStore((state) => state.setAnchorNodeId);
   const nodeColor = useStore((state) => state.nodeColors.api);
   const textColor = useStore((state) => state.nodeTextColors.api);
-  const slots = useStore((state) => state.slots);
   const { showAlert } = useAlert();
   const apiCount = data.apis?.length || 0;
   const isMulti = data.isMulti;
 
   const isAnchored = anchorNodeId === id;
 
-  const interpolateMessage = (message, slots) => {
-    if (!message) return '';
-    return message.replace(/\{([^}]+)\}/g, (match, key) => {
-      return slots.hasOwnProperty(key) ? slots[key] : match;
-    });
-  };
-
   const handleApiTest = async (e) => {
     e.stopPropagation();
     if (isMulti) return; // Multi 모드일 때는 컨트롤러에서 개별 테스트
     try {
-      const { method, url, headers, body } = data;
-      const interpolatedUrl = interpolateMessage(url, slots);
-      const interpolatedHeaders = JSON.parse(interpolateMessage(headers || '{}', slots));
-      const interpolatedBody = method !== 'GET' && body ? interpolateMessage(body, slots) : undefined;
-
-      const options = {
-        method,
-        headers: { 'Content-Type': 'application/json', ...interpolatedHeaders },
-        body: interpolatedBody,
-      };
-
-      const response = await fetch(interpolatedUrl, options);
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}\n${JSON.stringify(result, null, 2)}`);
-      }
-
+      // 💡[수정된 부분] backendService의 testApiCall 함수 사용
+      const result = await backendService.testApiCall(data);
       await showAlert(`API Test Success!\n\nResponse:\n${JSON.stringify(result, null, 2)}`);
     } catch (error) {
       console.error("API Test Error:", error);

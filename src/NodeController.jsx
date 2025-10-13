@@ -12,6 +12,20 @@ import BranchNodeController from './components/controllers/BranchNodeController'
 import LinkNodeController from './components/controllers/LinkNodeController';
 import FixedMenuNodeController from './components/controllers/FixedMenuNodeController';
 
+// 💡[수정된 부분] 노드 타입과 컨트롤러 컴포넌트를 매핑하는 객체
+const nodeControllerMap = {
+  message: MessageNodeController,
+  slotfilling: SlotFillingNodeController,
+  branch: BranchNodeController,
+  link: LinkNodeController,
+  fixedmenu: FixedMenuNodeController,
+  form: FormNodeController,
+  api: ApiNodeController,
+  llm: LlmNodeController,
+  toast: ToastNodeController,
+  iframe: IframeNodeController,
+};
+
 function NodeController() {
   const { selectedNodeId, nodes, updateNodeData } = useStore();
   const [localNode, setLocalNode] = useState(null);
@@ -51,32 +65,14 @@ function NodeController() {
     setIsDirty(false);
   };
 
+  // 💡[수정된 부분] 매핑 객체를 사용하여 동적으로 컴포넌트 렌더링
   const renderContent = () => {
+    const ControllerComponent = nodeControllerMap[localNode.type];
     const commonProps = { localNode, setLocalNode };
-    switch(localNode.type) {
-      case 'message':
-        return <MessageNodeController {...commonProps} />;
-      case 'slotfilling':
-        return <SlotFillingNodeController {...commonProps} />;
-      case 'branch':
-        return <BranchNodeController {...commonProps} />;
-      case 'link':
-        return <LinkNodeController {...commonProps} />;
-      case 'fixedmenu':
-        return <FixedMenuNodeController {...commonProps} />;
-      case 'form':
-        return <FormNodeController {...commonProps} />;
-      case 'api':
-        return <ApiNodeController {...commonProps} />;
-      case 'llm':
-        return <LlmNodeController {...commonProps} />;
-      case 'toast':
-        return <ToastNodeController {...commonProps} />;
-      case 'iframe':
-        return <IframeNodeController {...commonProps} />;
-      default:
-        return <p className={styles.placeholder}>This node type has no editable properties.</p>;
-    }
+
+    return ControllerComponent
+      ? <ControllerComponent {...commonProps} />
+      : <p className={styles.placeholder}>This node type has no editable properties.</p>;
   };
 
   return (

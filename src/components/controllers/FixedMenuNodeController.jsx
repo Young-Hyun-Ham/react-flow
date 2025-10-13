@@ -1,40 +1,10 @@
 import styles from '../../NodeController.module.css';
+import { useNodeController } from '../../hooks/useNodeController'; // 💡[추가된 부분]
 
 function FixedMenuNodeController({ localNode, setLocalNode }) {
     const { data } = localNode;
-
-    const handleLocalDataChange = (key, value) => {
-        setLocalNode(prev => ({
-          ...prev,
-          data: { ...prev.data, [key]: value },
-        }));
-    };
-
-    const localAddReply = () => {
-        setLocalNode(prev => {
-            const newReply = {
-                display: 'New Menu',
-                value: `menu_${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-            };
-            const newReplies = [...(prev.data.replies || []), newReply];
-            return { ...prev, data: { ...prev.data, replies: newReplies } };
-        });
-    };
-
-    const localUpdateReply = (index, part, value) => {
-        setLocalNode(prev => {
-            const newReplies = [...prev.data.replies];
-            newReplies[index] = { ...newReplies[index], [part]: value };
-            return { ...prev, data: { ...prev.data, replies: newReplies } };
-        });
-    };
-
-    const localDeleteReply = (index) => {
-        setLocalNode(prev => {
-            const newReplies = prev.data.replies.filter((_, i) => i !== index);
-            return { ...prev, data: { ...prev.data, replies: newReplies } };
-        });
-    };
+    // 💡[수정된 부분] Custom Hook 사용
+    const { handleLocalDataChange, addReply, updateReply, deleteReply } = useNodeController(setLocalNode);
 
     return (
         <>
@@ -50,13 +20,13 @@ function FixedMenuNodeController({ localNode, setLocalNode }) {
                             <input
                                 className={styles.quickReplyInput}
                                 value={reply.display}
-                                onChange={(e) => localUpdateReply(index, 'display', e.target.value)}
+                                onChange={(e) => updateReply(index, 'display', e.target.value)}
                                 placeholder="Display text"
                             />
-                            <button onClick={() => localDeleteReply(index)} className={styles.deleteReplyButton}>×</button>
+                            <button onClick={() => deleteReply(index)} className={styles.deleteReplyButton}>×</button>
                         </div>
                     ))}
-                    <button onClick={localAddReply} className={styles.addReplyButton}>
+                    <button onClick={addReply} className={styles.addReplyButton}>
                         + Add Menu
                     </button>
                 </div>

@@ -1,14 +1,10 @@
 import styles from '../../NodeController.module.css';
+import { useNodeController } from '../../hooks/useNodeController'; // 💡[추가된 부분]
 
 function LinkNodeController({ localNode, setLocalNode }) {
     const { data } = localNode;
-    
-    const handleLocalDataChange = (key, value) => {
-        setLocalNode(prev => ({
-          ...prev,
-          data: { ...prev.data, [key]: value },
-        }));
-    };
+    // 💡[수정된 부분] Custom Hook 사용
+    const { handleLocalDataChange } = useNodeController(setLocalNode);
 
     return (
       <>

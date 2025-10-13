@@ -6,6 +6,7 @@ import ApiTemplateModal from '../../ApiTemplateModal';
 import useAlert from '../../hooks/useAlert';
 
 function ApiCallEditor({ apiCall, onUpdate, onDelete, onTest }) {
+  // ... (ApiCallEditor 컴포넌트 내용은 변경 없음)
   const handleUpdate = (field, value) => {
     onUpdate({ ...apiCall, [field]: value });
   };
@@ -78,7 +79,6 @@ function ApiCallEditor({ apiCall, onUpdate, onDelete, onTest }) {
 }
 
 function ApiNodeController({ localNode, setLocalNode }) {
-    const { slots } = useStore();
     const { showAlert, showConfirm } = useAlert();
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
     const [apiTemplates, setApiTemplates] = useState([]);
@@ -174,25 +174,8 @@ function ApiNodeController({ localNode, setLocalNode }) {
 
     const handleTestApiCall = async (apiCall) => {
         try {
-          const interpolate = (str) => String(str || '').replace(/\{([^}]+)\}/g, (_, key) => slots[key] || `{${key}}`);
-          
-          const interpolatedUrl = interpolate(apiCall.url);
-          const interpolatedHeaders = JSON.parse(interpolate(apiCall.headers || '{}'));
-          const interpolatedBody = apiCall.method !== 'GET' ? interpolate(apiCall.body || '{}') : undefined;
-    
-          const options = {
-            method: apiCall.method,
-            headers: { 'Content-Type': 'application/json', ...interpolatedHeaders },
-            body: interpolatedBody,
-          };
-    
-          const response = await fetch(interpolatedUrl, options);
-          const result = await response.json();
-    
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${JSON.stringify(result, null, 2)}`);
-          }
-          
+          // 💡[수정된 부분] backendService의 testApiCall 함수 사용
+          const result = await backendService.testApiCall(apiCall);
           await showAlert(`API Test Success!\n\nResponse:\n${JSON.stringify(result, null, 2)}`);
         } catch (error) {
           await showAlert(`API Test Failed:\n${error.message}`);
