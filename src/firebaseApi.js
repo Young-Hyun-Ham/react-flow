@@ -64,7 +64,6 @@ export const renameScenario = async ({ oldScenario, newName, job }) => {
     }
 };
 
-// ... (deleteScenario, fetchScenarioData, saveScenarioData, and template functions remain the same)
 export const deleteScenario = async ({ scenarioId }) => {
   const docRef = doc(db, 'scenarios', scenarioId);
   await deleteDoc(docRef);
@@ -104,5 +103,23 @@ export const saveApiTemplate = async (templateData) => {
 
 export const deleteApiTemplate = async (templateId) => {
   const templateDocRef = doc(db, 'apiTemplates', templateId);
+  await deleteDoc(templateDocRef);
+};
+
+// Form 템플릿 관련 함수들
+export const fetchFormTemplates = async () => {
+  const templatesCollection = collection(db, 'formTemplates');
+  const querySnapshot = await getDocs(templatesCollection);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+export const saveFormTemplate = async (templateData) => {
+  const templatesCollection = collection(db, 'formTemplates');
+  const docRef = await addDoc(templatesCollection, templateData);
+  return { id: docRef.id, ...templateData };
+};
+
+export const deleteFormTemplate = async (templateId) => {
+  const templateDocRef = doc(db, 'formTemplates', templateId);
   await deleteDoc(templateDocRef);
 };

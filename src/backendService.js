@@ -23,14 +23,19 @@ export const deleteScenario = (backend, args) => getService(backend).deleteScena
 export const fetchScenarioData = (backend, args) => getService(backend).fetchScenarioData(args);
 export const saveScenarioData = (backend, args) => getService(backend).saveScenarioData(args);
 
-// FastAPI에는 템플릿 기능이 없으므로, firebaseApi를 직접 사용합니다.
+// API 템플릿 함수들
 export const fetchApiTemplates = firebaseApi.fetchApiTemplates;
 export const saveApiTemplate = firebaseApi.saveApiTemplate;
 export const deleteApiTemplate = firebaseApi.deleteApiTemplate;
 
-// 💡[추가된 부분] API 테스트를 위한 공통 함수
+// 💡[수정된 부분] Form 템플릿 관련 함수들을 모두 export 합니다.
+export const fetchFormTemplates = firebaseApi.fetchFormTemplates;
+export const saveFormTemplate = firebaseApi.saveFormTemplate;
+export const deleteFormTemplate = firebaseApi.deleteFormTemplate;
+
+
+// API 테스트 함수
 export const testApiCall = async (apiCall) => {
-  // Zustand 스토어에서 직접 상태 가져오기
   const { slots } = useStore.getState();
 
   const interpolatedUrl = interpolateMessage(apiCall.url, slots);

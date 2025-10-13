@@ -1,6 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from '../../NodeController.module.css';
 import { createFormElement } from '../../nodeFactory';
+import * as backendService from '../../backendService';
+import FormTemplateModal from '../../FormTemplateModal';
+import useAlert from '../../hooks/useAlert';
+
 
 // ElementEditor 컴포넌트
 function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange }) {
@@ -63,8 +67,7 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
           )}
         </>
       )}
-
-      {/* --- 💡 수정된 부분 시작 --- */}
+      
       {(element.type === 'checkbox' || element.type === 'dropbox') && (
         <>
           {element.type === 'dropbox' && (
@@ -92,7 +95,6 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
           </div>
         </>
       )}
-      {/* --- 💡 수정된 부분 끝 --- */}
 
       {element.type === 'grid' && (
         <>
@@ -136,6 +138,21 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
 function FormNodeController({ localNode, setLocalNode }) {
     const [selectedElementId, setSelectedElementId] = useState(null);
     const [draggedItemIndex, setDraggedItemIndex] = useState(null);
+    const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+    const [formTemplates, setFormTemplates] = useState([]);
+    const { showAlert, showConfirm } = useAlert();
+
+    useEffect(() => {
+        const fetchTemplates = async () => {
+          try {
+            const templates = await backendService.fetchFormTemplates();
+            setFormTemplates(templates);
+          } catch (error) {
+            console.error("Failed to fetch form templates:", error);
+          }
+        };
+        fetchTemplates();
+    }, []);
 
     const handleLocalDataChange = (key, value) => {
         setLocalNode(prev => ({
@@ -204,6 +221,49 @@ function FormNodeController({ localNode, setLocalNode }) {
         });
     };
 
+    const handleSaveTemplate = async (templateName) => {
+        const templateData = {
+            name: templateName,
+            title: localNode.data.title,
+            elements: localNode.data.elements || [],
+        };
+        try {
+            const savedTemplate = await backendService.saveFormTemplate(templateData);
+            setFormTemplates(prev => [...prev, savedTemplate]);
+            setIsTemplateModalOpen(false);
+            await showAlert("Form template saved successfully!");
+        } catch (error) {
+            console.error("Failed to save form template:", error);
+            await showAlert("Failed to save template.");
+        }
+    };
+
+    const handleLoadTemplate = (template) => {
+        setLocalNode(prev => ({
+            ...prev,
+            data: {
+                ...prev.data,
+                title: template.title,
+                elements: template.elements,
+            },
+        }));
+        setIsTemplateModalOpen(false);
+    };
+
+    const handleDeleteTemplate = async (templateId) => {
+        const confirmed = await showConfirm("Are you sure you want to delete this form template?");
+        if (confirmed) {
+            try {
+                await backendService.deleteFormTemplate(templateId);
+                setFormTemplates(prev => prev.filter(t => t.id !== templateId));
+            } catch (error) {
+                console.error("Failed to delete form template:", error);
+                await showAlert("Failed to delete template.");
+            }
+        }
+    };
+
+
     const handleDragStart = (e, index) => {
       setDraggedItemIndex(index);
     };
@@ -229,6 +289,19 @@ function FormNodeController({ localNode, setLocalNode }) {
 
   return (
     <>
+      <FormTemplateModal
+        isOpen={isTemplateModalOpen}
+        onClose={() => setIsTemplateModalOpen(false)}
+        onSave={handleSaveTemplate}
+        onSelect={handleLoadTemplate}
+        onDelete={handleDeleteTemplate}
+        templates={formTemplates}
+      />
+      <div className={styles.templateActions}>
+        <button onClick={() => setIsTemplateModalOpen(true)}>Templates</button>
+      </div>
+      <div className={styles.separator} />
+
       <div className={styles.formGroup}>
         <label>Form Title</label>
         <input type="text" value={data.title || ''} onChange={(e) => handleLocalDataChange('title', e.target.value)} />
