@@ -16,7 +16,6 @@
   transition: all 0.3s ease-in-out;
 }
 
-/* --- 💡 수정된 부분 시작 --- */
 .slotDisplayContainer.collapsed {
   width: 200px;
   max-height: 45px;
@@ -45,7 +44,6 @@
 .toggleIcon {
   font-size: 0.8rem;
 }
-/* --- 💡 수정된 부분 끝 --- */
 
 .slotList {
   display: flex;
@@ -53,25 +51,40 @@
   gap: 8px;
 }
 
+/* --- 💡 수정된 부분 시작 --- */
 .slotItem {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column; /* 세로 정렬로 변경 */
+  align-items: flex-start; /* 왼쪽 정렬 */
   font-size: 0.85rem;
   line-height: 1.4;
 }
 
 .slotKey {
-  font-weight: 500;
+  font-weight: 600;
   color: #555;
-  margin-right: 8px;
-  flex-shrink: 0;
+  margin-bottom: 4px; /* 값과의 간격 추가 */
 }
 
 .slotValue {
   color: #1a1a1a;
   word-break: break-all;
-  text-align: right;
+  text-align: left; /* 왼쪽 정렬 */
+  width: 100%; /* 너비 전체 사용 */
 }
+
+/* JSON을 예쁘게 보여주기 위한 스타일 */
+.prettyJson {
+  background-color: #f0f2f5;
+  border-radius: 4px;
+  padding: 8px;
+  margin: 0;
+  text-align: left;
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  border: 1px solid #e0e0e0;
+}
+/* --- 💡 수정된 부분 끝 --- */
 
 .placeholder {
   font-style: italic;
