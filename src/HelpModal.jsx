@@ -128,7 +128,7 @@ const HelpManual = () => (
  <li><strong>Dynamic Requests</strong>: Use slots to make dynamic API calls. In the URL, Headers, or Body fields, you can insert values from previous user inputs or API responses using brace notation (e.g., <code>https://api.example.com/users/{'{userId}'}</code>).</li>
  <li><strong>Response Mapping</strong>: After a successful API call, you can extract values from the JSON response and save them into new or existing slots. In the "Response Mapping" section of the controller:
   <ul>
-  <li><strong>JSON Path</strong>: Specify the path to the desired value in the JSON response (e.g., <code>data.user.name</code>).</li>
+  <li><strong>JSON Path</strong>: Specify the path to the desired value in the JSON response. You can access nested objects with a dot (e.g., <code>data.user.name</code>) and array elements with brackets (e.g., <code>data.items[0].product</code>).</li>
   <li><strong>Slot Name</strong>: Enter the name of the slot where you want to store the extracted value (e.g., <code>userName</code>).</li>
   </ul>
  </li>
@@ -329,7 +329,7 @@ const HelpManual_ko = () => (
  <li><strong>동적 요청</strong>: 슬롯을 사용하여 동적인 API를 호출할 수 있습니다. URL, Headers, Body 필드에 중괄호 표기법(예: <code>https://api.example.com/users/{'{userId}'}</code>)을 사용하여 이전 사용자 입력이나 다른 API 응답 값을 삽입할 수 있습니다.</li>
  <li><strong>응답 매핑</strong>: API가 성공적으로 호출된 후, JSON 응답에서 특정 값을 추출하여 새 슬롯이나 기존 슬롯에 저장할 수 있습니다. 컨트롤러의 "Response Mapping" 섹션에서 다음을 설정하세요:
   <ul>
-  <li><strong>JSON Path</strong>: JSON 응답에서 원하는 값의 경로를 지정합니다 (예: <code>data.user.name</code>).</li>
+  <li><strong>JSON Path</strong>: JSON 응답에서 원하는 값의 경로를 지정합니다. 점(.)으로 하위 객체에 접근하고, 대괄호(`[]`)를 사용해 배열의 특정 요소에 접근할 수 있습니다 (예: <code>data.items[0].product</code>).</li>
   <li><strong>Slot Name</strong>: 추출한 값을 저장할 슬롯의 이름을 입력합니다 (예: <code>userName</code>).</li>
   </ul>
  </li>

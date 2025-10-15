@@ -1,13 +1,18 @@
 export const interpolateMessage = (message, slots) => {
   if (!message) return '';
   return message.replace(/\{([^}]+)\}/g, (match, key) => {
-    return slots.hasOwnProperty(key) ? slots[key] : match;
+    // getNestedValue를 사용하여 슬롯 내부의 객체 값에도 접근 가능하도록 수정
+    const value = getNestedValue(slots, key);
+    return value !== undefined ? value : match;
   });
 };
 
 export const getNestedValue = (obj, path) => {
     if (!path) return undefined;
-    return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+    // 대괄호([]) 안의 숫자(인덱스)를 점(.) 표기법으로 변환합니다. 예: 'items[0]' -> 'items.0'
+    const normalizedPath = path.replace(/\[(\d+)\]/g, '.$1');
+    // 점(.)을 기준으로 경로를 분리하여 객체를 탐색합니다.
+    return normalizedPath.split('.').reduce((acc, part) => (acc && acc[part] !== undefined ? acc[part] : undefined), obj);
 };
 
 export const validateInput = (value, validation) => {
