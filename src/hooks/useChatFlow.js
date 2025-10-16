@@ -36,7 +36,9 @@ export const useChatFlow = (nodes, edges) => {
         const conditions = sourceNode.data.conditions || [];
         for (const condition of conditions) {
             const slotValue = updatedSlots[condition.slot];
-            if (evaluateCondition(slotValue, condition.operator, condition.value)) {
+            // --- 💡 수정된 부분 시작 ---
+            if (evaluateCondition(slotValue, condition.operator, condition, updatedSlots)) {
+            // --- 💡 수정된 부분 끝 ---
                 const handleId = sourceNode.data.replies[conditions.indexOf(condition)]?.value;
                 if(handleId) {
                   nextEdge = edges.find(edge => edge.source === sourceNodeId && edge.sourceHandle === handleId);

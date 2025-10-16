@@ -69,9 +69,11 @@ export const useNodeController = (setLocalNode) => {
      */
     const addCondition = () => {
         setLocalNode(prev => {
+            // --- 💡 수정된 부분 시작 ---
             const newConditions = [...(prev.data.conditions || []), {
-                id: `cond-${Date.now()}`, slot: '', operator: '==', value: ''
+                id: `cond-${Date.now()}`, slot: '', operator: '==', value: '', valueType: 'value'
             }];
+            // --- 💡 수정된 부분 끝 ---
             const newReplies = [...(prev.data.replies || []), {
                 display: `Condition ${newConditions.length}`,
                 value: `cond_${Date.now()}-${Math.random().toString(36).substring(2, 9)}`

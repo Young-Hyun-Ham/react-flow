@@ -58,8 +58,16 @@ export const validateInput = (value, validation) => {
   }
 };
 
-export const evaluateCondition = (slotValue, operator, conditionValue) => {
+// --- 💡 수정된 부분 시작 ---
+export const evaluateCondition = (slotValue, operator, condition, slots) => {
+  let conditionValue = condition.value;
+  // valueType이 'slot'이면, slots 객체에서 값을 가져옴
+  if (condition.valueType === 'slot') {
+    conditionValue = getNestedValue(slots, condition.value);
+  }
+  
   const lowerCaseConditionValue = String(conditionValue).toLowerCase();
+  // --- 💡 수정된 부분 끝 ---
   if (lowerCaseConditionValue === 'true' || lowerCaseConditionValue === 'false') {
     const boolConditionValue = lowerCaseConditionValue === 'true';
     const boolSlotValue = String(slotValue).toLowerCase() === 'true';

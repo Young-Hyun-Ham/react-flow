@@ -1,9 +1,8 @@
 import styles from '../../NodeController.module.css';
-import { useNodeController } from '../../hooks/useNodeController'; // 💡[추가된 부분]
+import { useNodeController } from '../../hooks/useNodeController';
 
 function BranchNodeController({ localNode, setLocalNode }) {
     const { data } = localNode;
-    // 💡[수정된 부분] Custom Hook 사용 (condition 관련 함수 포함)
     const { 
         handleLocalDataChange, 
         addReply, 
@@ -37,7 +36,18 @@ function BranchNodeController({ localNode, setLocalNode }) {
                                 <select value={cond.operator} onChange={(e) => updateCondition(index, 'operator', e.target.value)}>
                                     <option value="==">==</option> <option value="!=">!=</option> <option value=">">&gt;</option> <option value="<">&lt;</option> <option value=">=">&gt;=</option> <option value="<=">&lt;=</option> <option value="contains">contains</option> <option value="!contains">!contains</option>
                                 </select>
-                                <input className={styles.quickReplyInput} value={cond.value} onChange={(e) => updateCondition(index, 'value', e.target.value)} placeholder="Value" />
+                                {/* --- 💡 수정된 부분 시작 --- */}
+                                <select value={cond.valueType || 'value'} onChange={(e) => updateCondition(index, 'valueType', e.target.value)}>
+                                  <option value="value">Value</option>
+                                  <option value="slot">Slot</option>
+                                </select>
+                                <input 
+                                  className={styles.quickReplyInput} 
+                                  value={cond.value} 
+                                  onChange={(e) => updateCondition(index, 'value', e.target.value)} 
+                                  placeholder={cond.valueType === 'slot' ? 'Slot Name' : 'Value'}
+                                />
+                                {/* --- 💡 수정된 부분 끝 --- */}
                                 <button onClick={() => deleteCondition(index)} className={styles.deleteReplyButton}>×</button>
                             </div>
                         ))}
