@@ -36,6 +36,22 @@ export const createScenario = async ({ newScenarioName, job }) => {
     return handleApiResponse(response);
 };
 
+// --- 💡 추가된 부분 시작 ---
+export const cloneScenario = async ({ scenarioToClone, newName }) => {
+  const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: newName,
+      job: scenarioToClone.job,
+      clone_from_id: scenarioToClone.id, // 원본 ID를 포함하여 요청
+      category_id: 'DEV_1000_S_1_1_1',
+    }),
+  });
+  return handleApiResponse(response);
+};
+// --- 💡 추가된 부분 끝 ---
+
 export const renameScenario = async ({ oldScenario, newName, job }) => {
     const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}/${oldScenario.id}`, {
         method: 'PATCH',

@@ -22,6 +22,10 @@ export const renameScenario = (backend, args) => getService(backend).renameScena
 export const deleteScenario = (backend, args) => getService(backend).deleteScenario(args);
 export const fetchScenarioData = (backend, args) => getService(backend).fetchScenarioData(args);
 export const saveScenarioData = (backend, args) => getService(backend).saveScenarioData(args);
+// --- 💡 추가된 부분 시작 ---
+export const cloneScenario = (backend, args) => getService(backend).cloneScenario(args);
+// --- 💡 추가된 부분 끝 ---
+
 
 // API 템플릿 함수들
 export const fetchApiTemplates = firebaseApi.fetchApiTemplates;

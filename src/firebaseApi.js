@@ -69,6 +69,33 @@ export const deleteScenario = async ({ scenarioId }) => {
   await deleteDoc(docRef);
 };
 
+// --- 💡 추가된 부분 시작 ---
+export const cloneScenario = async ({ scenarioToClone, newName }) => {
+  const originalDocRef = doc(db, 'scenarios', scenarioToClone.id);
+  const newDocRef = doc(db, 'scenarios', newName);
+
+  const newDocSnap = await getDoc(newDocRef);
+  if (newDocSnap.exists()) {
+    throw new Error('A scenario with that name already exists.');
+  }
+
+  const originalDocSnap = await getDoc(originalDocRef);
+  if (!originalDocSnap.exists()) {
+    throw new Error('The scenario to clone does not exist.');
+  }
+
+  const originalData = originalDocSnap.data();
+  const newData = {
+    ...originalData,
+    name: newName,
+    job: scenarioToClone.job, // 원본의 job 정보를 유지
+  };
+
+  await setDoc(newDocRef, newData);
+  return { id: newName, ...newData };
+};
+// --- 💡 추가된 부분 끝 ---
+
 
 export const fetchScenarioData = async ({ scenarioId }) => {
   if (!scenarioId) return { nodes: [], edges: [] };

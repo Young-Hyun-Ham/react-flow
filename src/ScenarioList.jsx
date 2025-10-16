@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import * as backendService from './backendService';
 import useAlert from './hooks/useAlert';
+// --- 💡 추가된 부분 시작 ---
+import { EditIcon, CloneIcon, DeleteIcon } from './components/Icons';
+// --- 💡 추가된 부분 끝 ---
 
 const styles = {
   container: {
@@ -46,17 +49,25 @@ const styles = {
     fontWeight: '600',
     border: '1px solid',
   },
+  // --- 💡 수정된 부분 시작 ---
   buttonGroup: {
     display: 'flex',
-    gap: '8px',
+    gap: '12px',
+    alignItems: 'center',
   },
   actionButton: {
-    padding: '5px 10px',
-    fontSize: '0.8rem',
-    border: '1px solid #ccc',
-    borderRadius: '4px',
+    padding: '5px',
+    border: 'none',
+    borderRadius: '50%',
     cursor: 'pointer',
+    backgroundColor: 'transparent',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'background-color 0.2s, color 0.2s',
+    color: '#606770',
   },
+  // --- 💡 수정된 부분 끝 ---
   button: {
     marginTop: '20px',
     padding: '10px 20px',
@@ -103,7 +114,28 @@ function ScenarioList({ backend, onSelect, onAddScenario, onEditScenario, scenar
     };
 
     fetchAndSetScenarios();
-  }, [backend, setScenarios]);
+  }, [backend, setScenarios, showAlert]);
+
+  const handleCloneScenario = async (scenarioToClone) => {
+    const newName = prompt(`Enter the new name for the cloned scenario:`, `${scenarioToClone.name}_copy`);
+    if (newName && newName.trim()) {
+      if (scenarios.some(s => s.name === newName.trim())) {
+        showAlert("A scenario with that name already exists.");
+        return;
+      }
+      try {
+        const newScenario = await backendService.cloneScenario(backend, {
+          scenarioToClone,
+          newName: newName.trim(),
+        });
+        setScenarios(prev => [...prev, newScenario]);
+        showAlert(`Scenario '${scenarioToClone.name}' has been cloned to '${newName.trim()}'.`);
+      } catch (error) {
+        console.error("Error cloning scenario:", error);
+        showAlert(`Failed to clone scenario: ${error.message}`);
+      }
+    }
+  };
 
   const handleDeleteScenario = async (scenarioId) => {
     const confirmed = await showConfirm(`Are you sure you want to delete this scenario?`);
@@ -125,7 +157,6 @@ function ScenarioList({ backend, onSelect, onAddScenario, onEditScenario, scenar
 
   return (
     <div style={styles.container}>
-      <h1 style={styles.title}>Chatbot Scenario List</h1>
       <ul style={styles.list}>
         {scenarios.map(scenario => (
           <li key={scenario.id} style={styles.listItem}>
@@ -138,10 +169,37 @@ function ScenarioList({ backend, onSelect, onAddScenario, onEditScenario, scenar
               <span style={styles.scenarioName}>{scenario.name}</span>
               <span style={getJobBadgeStyle(scenario.job)}>{scenario.job}</span>
             </div>
+            {/* --- 💡 수정된 부분 시작 --- */}
             <div style={styles.buttonGroup}>
-              <button onClick={() => onEditScenario(scenario)} style={styles.actionButton}>Edit</button>
-              <button onClick={() => handleDeleteScenario(scenario.id)} style={{...styles.actionButton, color: 'red'}}>Delete</button>
+                <button
+                    onClick={() => onEditScenario(scenario)}
+                    style={styles.actionButton}
+                    title="Edit"
+                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#e9ecef'; e.currentTarget.style.color = '#343a40'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#606770'; }}
+                >
+                    <EditIcon />
+                </button>
+                <button
+                    onClick={() => handleCloneScenario(scenario)}
+                    style={{...styles.actionButton}}
+                    title="Clone"
+                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#e9ecef'; e.currentTarget.style.color = '#3498db'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#606770'; }}
+                >
+                    <CloneIcon />
+                </button>
+                <button
+                    onClick={() => handleDeleteScenario(scenario.id)}
+                    style={styles.actionButton}
+                    title="Delete"
+                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#e9ecef'; e.currentTarget.style.color = '#e74c3c'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#606770'; }}
+                >
+                    <DeleteIcon />
+                </button>
             </div>
+            {/* --- 💡 수정된 부분 끝 --- */}
           </li>
         ))}
       </ul>
