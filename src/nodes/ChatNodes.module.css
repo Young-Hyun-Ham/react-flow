@@ -11,6 +11,22 @@
   width: 320px;
 }
 
+/* --- 💡 추가된 부분 시작 --- */
+.scenarioNodeWrapper {
+  background-color: #f0f2f5;
+  border: 1px solid #bdc3c7;
+}
+
+.scenarioDescription {
+  padding: 10px;
+  font-style: italic;
+  color: #555;
+  text-align: center;
+  margin: 0;
+  font-size: 0.85rem;
+}
+/* --- 💡 추가된 부분 끝 --- */
+
 .nodeHeader {
   display: flex;
   justify-content: space-between;
@@ -46,16 +62,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ccc; /* 기본 색상을 연하게 */
+  color: #ccc;
   font-size: 1rem;
   line-height: 1;
 }
 .anchorButton.active,
 .anchorButton:hover {
-  color: white; /* 활성화 및 호버 시 색상 변경 */
+  color: white;
 }
 .nodeWrapper.anchored {
-    border: 2px solid #e74c3c; /* 앵커 설정 시 테두리 강조 */
+    border: 2px solid #e74c3c;
     box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
 }
 

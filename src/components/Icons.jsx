@@ -59,7 +59,6 @@ export const SettingsIcon = () => (
     </svg>
 );
 
-// --- 💡 추가된 부분 시작 ---
 export const EditIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -82,4 +81,20 @@ export const DeleteIcon = () => (
     <line x1="14" y1="11" x2="14" y2="17"></line>
   </svg>
 );
-// --- 💡 추가된 부분 끝 ---
+
+// --- 💡 수정된 부분 시작 ---
+export const ExpandNodeIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <path d="M12 5v14" />
+        <path d="M5 12h14" />
+    </svg>
+);
+
+export const CollapseNodeIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <path d="M5 12h14" />
+    </svg>
+);
+// --- 💡 수정된 부분 끝 ---

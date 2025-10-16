@@ -11,29 +11,26 @@ export const createNodeData = (type) => {
     case 'slotfilling':
       return { ...baseData, content: 'Enter your question.', slot: 'newSlot', replies: [] };
     case 'api':
-      // --- 💡 수정된 부분 시작 ---
       return {
         ...baseData,
-        isMulti: false, // Multi-API 모드 비활성화가 기본값
-        // 단일 API 기본 구조
+        isMulti: false,
         method: 'GET',
         url: '',
         headers: '{}',
         body: '{}',
         responseMapping: [],
-        // 다중 API를 위한 배열 (초기에는 비어있음)
         apis: [],
       };
-    // --- 💡 수정된 부분 끝 ---
     case 'branch':
       return { 
         ...baseData, 
-        evaluationType: 'BUTTON', // 'BUTTON' or 'CONDITION'
+        evaluationType: 'BUTTON',
         conditions: [{
           id: `cond-${Date.now()}`,
           slot: '',
           operator: '==',
-          value: ''
+          value: '',
+          valueType: 'value' // valueType 추가
         }],
         replies: [{ display: 'Condition 1', value: `cond_${Date.now()}` }, { display: 'Condition 2', value: `cond_${Date.now() + 1}` }] 
       };
@@ -60,7 +57,7 @@ export const createNodeData = (type) => {
       return {
         ...baseData,
         message: 'This is a toast message.',
-        toastType: 'info' // info, success, error
+        toastType: 'info'
       };
     case 'iframe':
       return {
@@ -69,6 +66,8 @@ export const createNodeData = (type) => {
         width: '250',
         height: '200'
       };
+    case 'scenario':
+        return { ...baseData, label: 'Imported Scenario', scenarioId: null };
     default:
       return baseData;
   }
@@ -102,9 +101,7 @@ export const createFormElement = (elementType) => {
             newElement = { id: newId, type: 'checkbox', name: '', label: 'New Checkbox', options: [], defaultValue: [] };
             break;
         case 'dropbox':
-            // --- 💡 수정된 부분 시작 ---
             newElement = { id: newId, type: 'dropbox', name: '', label: 'New Dropbox', options: [], optionsSlot: '', defaultValue: '' };
-            // --- 💡 수정된 부분 끝 ---
             break;
         default:
             newElement = { id: newId, type: elementType };

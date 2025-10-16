@@ -5,7 +5,7 @@ import ScenarioList from './ScenarioList';
 import Board from './Board';
 import Login from './Login';
 import HelpModal from './HelpModal';
-import ScenarioModal from './ScenarioModal'; // Renamed from NewScenarioModal
+import ScenarioModal from './ScenarioModal';
 import ApiDocs from './ApiDocs';
 import useStore from './store';
 import * as backendService from './backendService';
@@ -20,17 +20,15 @@ function App() {
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [scenarios, setScenarios] = useState([]);
   const [isScenarioModalOpen, setIsScenarioModalOpen] = useState(false);
-  const [editingScenario, setEditingScenario] = useState(null); // State to hold scenario being edited
+  const [editingScenario, setEditingScenario] = useState(null);
   const [backend, setBackend] = useState('firebase');
 
   const fetchNodeColors = useStore((state) => state.fetchNodeColors);
   const fetchNodeTextColors = useStore((state) => state.fetchNodeTextColors);
 
   useEffect(() => {
-    // onAuthStateChanged는 로그인/로그아웃 상태를 감지하고 user 상태를 업데이트하기 위해 유지합니다.
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
-        // 이메일/도메인 검증 로직은 그대로 유지합니다.
         const allowedEmails = ['cutiefunny@gmail.com', 'hyh8414@gmail.com'];
         const allowedDomains = ['cyberlogitec.com', 'wisenut.co.kr'];
         const userEmail = currentUser.email;
@@ -50,7 +48,6 @@ function App() {
       setLoading(false);
     });
 
-    // 초기 색상 설정은 로그인 상태와 무관하게 실행합니다.
     fetchNodeColors();
     fetchNodeTextColors();
 
@@ -91,7 +88,7 @@ function App() {
 
   const handleSaveScenario = async ({ name, job }) => {
     try {
-      if (editingScenario) { // Edit mode
+      if (editingScenario) {
         if (name !== editingScenario.name && scenarios.some(s => s.name === name)) {
           alert("A scenario with that name already exists.");
           return;
@@ -99,7 +96,7 @@ function App() {
         await backendService.renameScenario(backend, { oldScenario: editingScenario, newName: name, job });
         setScenarios(prev => prev.map(s => (s.id === editingScenario.id ? { ...s, name, job } : s)));
         alert('Scenario updated successfully.');
-      } else { // Create mode
+      } else {
         if (scenarios.some(s => s.name === name)) {
           alert("A scenario with that name already exists.");
           return;
@@ -194,7 +191,7 @@ function App() {
           
           <div className={`view-container ${view !== 'flow' ? 'hidden' : ''}`}>
             {selectedScenario && (
-              <Flow scenario={selectedScenario} backend={backend} />
+              <Flow scenario={selectedScenario} backend={backend} scenarios={scenarios} />
             )}
           </div>
           

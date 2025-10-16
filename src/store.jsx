@@ -20,6 +20,7 @@ const defaultColors = {
   llm: '#1abc9c',
   toast: '#95a5a6',
   iframe: '#2c3e50',
+  scenario: '#7f8c8d',
 };
 
 const defaultTextColors = {
@@ -33,6 +34,7 @@ const defaultTextColors = {
   llm: '#ffffff',
   toast: '#ffffff',
   iframe: '#ffffff',
+  scenario: '#ffffff',
 }
 
 const useStore = create((set, get) => ({
@@ -42,7 +44,7 @@ const useStore = create((set, get) => ({
   anchorNodeId: null,
   nodeColors: defaultColors,
   nodeTextColors: defaultTextColors,
-  slots: {}, // --- 💡 수정된 부분: 슬롯 상태 추가 ---
+  slots: {},
 
   setAnchorNodeId: (nodeId) => {
     set((state) => ({
@@ -50,7 +52,7 @@ const useStore = create((set, get) => ({
     }));
   },
 
-  setSlots: (newSlots) => set({ slots: newSlots }), // --- 💡 수정된 부분: 슬롯 업데이트 함수 추가 ---
+  setSlots: (newSlots) => set({ slots: newSlots }),
 
   fetchNodeColors: async () => {
     const docRef = doc(db, "settings", "nodeColors");
@@ -111,11 +113,70 @@ const useStore = create((set, get) => ({
   setSelectedNodeId: (nodeId) => set({ selectedNodeId: nodeId }),
 
   deleteNode: (nodeId) => {
-    set((state) => ({
-      nodes: state.nodes.filter((node) => node.id !== nodeId),
-      edges: state.edges.filter((edge) => edge.source !== nodeId && edge.target !== nodeId),
-      selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId,
-    }));
+    set((state) => {
+      const nodeToDelete = state.nodes.find(n => n.id === nodeId);
+      if (!nodeToDelete) return state;
+
+      let nodesToRemove = [nodeId];
+      if (nodeToDelete.type === 'scenario') {
+        const childNodes = state.nodes.filter(n => n.parentNode === nodeId);
+        childNodes.forEach(child => nodesToRemove.push(child.id));
+      }
+
+      const nodesToRemoveSet = new Set(nodesToRemove);
+      const remainingNodes = state.nodes.filter(n => !nodesToRemoveSet.has(n.id));
+      const remainingEdges = state.edges.filter(e => !nodesToRemoveSet.has(e.source) && !nodesToRemoveSet.has(e.target));
+      
+      return {
+        nodes: remainingNodes,
+        edges: remainingEdges,
+        selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId,
+      };
+    });
+  },
+  
+  toggleScenarioNode: (nodeId) => {
+    set((state) => {
+      const newNodes = state.nodes.map(n => {
+        if (n.id === nodeId && n.type === 'scenario') {
+          const isCollapsed = !(n.data.isCollapsed || false);
+          let newStyle = { ...n.style };
+
+          if (isCollapsed) {
+            newStyle.width = 250;
+            newStyle.height = 50;
+          } else {
+            const PADDING = 20;
+            const childNodes = state.nodes.filter(child => child.parentNode === nodeId);
+            if (childNodes.length > 0) {
+              let minX = Infinity, minY = Infinity, maxX = 0, maxY = 0;
+              childNodes.forEach(node => {
+                const x = node.position.x;
+                const y = node.position.y;
+                minX = Math.min(minX, x);
+                minY = Math.min(minY, y);
+                maxX = Math.max(maxX, x + (node.width || 250));
+                maxY = Math.max(maxY, y + (node.height || 150));
+              });
+              
+              newStyle.width = (maxX - minX) + PADDING * 2;
+              newStyle.height = (maxY - minY) + PADDING * 2;
+            } else {
+              newStyle.width = 250;
+              newStyle.height = 100;
+            }
+          }
+          
+          return {
+            ...n,
+            style: newStyle,
+            data: { ...n.data, isCollapsed },
+          };
+        }
+        return n;
+      });
+      return { nodes: newNodes };
+    });
   },
   
   deleteSelectedEdges: () => {
@@ -135,32 +196,24 @@ const useStore = create((set, get) => ({
     const newNode = {
       ...originalNode,
       id: `${originalNode.type}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      position: {
-        x: originalNode.position.x + 50,
-        y: originalNode.position.y + 50,
-      },
+      position: { x: originalNode.position.x + 50, y: originalNode.position.y + 50 },
       data: newData,
       selected: false,
       zIndex: maxZIndex + 1,
     };
 
-    set({
-      nodes: [...nodes, newNode],
-    });
+    set({ nodes: [...nodes, newNode] });
     get().setSelectedNodeId(newNode.id);
   },
 
   updateNodeData: (nodeId, dataUpdate) => {
     set((state) => ({
       nodes: state.nodes.map((node) =>
-        node.id === nodeId
-          ? { ...node, data: { ...node.data, ...dataUpdate } }
-          : node
+        node.id === nodeId ? { ...node, data: { ...node.data, ...dataUpdate } } : node
       ),
     }));
   },
 
-  // --- 💡 수정된 부분 시작 ---
   addNode: (type, position = { x: 100, y: 100 }) => {
     const newNodeData = createNodeData(type);
     const newNode = {
@@ -171,8 +224,8 @@ const useStore = create((set, get) => ({
     };
     set({ nodes: [...get().nodes, newNode] });
   },
-  // --- 💡 수정된 부분 끝 ---
 
+  // --- 👇 복원된 함수들 ---
   addReply: (nodeId) => {
     set((state) => ({
       nodes: state.nodes.map((node) => {
@@ -219,39 +272,7 @@ const useStore = create((set, get) => ({
     set((state) => ({
       nodes: state.nodes.map((node) => {
         if (node.id === nodeId && node.type === 'form') {
-          let newElement;
-          const newId = `${elementType}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-
-          switch (elementType) {
-            case 'input':
-              newElement = { id: newId, type: 'input', name: '', label: 'New Input', placeholder: '', validation: { type: 'text' } };
-              break;
-            case 'date':
-              newElement = { id: newId, type: 'date', name: '', label: 'New Date' };
-              break;
-            case 'grid':
-              const rows = 2;
-              const columns = 2;
-              newElement = {
-                id: newId,
-                type: 'grid',
-                name: '',
-                label: 'New Grid',
-                rows: rows,
-                columns: columns,
-                data: Array(rows * columns).fill('')
-              };
-              break;
-            case 'checkbox':
-              newElement = { id: newId, type: 'checkbox', name: '', label: 'New Checkbox', options: [] };
-              break;
-            case 'dropbox':
-              newElement = { id: newId, type: 'dropbox', name: '', label: 'New Dropbox', options: [] };
-              break;
-            default:
-              newElement = { id: newId, type: elementType };
-          }
-
+          const newElement = createFormElement(elementType);
           const newElements = [...(node.data.elements || []), newElement];
           return { ...node, data: { ...node.data, elements: newElements } };
         }
@@ -268,18 +289,15 @@ const useStore = create((set, get) => ({
                 const oldElement = newElements[elementIndex];
                 const newElement = { ...oldElement, ...elementUpdate };
 
-                if (
-                    newElement.type === 'grid' &&
-                    (oldElement.rows !== newElement.rows || oldElement.columns !== newElement.columns)
-                ) {
+                if (newElement.type === 'grid' && (oldElement.rows !== newElement.rows || oldElement.columns !== newElement.columns)) {
                     const oldData = oldElement.data || [];
                     const newRows = newElement.rows || 2;
                     const newColumns = newElement.columns || 2;
                     const newData = Array(newRows * newColumns).fill('');
 
-                    for (let r = 0; r < Math.min(oldElement.rows, newRows); r++) {
-                        for (let c = 0; c < Math.min(oldElement.columns, newColumns); c++) {
-                            const oldIndex = r * oldElement.columns + c;
+                    for (let r = 0; r < Math.min(oldElement.rows || 0, newRows); r++) {
+                        for (let c = 0; c < Math.min(oldElement.columns || 0, newColumns); c++) {
+                            const oldIndex = r * (oldElement.columns || 0) + c;
                             const newIndex = r * newColumns + c;
                             if (oldData[oldIndex] !== undefined) {
                                 newData[newIndex] = oldData[oldIndex];
@@ -295,8 +313,7 @@ const useStore = create((set, get) => ({
             return node;
         }),
     }));
-},
-
+  },
 
   deleteElement: (nodeId, elementIndex) => {
     set((state) => ({
@@ -351,10 +368,7 @@ const useStore = create((set, get) => ({
       selectedNodeIds.has(e.source) && selectedNodeIds.has(e.target)
     );
 
-    const dataToExport = {
-      nodes: selectedNodes,
-      edges: relevantEdges,
-    };
+    const dataToExport = { nodes: selectedNodes, edges: relevantEdges };
 
     navigator.clipboard.writeText(JSON.stringify(dataToExport, null, 2))
       .then(() => alert(`${selectedNodes.length} nodes exported to clipboard!`))
@@ -381,10 +395,7 @@ const useStore = create((set, get) => ({
         return {
           ...node,
           id: newId,
-          position: {
-            x: node.position.x + 20,
-            y: node.position.y + 20,
-          },
+          position: { x: node.position.x + 20, y: node.position.y + 20 },
           selected: false,
         };
       });
@@ -415,6 +426,52 @@ const useStore = create((set, get) => ({
       alert('Failed to import nodes from clipboard. Check console for details.');
     }
   },
+  // --- 👆 복원된 함수들 ---
+
+  addScenarioAsGroup: async (backend, scenario, position = { x: 200, y: 200 }) => {
+    const { nodes: currentNodes, edges: currentEdges } = get();
+    
+    const scenarioData = await backendService.fetchScenarioData(backend, { scenarioId: scenario.id });
+    if (!scenarioData || !scenarioData.nodes) {
+      alert(`Failed to load scenario data for '${scenario.name}'.`);
+      return;
+    }
+
+    const idPrefix = `group-${scenario.id}-${Date.now()}`;
+    const idMapping = new Map();
+    
+    const childNodes = scenarioData.nodes.map(node => {
+      const newId = `${idPrefix}-${node.id}`;
+      idMapping.set(node.id, newId);
+      return { ...node, id: newId };
+    });
+
+    const groupNodeId = `group-${idPrefix}`;
+    const groupNode = {
+      id: groupNodeId,
+      type: 'scenario',
+      position,
+      data: { label: scenario.name, scenarioId: scenario.id, isCollapsed: true },
+      style: { width: 250, height: 50 },
+    };
+
+    childNodes.forEach(node => {
+      node.parentNode = groupNodeId;
+      node.extent = 'parent';
+    });
+
+    const newEdges = scenarioData.edges.map(edge => ({
+      ...edge,
+      id: `${idPrefix}-${edge.id}`,
+      source: idMapping.get(edge.source),
+      target: idMapping.get(edge.target),
+    }));
+
+    set({
+      nodes: [...currentNodes, groupNode, ...childNodes],
+      edges: [...currentEdges, ...newEdges],
+    });
+  },
   
   fetchScenario: async (backend, scenarioId) => {
     try {
@@ -427,7 +484,6 @@ const useStore = create((set, get) => ({
     }
   },
 
-  // --- 💡 수정된 부분 시작 ---
   saveScenario: async (backend, scenario) => {
     try {
       const { nodes, edges } = get();
@@ -441,7 +497,6 @@ const useStore = create((set, get) => ({
       alert(`Failed to save scenario: ${error.message}`);
     }
   },
-  // --- 💡 수정된 부분 끝 ---
 }));
 
 export default useStore;

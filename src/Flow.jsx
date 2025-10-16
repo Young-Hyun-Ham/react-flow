@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'; // useMemo 추가
 import ReactFlow, { Controls, useReactFlow, MiniMap } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -12,6 +12,8 @@ import LinkNode from './nodes/LinkNode';
 import LlmNode from './nodes/LlmNode';
 import ToastNode from './nodes/ToastNode';
 import IframeNode from './nodes/IframeNode';
+import ScenarioNode from './nodes/ScenarioNode'; 
+import ScenarioGroupModal from './ScenarioGroupModal';
 import ChatbotSimulator from './ChatbotSimulator';
 import NodeController from './NodeController';
 import useStore from './store';
@@ -30,15 +32,16 @@ const nodeTypes = {
   llm: LlmNode,
   toast: ToastNode,
   iframe: IframeNode,
+  scenario: ScenarioNode,
 };
 
-function Flow({ scenario, backend }) {
+function Flow({ scenario, backend, scenarios }) {
   const { 
     nodes, edges, onNodesChange, onEdgesChange, onConnect, 
     fetchScenario, saveScenario, addNode, selectedNodeId, 
     setSelectedNodeId, duplicateNode, deleteSelectedEdges, 
     nodeColors, setNodeColor, nodeTextColors, setNodeTextColor,
-    exportSelectedNodes, importNodes
+    exportSelectedNodes, importNodes, addScenarioAsGroup
   } = useStore();
   
   const { getNodes, project } = useReactFlow();
@@ -49,12 +52,20 @@ function Flow({ scenario, backend }) {
   const [isSimulatorVisible, setIsSimulatorVisible] = useState(false);
   const [isColorSettingsVisible, setIsColorSettingsVisible] = useState(false);
   const [isSimulatorExpanded, setIsSimulatorExpanded] = useState(false);
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   
   useEffect(() => {
     if (scenario) {
       fetchScenario(backend, scenario.id);
     }
   }, [scenario, backend, fetchScenario]);
+  
+  // --- 💡 추가된 부분 시작 ---
+  const visibleNodes = useMemo(() => {
+    const collapsedGroupIds = new Set(nodes.filter(n => n.type === 'scenario' && n.data.isCollapsed).map(n => n.id));
+    return nodes.filter(n => !n.parentNode || !collapsedGroupIds.has(n.parentNode));
+  }, [nodes]);
+  // --- 💡 추가된 부분 끝 ---
 
   const handleNodeClick = (event, node) => {
     setSelectedNodeId(node.id);
@@ -100,7 +111,6 @@ function Flow({ scenario, backend }) {
     }
   };
 
-  // --- 💡 추가된 부분 시작 ---
   const onDragStart = (event, nodeType) => {
     event.dataTransfer.setData('application/reactflow', nodeType);
     event.dataTransfer.effectAllowed = 'move';
@@ -131,7 +141,6 @@ function Flow({ scenario, backend }) {
     },
     [project, addNode]
   );
-  // --- 💡 추가된 부분 끝 ---
 
   const nodeButtons = [
     { type: 'message', label: '+ Message' },
@@ -150,6 +159,15 @@ function Flow({ scenario, backend }) {
 
   return (
     <div className={styles.flowContainer}>
+      <ScenarioGroupModal
+        isOpen={isGroupModalOpen}
+        onClose={() => setIsGroupModalOpen(false)}
+        scenarios={scenarios.filter(s => s.id !== scenario.id)}
+        onSelect={(selected) => {
+          addScenarioAsGroup(backend, selected);
+          setIsGroupModalOpen(false);
+        }}
+      />
       <div className={styles.leftSidebar}>
         <div className={styles.sidebarHeader}>
             <h3>Add Node</h3>
@@ -180,7 +198,6 @@ function Flow({ scenario, backend }) {
             </div>
         )}
 
-        {/* --- 💡 수정된 부분 시작 --- */}
         {visibleNodeButtons.map(({ type, label }) => (
             <button 
                 key={type}
@@ -196,8 +213,11 @@ function Flow({ scenario, backend }) {
                 {label}
             </button>
         ))}
-        {/* --- 💡 수정된 부분 끝 --- */}
         
+        <div className={styles.separator} />
+        <button onClick={() => setIsGroupModalOpen(true)} className={styles.sidebarButton} style={{backgroundColor: '#7f8c8d', color: 'white'}}>
+          + Scenario Group
+        </button>
         <div className={styles.separator} />
         <button onClick={importNodes} className={styles.sidebarButton} style={{backgroundColor: '#555', color: 'white'}}>
           Import Nodes
@@ -216,9 +236,7 @@ function Flow({ scenario, backend }) {
         )}
       </div>
 
-      {/* --- 💡 수정된 부분 시작 --- */}
       <div className={styles.mainContent} ref={reactFlowWrapper}>
-      {/* --- 💡 수정된 부분 끝 --- */}
         <SlotDisplay />
         <div className={styles.topRightControls}>
           <div onClick={() => saveScenario(backend, scenario)}>
@@ -228,9 +246,8 @@ function Flow({ scenario, backend }) {
             <img src="/images/chat_simulator.png" alt="Simulator Icon" className={!isSimulatorVisible ? styles.botButtonHidden : styles.botButton}/>
           </div>
         </div>
-        {/* --- 💡 수정된 부분 시작 --- */}
         <ReactFlow
-          nodes={nodes}
+          nodes={visibleNodes} // --- 💡 수정된 부분 ---
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
@@ -244,7 +261,6 @@ function Flow({ scenario, backend }) {
           fitView
           style={{ backgroundColor: '#ffffff' }}
         >
-        {/* --- 💡 수정된 부분 끝 --- */}
           <Controls />
           <MiniMap nodeColor={(n) => nodeColors[n.type] || '#ddd'} nodeStrokeWidth={3} zoomable pannable />
         </ReactFlow>
