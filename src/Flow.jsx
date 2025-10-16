@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import ReactFlow, { Controls, useReactFlow, MiniMap } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -41,7 +41,8 @@ function Flow({ scenario, backend }) {
     exportSelectedNodes, importNodes
   } = useStore();
   
-  const { getNodes } = useReactFlow();
+  const { getNodes, project } = useReactFlow();
+  const reactFlowWrapper = useRef(null);
   const selectedNodesCount = getNodes().filter(n => n.selected).length;
 
   const [rightPanelWidth, setRightPanelWidth] = useState(400);
@@ -99,6 +100,39 @@ function Flow({ scenario, backend }) {
     }
   };
 
+  // --- 💡 추가된 부분 시작 ---
+  const onDragStart = (event, nodeType) => {
+    event.dataTransfer.setData('application/reactflow', nodeType);
+    event.dataTransfer.effectAllowed = 'move';
+  };
+
+  const onDragOver = useCallback((event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const onDrop = useCallback(
+    (event) => {
+      event.preventDefault();
+
+      const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
+      const type = event.dataTransfer.getData('application/reactflow');
+
+      if (typeof type === 'undefined' || !type) {
+        return;
+      }
+
+      const position = project({
+        x: event.clientX - reactFlowBounds.left,
+        y: event.clientY - reactFlowBounds.top,
+      });
+      
+      addNode(type, position);
+    },
+    [project, addNode]
+  );
+  // --- 💡 추가된 부분 끝 ---
+
   const nodeButtons = [
     { type: 'message', label: '+ Message' },
     { type: 'form', label: '+ Form' },
@@ -146,10 +180,13 @@ function Flow({ scenario, backend }) {
             </div>
         )}
 
+        {/* --- 💡 수정된 부분 시작 --- */}
         {visibleNodeButtons.map(({ type, label }) => (
             <button 
                 key={type}
                 onClick={() => addNode(type)} 
+                onDragStart={(event) => onDragStart(event, type)}
+                draggable
                 className={styles.sidebarButton} 
                 style={{ 
                     backgroundColor: nodeColors[type], 
@@ -159,6 +196,7 @@ function Flow({ scenario, backend }) {
                 {label}
             </button>
         ))}
+        {/* --- 💡 수정된 부분 끝 --- */}
         
         <div className={styles.separator} />
         <button onClick={importNodes} className={styles.sidebarButton} style={{backgroundColor: '#555', color: 'white'}}>
@@ -178,7 +216,9 @@ function Flow({ scenario, backend }) {
         )}
       </div>
 
-      <div className={styles.mainContent}>
+      {/* --- 💡 수정된 부분 시작 --- */}
+      <div className={styles.mainContent} ref={reactFlowWrapper}>
+      {/* --- 💡 수정된 부분 끝 --- */}
         <SlotDisplay />
         <div className={styles.topRightControls}>
           <div onClick={() => saveScenario(backend, scenario)}>
@@ -188,6 +228,7 @@ function Flow({ scenario, backend }) {
             <img src="/images/chat_simulator.png" alt="Simulator Icon" className={!isSimulatorVisible ? styles.botButtonHidden : styles.botButton}/>
           </div>
         </div>
+        {/* --- 💡 수정된 부분 시작 --- */}
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -195,16 +236,17 @@ function Flow({ scenario, backend }) {
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           nodeTypes={nodeTypes}
-          fitView
-          style={{ backgroundColor: '#ffffff' }}
           onNodeClick={handleNodeClick}
           onPaneClick={handlePaneClick}
           onKeyDown={handleKeyDown}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+          fitView
+          style={{ backgroundColor: '#ffffff' }}
         >
+        {/* --- 💡 수정된 부분 끝 --- */}
           <Controls />
-          {/* --- 💡 수정된 부분 시작 --- */}
           <MiniMap nodeColor={(n) => nodeColors[n.type] || '#ddd'} nodeStrokeWidth={3} zoomable pannable />
-          {/* --- 💡 수정된 부분 끝 --- */}
         </ReactFlow>
       </div>
 

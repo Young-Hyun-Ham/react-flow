@@ -77,6 +77,7 @@
   background-color: transparent;
 }
 
+/* --- 💡 수정된 부분 시작 --- */
 .sidebarButton {
   width: 100%;
   padding: 12px;
@@ -85,9 +86,14 @@
   text-align: left;
   font-size: 0.9rem;
   font-weight: bold;
-  cursor: pointer;
+  cursor: grab;
   transition: opacity 0.2s;
 }
+
+.sidebarButton:active {
+  cursor: grabbing;
+}
+/* --- 💡 수정된 부분 끝 --- */
 
 .sidebarButton:hover {
   opacity: 0.9;

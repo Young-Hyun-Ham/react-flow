@@ -160,16 +160,18 @@ const useStore = create((set, get) => ({
     }));
   },
 
-  addNode: (type) => {
+  // --- 💡 수정된 부분 시작 ---
+  addNode: (type, position = { x: 100, y: 100 }) => {
     const newNodeData = createNodeData(type);
     const newNode = {
         id: newNodeData.id,
         type,
-        position: { x: 100, y: 100 },
+        position,
         data: newNodeData,
     };
     set({ nodes: [...get().nodes, newNode] });
   },
+  // --- 💡 수정된 부분 끝 ---
 
   addReply: (nodeId) => {
     set((state) => ({
