@@ -12,8 +12,8 @@ import LinkNode from './nodes/LinkNode';
 import LlmNode from './nodes/LlmNode';
 import ToastNode from './nodes/ToastNode';
 import IframeNode from './nodes/IframeNode';
-import ScenarioNode from './nodes/ScenarioNode';
-import SetSlotNode from './nodes/SetSlotNode';
+import ScenarioNode from './nodes/ScenarioNode'; 
+import SetSlotNode from './nodes/SetSlotNode'; // Added
 import ScenarioGroupModal from './ScenarioGroupModal';
 import ChatbotSimulator from './ChatbotSimulator';
 import NodeController from './NodeController';
@@ -34,10 +34,10 @@ const nodeTypes = {
   toast: ToastNode,
   iframe: IframeNode,
   scenario: ScenarioNode,
-  setSlot: SetSlotNode,
+  setSlot: SetSlotNode, // Added
 };
 
-function Flow({ scenario, backend, scenarios, user }) {
+function Flow({ scenario, backend, scenarios }) {
   const { 
     nodes, edges, onNodesChange, onEdgesChange, onConnect, 
     fetchScenario, saveScenario, addNode, selectedNodeId, 
@@ -149,7 +149,7 @@ function Flow({ scenario, backend, scenarios, user }) {
     { type: 'slotfilling', label: '+ SlotFilling' },
     { type: 'api', label: '+ API' },
     { type: 'llm', label: '+ LLM' },
-    { type: 'setSlot', label: '+ Set Slot' },
+    { type: 'setSlot', label: '+ Set Slot' }, // Added
     { type: 'fixedmenu', label: '+ Fixed Menu' },
     { type: 'link', label: '+ Link' },
     { type: 'toast', label: '+ Toast' },
@@ -240,7 +240,7 @@ function Flow({ scenario, backend, scenarios, user }) {
       <div className={styles.mainContent} ref={reactFlowWrapper}>
         <SlotDisplay />
         <div className={styles.topRightControls}>
-          <div onClick={() => saveScenario(backend, scenario, user)}>
+          <div onClick={() => saveScenario(backend, scenario)}>
             <img src="/images/save.png" alt="Save Icon" className={styles.saveButton}/>
           </div>
           <div onClick={() => setIsSimulatorVisible(!isSimulatorVisible)}>

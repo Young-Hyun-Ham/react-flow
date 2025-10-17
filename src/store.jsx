@@ -6,7 +6,7 @@ import {
 } from 'reactflow';
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from './firebase';
-import { createNodeData, createFormElement } from './nodeFactory';
+import { createNodeData } from './nodeFactory';
 import * as backendService from './backendService';
 
 const defaultColors = {
@@ -21,7 +21,7 @@ const defaultColors = {
   toast: '#95a5a6',
   iframe: '#2c3e50',
   scenario: '#7f8c8d',
-  setSlot: '#8e44ad',
+  setSlot: '#8e44ad', // Added
 };
 
 const defaultTextColors = {
@@ -36,7 +36,7 @@ const defaultTextColors = {
   toast: '#ffffff',
   iframe: '#ffffff',
   scenario: '#ffffff',
-  setSlot: '#ffffff',
+  setSlot: '#ffffff', // Added
 }
 
 const useStore = create((set, get) => ({
@@ -166,6 +166,7 @@ const useStore = create((set, get) => ({
               newStyle.width = (maxX - minX) + PADDING * 2;
               newStyle.height = (maxY - minY) + PADDING * 2;
 
+              // Ensure child nodes are repositioned if they are outside the new bounds
               childNodes.forEach(node => {
                 node.position.x -= (minX - PADDING);
                 node.position.y -= (minY - PADDING);
@@ -235,6 +236,7 @@ const useStore = create((set, get) => ({
     set({ nodes: [...get().nodes, newNode] });
   },
 
+  // --- 👇 Functions from previous development ---
   addReply: (nodeId) => {
     set((state) => ({
       nodes: state.nodes.map((node) => {
@@ -512,13 +514,12 @@ const useStore = create((set, get) => ({
     }
   },
 
-  saveScenario: async (backend, scenario, user) => {
+  saveScenario: async (backend, scenario) => {
     try {
       const { nodes, edges } = get();
       await backendService.saveScenarioData(backend, {
         scenario,
         data: { nodes, edges },
-        user,
       });
       alert(`Scenario has been saved successfully!`);
     } catch (error) {

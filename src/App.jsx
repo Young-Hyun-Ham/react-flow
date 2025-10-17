@@ -87,25 +87,21 @@ function App() {
   };
 
   const handleSaveScenario = async ({ name, job }) => {
-    if (!user) {
-        alert("You must be logged in to save a scenario.");
-        return;
-    }
     try {
       if (editingScenario) {
         if (name !== editingScenario.name && scenarios.some(s => s.name === name)) {
           alert("A scenario with that name already exists.");
           return;
         }
-        await backendService.renameScenario(backend, { oldScenario: editingScenario, newName: name, job, user });
-        setScenarios(prev => prev.map(s => (s.id === editingScenario.id ? { ...s, name, job, updatedBy: user.displayName, updatedById: user.uid, updatedAt: new Date().toISOString() } : s)));
+        await backendService.renameScenario(backend, { oldScenario: editingScenario, newName: name, job });
+        setScenarios(prev => prev.map(s => (s.id === editingScenario.id ? { ...s, name, job } : s)));
         alert('Scenario updated successfully.');
       } else {
         if (scenarios.some(s => s.name === name)) {
           alert("A scenario with that name already exists.");
           return;
         }
-        const newScenario = await backendService.createScenario(backend, { newScenarioName: name, job, user });
+        const newScenario = await backendService.createScenario(backend, { newScenarioName: name, job });
         setScenarios(prev => [...prev, newScenario]);
         setSelectedScenario(newScenario);
         setView('flow');
@@ -190,13 +186,12 @@ function App() {
                   onEditScenario={handleOpenEditScenarioModal}
                   scenarios={scenarios}
                   setScenarios={setScenarios}
-                  user={user}
               />
           </div>
           
           <div className={`view-container ${view !== 'flow' ? 'hidden' : ''}`}>
             {selectedScenario && (
-              <Flow scenario={selectedScenario} backend={backend} scenarios={scenarios} user={user} />
+              <Flow scenario={selectedScenario} backend={backend} scenarios={scenarios} />
             )}
           </div>
           

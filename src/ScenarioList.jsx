@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import * as backendService from './backendService';
 import useAlert from './hooks/useAlert';
+// --- 💡 추가된 부분 시작 ---
 import { EditIcon, CloneIcon, DeleteIcon } from './components/Icons';
+// --- 💡 추가된 부분 끝 ---
 
 const styles = {
   container: {
@@ -9,21 +11,10 @@ const styles = {
     color: '#333',
     textAlign: 'center',
   },
-  // --- New styles start ---
-  listHeader: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    maxWidth: '600px',
-    margin: '0 auto 20px',
+  title: {
+    fontSize: '2rem',
+    marginBottom: '20px',
   },
-  filterSwitch: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    fontSize: '0.9rem',
-  },
-  // --- New styles end ---
   list: {
     listStyle: 'none',
     padding: 0,
@@ -44,14 +35,12 @@ const styles = {
     flexGrow: 1,
     textAlign: 'left',
     cursor: 'pointer',
-  },
-  scenarioName: {
-    fontWeight: 'bold',
-    fontSize: '1.1rem',
-    marginBottom: '5px',
     display: 'flex',
     alignItems: 'center',
     gap: '10px'
+  },
+  scenarioName: {
+    fontWeight: 'bold',
   },
   jobBadge: {
     fontSize: '0.75rem',
@@ -60,10 +49,7 @@ const styles = {
     fontWeight: '600',
     border: '1px solid',
   },
-  metaInfo: {
-    fontSize: '0.8rem',
-    color: '#606770',
-  },
+  // --- 💡 수정된 부분 시작 ---
   buttonGroup: {
     display: 'flex',
     gap: '12px',
@@ -81,6 +67,7 @@ const styles = {
     transition: 'background-color 0.2s, color 0.2s',
     color: '#606770',
   },
+  // --- 💡 수정된 부분 끝 ---
   button: {
     marginTop: '20px',
     padding: '10px 20px',
@@ -88,6 +75,7 @@ const styles = {
   }
 };
 
+// Job 유형에 따라 다른 스타일을 반환하는 함수
 const getJobBadgeStyle = (job) => {
     const baseStyle = styles.jobBadge;
     switch (job) {
@@ -102,9 +90,8 @@ const getJobBadgeStyle = (job) => {
     }
 };
 
-function ScenarioList({ backend, onSelect, onAddScenario, onEditScenario, scenarios, setScenarios, user }) {
+function ScenarioList({ backend, onSelect, onAddScenario, onEditScenario, scenarios, setScenarios }) {
   const [loading, setLoading] = useState(true);
-  const [showMyScenariosOnly, setShowMyScenariosOnly] = useState(false);
   const { showAlert, showConfirm } = useAlert();
 
   useEffect(() => {
@@ -112,6 +99,7 @@ function ScenarioList({ backend, onSelect, onAddScenario, onEditScenario, scenar
       setLoading(true);
       try {
         let scenarioList = await backendService.fetchScenarios(backend);
+        // job 속성이 없는 경우 'Process'를 기본값으로 설정
         scenarioList = scenarioList.map(scenario => ({
           ...scenario,
           job: scenario.job || 'Process',
@@ -125,10 +113,8 @@ function ScenarioList({ backend, onSelect, onAddScenario, onEditScenario, scenar
       }
     };
 
-    if (user) {
-        fetchAndSetScenarios();
-    }
-  }, [backend, setScenarios, showAlert, user]);
+    fetchAndSetScenarios();
+  }, [backend, setScenarios, showAlert]);
 
   const handleCloneScenario = async (scenarioToClone) => {
     const newName = prompt(`Enter the new name for the cloned scenario:`, `${scenarioToClone.name}_copy`);
@@ -141,7 +127,6 @@ function ScenarioList({ backend, onSelect, onAddScenario, onEditScenario, scenar
         const newScenario = await backendService.cloneScenario(backend, {
           scenarioToClone,
           newName: newName.trim(),
-          user,
         });
         setScenarios(prev => [...prev, newScenario]);
         showAlert(`Scenario '${scenarioToClone.name}' has been cloned to '${newName.trim()}'.`);
@@ -166,67 +151,55 @@ function ScenarioList({ backend, onSelect, onAddScenario, onEditScenario, scenar
     }
   };
 
-  const filteredScenarios = showMyScenariosOnly
-    ? scenarios.filter(s => s.authorId === user.uid || s.updatedById === user.uid)
-    : scenarios;
-
   if (loading) {
     return <div>Loading scenarios...</div>;
   }
 
   return (
     <div style={styles.container}>
-        <div style={styles.listHeader}>
-            <div style={styles.filterSwitch}>
-                <label className="switch">
-                    <input type="checkbox" checked={showMyScenariosOnly} onChange={() => setShowMyScenariosOnly(!showMyScenariosOnly)} />
-                    <span className="slider round"></span>
-                </label>
-                <span>Show my scenarios only</span>
-            </div>
-        </div>
       <ul style={styles.list}>
-        {filteredScenarios.map(scenario => (
+        {scenarios.map(scenario => (
           <li key={scenario.id} style={styles.listItem}>
             <div
                 style={styles.scenarioInfo}
                 onClick={() => onSelect(scenario)}
+                onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'}
             >
-                <div>
-                    <div style={styles.scenarioName}>
-                      <span>{scenario.name}</span>
-                      <span style={getJobBadgeStyle(scenario.job)}>{scenario.job}</span>
-                    </div>
-                    <div style={styles.metaInfo}>
-                        Last updated by {scenario.updatedBy || scenario.authorName || 'N/A'} 
-                        {' on '}
-                        {scenario.updatedAt ? new Date(scenario.updatedAt).toLocaleString() : (scenario.createdAt ? new Date(scenario.createdAt).toLocaleString() : 'N/A')}
-                    </div>
-                </div>
+              <span style={styles.scenarioName}>{scenario.name}</span>
+              <span style={getJobBadgeStyle(scenario.job)}>{scenario.job}</span>
             </div>
+            {/* --- 💡 수정된 부분 시작 --- */}
             <div style={styles.buttonGroup}>
                 <button
-                    onClick={(e) => { e.stopPropagation(); onEditScenario(scenario); }}
+                    onClick={() => onEditScenario(scenario)}
                     style={styles.actionButton}
                     title="Edit"
+                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#e9ecef'; e.currentTarget.style.color = '#343a40'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#606770'; }}
                 >
                     <EditIcon />
                 </button>
                 <button
-                    onClick={(e) => { e.stopPropagation(); handleCloneScenario(scenario); }}
+                    onClick={() => handleCloneScenario(scenario)}
                     style={{...styles.actionButton}}
                     title="Clone"
+                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#e9ecef'; e.currentTarget.style.color = '#3498db'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#606770'; }}
                 >
                     <CloneIcon />
                 </button>
                 <button
-                    onClick={(e) => { e.stopPropagation(); handleDeleteScenario(scenario.id); }}
+                    onClick={() => handleDeleteScenario(scenario.id)}
                     style={styles.actionButton}
                     title="Delete"
+                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#e9ecef'; e.currentTarget.style.color = '#e74c3c'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#606770'; }}
                 >
                     <DeleteIcon />
                 </button>
             </div>
+            {/* --- 💡 수정된 부분 끝 --- */}
           </li>
         ))}
       </ul>
