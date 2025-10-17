@@ -41,6 +41,13 @@ function FormNode({ id, data }) {
             {element.optionsSlot && (
               <div className={styles.slotBindingInfo}>Bound to: {`{${element.optionsSlot}}`}</div>
             )}
+            {/* --- 💡 수정된 부분 시작 --- */}
+            {element.optionsSlot && element.displayKeys && element.displayKeys.length > 0 && (
+                <div className={styles.slotBindingInfo} style={{ fontStyle: 'normal', color: '#555', fontSize: '0.7rem' }}>
+                    Displaying: {element.displayKeys.join(', ')}
+                </div>
+            )}
+            {/* --- 💡 수정된 부분 끝 --- */}
             <table className={styles.previewGridTable}>
               <tbody>
                 {[...Array(element.rows || 2)].map((_, rowIndex) => (

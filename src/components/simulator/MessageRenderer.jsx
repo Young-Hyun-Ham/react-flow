@@ -43,54 +43,77 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                             if(el.validation.endDate) dateProps.max = el.validation.endDate;
                         }
                     }
+                    
+                    // --- 💡 수정된 부분 시작 ---
                     if (el.type === 'grid') {
-                        const gridData = Array.isArray(slots[el.optionsSlot]) ? slots[el.optionsSlot] : el.data;
-                        const isDynamicObjectArray = Array.isArray(gridData) && gridData.length > 0 && typeof gridData[0] === 'object' && gridData[0] !== null && !Array.isArray(gridData[0]);
-
-                        if (isDynamicObjectArray) {
-                            return (
-                                <div key={el.id}>
-                                    {gridData.map((dataObject, index) => {
-                                        let keys = Object.keys(dataObject);
-                                        if (el.hideNullColumns) {
-                                            keys = keys.filter(key => dataObject[key] !== null && dataObject[key] !== undefined && dataObject[key] !== "");
-                                        }
-
-                                        return (
-                                            <table key={`${el.id}-${index}`} className={styles.formGridTable} style={{ marginTop: index > 0 ? '15px' : '0' }}>
-                                                <thead>
-                                                    <tr>
-                                                        <th>Label</th>
-                                                        <th>property</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {keys.map(key => (
-                                                        <tr key={key}>
-                                                            <td>{key}</td>
-                                                            <td>{interpolateMessage(dataObject[key] || '', slots)}</td>
+                        const gridDataFromSlot = el.optionsSlot ? slots[el.optionsSlot] : null;
+                        const hasSlotData = Array.isArray(gridDataFromSlot) && gridDataFromSlot.length > 0;
+                    
+                        if (hasSlotData) {
+                            const isDynamicObjectArray = typeof gridDataFromSlot[0] === 'object' && gridDataFromSlot[0] !== null && !Array.isArray(gridDataFromSlot[0]);
+                            if (isDynamicObjectArray) {
+                                // 데이터 슬롯이 객체 배열일 때의 렌더링 로직
+                                const displayKeys = el.displayKeys && el.displayKeys.length > 0 ? el.displayKeys : null;
+                                return (
+                                    <div key={el.id}>
+                                        {gridDataFromSlot.map((dataObject, index) => {
+                                            let keys = displayKeys || Object.keys(dataObject);
+                                            if (!displayKeys && el.hideNullColumns) {
+                                                keys = keys.filter(key => dataObject[key] !== null && dataObject[key] !== undefined && dataObject[key] !== "");
+                                            }
+                                            return (
+                                                <table key={`${el.id}-${index}`} className={styles.formGridTable} style={{ marginTop: index > 0 ? '15px' : '0' }}>
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Label</th>
+                                                            <th>Property</th>
                                                         </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        );
-                                    })}
-                                </div>
-                            );
+                                                    </thead>
+                                                    <tbody>
+                                                        {keys.map(key => (
+                                                            <tr key={key}>
+                                                                <td>{key}</td>
+                                                                <td>{interpolateMessage(dataObject[key] || '', slots)}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            );
+                                        })}
+                                    </div>
+                                );
+                            } else {
+                                // 데이터 슬롯이 2차원 배열일 때의 렌더링 로직
+                                const rows = gridDataFromSlot.length;
+                                const columns = gridDataFromSlot[0]?.length || 0;
+                                 return (
+                                    <table key={el.id} className={styles.formGridTable}>
+                                        <tbody>
+                                            {[...Array(rows)].map((_, r) => (
+                                                <tr key={r}>
+                                                    {[...Array(columns)].map((_, c) => {
+                                                        const cellValue = gridDataFromSlot[r] ? gridDataFromSlot[r][c] : '';
+                                                        return <td key={c}>{interpolateMessage(cellValue || '', slots)}</td>;
+                                                    })}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                );
+                            }
                         } else {
-                            const rows = Array.isArray(gridData) && gridData.length > 0 ? gridData.length : (el.rows || 2);
-                            const columns = Array.isArray(gridData) && gridData.length > 0 && Array.isArray(gridData[0]) ? gridData[0].length : (el.columns || 2);
-
+                            // 데이터 슬롯이 없거나 유효하지 않을 때, 수동 입력 데이터를 렌더링
+                            const rows = el.rows || 2;
+                            const columns = el.columns || 2;
                             return (
                                 <table key={el.id} className={styles.formGridTable}>
                                     <tbody>
                                         {[...Array(rows)].map((_, r) => (
                                             <tr key={r}>
                                                 {[...Array(columns)].map((_, c) => {
-                                                    const cellValue = Array.isArray(gridData)
-                                                        ? (gridData[r] ? gridData[r][c] : '') 
-                                                        : (el.data ? el.data[r * columns + c] : '');
-                                                    return <td key={c}>{interpolateMessage(cellValue || '', slots)}</td>;
+                                                    const cellIndex = r * columns + c;
+                                                    const cellValue = el.data && el.data[cellIndex] ? el.data[cellIndex] : '';
+                                                    return <td key={c}>{interpolateMessage(cellValue, slots)}</td>;
                                                 })}
                                             </tr>
                                         ))}
@@ -99,6 +122,8 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                             );
                         }
                     }
+                    // --- 💡 수정된 부분 끝 ---
+
                     return (
                         <div key={el.id} className={styles.formElement}>
                             <label className={styles.formLabel}>{el.label}</label>

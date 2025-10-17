@@ -6,6 +6,8 @@ export const createNodeData = (type) => {
   };
 
   switch (type) {
+    case 'start':
+      return { ...baseData, description: 'Scenario starts here.' };
     case 'message':
       return { ...baseData, content: 'New text message', replies: [] };
     case 'slotfilling':
@@ -30,9 +32,9 @@ export const createNodeData = (type) => {
           slot: '',
           operator: '==',
           value: '',
-          valueType: 'value' // valueType 추가
+          valueType: 'value'
         }],
-        replies: [{ display: 'Condition 1', value: `cond_${Date.now()}` }, { display: 'Condition 2', value: `cond_${Date.now() + 1}` }] 
+        replies: [{ display: 'Condition 1', value: `cond_${Date.now()}` }] 
       };
     case 'form':
       return {
@@ -43,7 +45,7 @@ export const createNodeData = (type) => {
         dataSource: ''
       };
     case 'fixedmenu':
-      return { ...baseData, title: 'Fixed Menu', replies: [{ display: 'Menu 1', value: `menu_${Date.now()}` }, { display: 'Menu 2', value: `menu_${Date.now() + 1}` }] };
+      return { ...baseData, content: 'Fixed Menu', replies: [{ display: 'Menu 1', value: `menu_${Date.now()}` }] };
     case 'link':
       return { ...baseData, content: 'https://', display: 'Link' };
     case 'llm':
@@ -68,7 +70,7 @@ export const createNodeData = (type) => {
       };
     case 'scenario':
         return { ...baseData, label: 'Imported Scenario', scenarioId: null };
-    case 'setSlot': // Added
+    case 'setSlot':
         return { ...baseData, assignments: [{ key: 'newSlot', value: 'someValue' }] };
     default:
       return baseData;
@@ -96,7 +98,8 @@ export const createFormElement = (elementType) => {
                 label: 'New Grid',
                 rows: rows,
                 columns: columns,
-                data: Array(rows * columns).fill('')
+                data: Array(rows * columns).fill(''),
+                displayKeys: [], // --- 💡 수정된 부분 ---
             };
             break;
         case 'checkbox':

@@ -108,16 +108,40 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
             />
           </div>
           {element.optionsSlot && (
-            <div className={styles.formGroup}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+            <>
+                <div className={styles.formGroup}>
+                    <label>Display Labels (comma-separated)</label>
+                    {/* --- 💡 수정된 부분 시작 --- */}
                     <input
-                        type="checkbox"
-                        checked={element.hideNullColumns || false}
-                        onChange={(e) => handleInputChange('hideNullColumns', e.target.checked)}
+                        type="text"
+                        placeholder="e.g., name,email,phone"
+                        value={Array.isArray(element.displayKeys) ? element.displayKeys.join(',') : element.displayKeys}
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            // 쉼표로 끝나는 경우를 포함하여 문자열을 그대로 저장하고, 포커스가 아웃될 때 배열로 변환합니다.
+                            handleInputChange('displayKeys', value);
+                        }}
+                        onBlur={(e) => {
+                            const value = e.target.value;
+                            handleInputChange('displayKeys', value.split(',').map(k => k.trim()).filter(Boolean));
+                        }}
                     />
-                    Hide Columns with Null Values
-                </label>
-            </div>
+                    {/* --- 💡 수정된 부분 끝 --- */}
+                    <p className={styles.instructionText} style={{marginTop: '4px', fontSize: '0.75rem'}}>
+                        Specify which keys to display as labels. If empty, all keys will be shown.
+                    </p>
+                </div>
+                <div className={styles.formGroup}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                        <input
+                            type="checkbox"
+                            checked={element.hideNullColumns || false}
+                            onChange={(e) => handleInputChange('hideNullColumns', e.target.checked)}
+                        />
+                        Hide Columns with Null Values
+                    </label>
+                </div>
+            </>
           )}
           {!element.optionsSlot && (
             <>
