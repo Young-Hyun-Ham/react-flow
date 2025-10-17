@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import useStore from '../store';
-import { interpolateMessage, getNestedValue, evaluateCondition } from '../simulatorUtils';
+import { interpolateMessage, interpolateMessageForApi, getNestedValue, evaluateCondition } from '../simulatorUtils';
 
 export const useChatFlow = (nodes, edges) => {
   const [history, setHistory] = useState([]);
@@ -156,7 +156,6 @@ export const useChatFlow = (nodes, edges) => {
     setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: !isInteractive || node.type === 'iframe', id: Date.now() }]);
   }, [nodes, edges, proceedToNextNode, setSlots]);
 
-  // --- 💡 수정된 부분 시작 ---
   const handleApiNode = useCallback(async (node, currentSlots) => {
     const loadingId = Date.now();
     setHistory(prev => [...prev, { type: 'loading', id: loadingId }]);
@@ -165,16 +164,14 @@ export const useChatFlow = (nodes, edges) => {
         const { isMulti, apis } = node.data;
 
         const processApiCall = (apiCall) => {
-            const interpolatedUrl = interpolateMessage(apiCall.url, currentSlots);
-            const interpolatedHeaders = JSON.parse(interpolateMessage(apiCall.headers || '{}', currentSlots));
+            const interpolatedUrl = interpolateMessageForApi(apiCall.url, currentSlots);
+            const interpolatedHeaders = JSON.parse(interpolateMessageForApi(apiCall.headers || '{}', currentSlots));
 
-            // Body 처리: 슬롯 값이 문자열이 아닌 경우를 위해 replacer 함수 사용
             const rawBody = apiCall.body || '{}';
             const interpolatedBodyString = JSON.stringify(JSON.parse(rawBody), (key, value) => {
                 if (typeof value === 'string') {
                     return value.replace(/{{([^}]+)}}/g, (match, slotKey) => {
                         const slotValue = getNestedValue(currentSlots, slotKey);
-                        // 슬롯 값이 문자열이면 그대로 반환, 아니면 특별한 마커를 반환
                         return typeof slotValue === 'string' ? slotValue : `___SLOT___${slotKey}`;
                     });
                 }
@@ -225,7 +222,6 @@ export const useChatFlow = (nodes, edges) => {
         proceedToNextNode('onError', node.id, finalSlots);
     }
   }, [proceedToNextNode, setSlots]);
-  // --- 💡 수정된 부분 끝 ---
 
   const handleLlmNode = useCallback(async (node, currentSlots) => {
     const streamingMessageId = Date.now();

@@ -47,11 +47,9 @@ function BranchNode({ id, data }) {
             {isConditionType ? (
               data.conditions?.map((cond, index) => (
                 <div key={cond.id || index} className={styles.branchOption}>
-                  {/* --- 💡 수정된 부분 시작 --- */}
                   <span className={styles.branchOptionButton}>
-                    {`{{${cond.slot}}} ${cond.operator} ${cond.valueType === 'slot' ? `{{${cond.value}}}` : `'${cond.value}'`}`}
+                    {`{${cond.slot}} ${cond.operator} ${cond.valueType === 'slot' ? `{${cond.value}}` : `'${cond.value}'`}`}
                   </span>
-                  {/* --- 💡 수정된 부분 끝 --- */}
                   <Handle
                     type="source"
                     position={Position.Right}

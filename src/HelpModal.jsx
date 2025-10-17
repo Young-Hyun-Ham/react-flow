@@ -102,8 +102,14 @@ const HelpManual = () => (
 
  <h3>6.2. Using Slots (Variables)</h3>
  <p>Slots are variables used to store and reuse information within a scenario. You can store user input from a <strong>SlotFilling</strong> node, data from an <strong>API</strong> node's response, or set them directly with the <strong>Set Slot</strong> node.</p>
- <p>To use a stored slot value in other nodes (like Message, API, or LLM), use brace notation: <code>{'{slotName}'}</code>.</p>
- <p><strong>Example:</strong> If you stored a user's name in a slot called <code>userName</code>, you can use it in a Message node like this: <code>Hello, {'{userName}'}! Welcome.</code> The Slot Display in the top-left corner of the simulator shows the current values of all slots in a readable format.</p>
+ <p>
+  To use a stored slot value, use brace notation. There are two types:
+  <ul>
+    <li><code>{'{slotName}'}</code>: Used in most nodes like <strong>Message</strong>, <strong>LLM</strong>, and <strong>Link</strong>.</li>
+    <li><code>{'{{slotName}}'}</code>: Used <strong>only within the API node</strong> (URL, Headers, Body fields) to prevent conflicts with JSON syntax.</li>
+  </ul>
+ </p>
+ <p><strong>Example:</strong> If you stored a user's name in a slot called <code>userName</code>, you can use it in a Message node like this: <code>Hello, {'{userName}'}! Welcome.</code> The Slot Display shows the current values of all slots.</p>
  
  <h4>6.2.1. Dynamic Dropbox Options (Slot Binding)</h4>
  <p>In a <strong>Form</strong> node, you can dynamically populate the options of a <strong>Dropbox</strong> element from a slot that contains an array.</p>
@@ -129,7 +135,7 @@ const HelpManual = () => (
         <li>The node will proceed to the 'On Success' branch only after all API calls have completed successfully. If any one of them fails, it will proceed to the 'On Error' branch.</li>
     </ul>
  </li>
- <li><strong>Dynamic Requests</strong>: Use slots to make dynamic API calls. In the URL, Headers, or Body fields, you can insert values from previous user inputs or API responses using brace notation (e.g., <code>https://api.example.com/users/{'{userId}'}</code>).</li>
+ <li><strong>Dynamic Requests</strong>: Use slots to make dynamic API calls. In the URL, Headers, or Body fields, you can insert values from previous user inputs or API responses using <strong>double brace notation</strong> (e.g., <code>https://api.example.com/users/{'{{userId}}'}</code>).</li>
  <li><strong>Response Mapping</strong>: After a successful API call, you can extract values from the JSON response and save them into new or existing slots. In the "Response Mapping" section of the controller:
   <ul>
   <li><strong>JSON Path</strong>: Specify the path to the desired value in the JSON response. You can access nested objects with a dot (e.g., <code>data.user.name</code>) and array elements with brackets (e.g., <code>data.items[0].product</code>).</li>
@@ -307,8 +313,14 @@ const HelpManual_ko = () => (
 
  <h3>6.2. 슬롯(변수) 사용하기</h3>
  <p>슬롯은 시나리오 내에서 정보를 저장하고 재사용하기 위한 변수입니다. <strong>슬롯 채우기</strong> 노드를 통해 받은 사용자 입력, <strong>API</strong> 노드의 응답 데이터, 또는 <strong>슬롯 설정</strong> 노드를 통해 직접 값을 할당할 수 있습니다.</p>
- <p>저장된 슬롯 값은 다른 노드(메시지, API, LLM 등)에서 중괄호 표기법(<code>{'{슬롯이름}'}</code>)을 사용하여 불러올 수 있습니다.</p>
- <p><strong>예시:</strong> <code>userName</code>이라는 슬롯에 사용자 이름을 저장했다면, 메시지 노드에서 <code>안녕하세요, {'{userName}'}님!</code> 과 같이 사용할 수 있습니다. 시뮬레이터 좌측 상단의 슬롯 표시 창은 현재 모든 슬롯의 값을 가독성 좋게 보여줍니다.</p>
+ <p>
+  저장된 슬롯 값은 중괄호 표기법을 사용하여 불러올 수 있습니다. 두 가지 종류가 있습니다:
+  <ul>
+    <li><code>{'{슬롯이름}'}</code>: <strong>메시지</strong>, <strong>LLM</strong>, <strong>링크</strong> 등 대부분의 노드에서 사용합니다.</li>
+    <li><code>{'{{슬롯이름}}'}</code>: JSON 문법과의 충돌을 피하기 위해 <strong>API 노드(URL, Headers, Body 필드) 내에서만</strong> 사용합니다.</li>
+  </ul>
+ </p>
+ <p><strong>예시:</strong> <code>userName</code>이라는 슬롯에 사용자 이름을 저장했다면, 메시지 노드에서 <code>안녕하세요, {'{userName}'}님!</code> 과 같이 사용할 수 있습니다. 시뮬레이터 좌측 상단의 슬롯 표시 창은 현재 모든 슬롯의 값을 보여줍니다.</p>
  
  <h4>6.2.1. 동적 Dropbox 옵션 (슬롯 바인딩)</h4>
  <p><strong>Form</strong> 노드에서, 배열을 담고 있는 슬롯을 이용하여 <strong>Dropbox</strong> 요소의 선택지를 동적으로 채울 수 있습니다.</p>
@@ -334,7 +346,7 @@ const HelpManual_ko = () => (
         <li>노드는 모든 API 호출이 성공적으로 완료되었을 때만 'On Success' 브랜치로 진행합니다. 하나라도 실패하면 'On Error' 브랜치로 진행됩니다.</li>
     </ul>
  </li>
- <li><strong>동적 요청</strong>: 슬롯을 사용하여 동적인 API를 호출할 수 있습니다. URL, Headers, Body 필드에 중괄호 표기법(예: <code>https://api.example.com/users/{'{userId}'}</code>)을 사용하여 이전 사용자 입력이나 다른 API 응답 값을 삽입할 수 있습니다.</li>
+ <li><strong>동적 요청</strong>: 슬롯을 사용하여 동적인 API를 호출할 수 있습니다. URL, Headers, Body 필드에 <strong>이중 중괄호 표기법</strong>(예: <code>https://api.example.com/users/{'{{userId}}'}</code>)을 사용하여 이전 사용자 입력이나 다른 API 응답 값을 삽입할 수 있습니다.</li>
  <li><strong>응답 매핑</strong>: API가 성공적으로 호출된 후, JSON 응답에서 특정 값을 추출하여 새 슬롯이나 기존 슬롯에 저장할 수 있습니다. 컨트롤러의 "Response Mapping" 섹션에서 다음을 설정하세요:
   <ul>
   <li><strong>JSON Path</strong>: JSON 응답에서 원하는 값의 경로를 지정합니다. 점(.)으로 하위 객체에 접근하고, 대괄호(`[]`)를 사용해 배열의 특정 요소에 접근할 수 있습니다 (예: <code>data.items[0].product</code>).</li>
@@ -511,9 +523,15 @@ const HelpManual_vi = () => (
 
  <h3>6.2. Sử dụng Slots (Biến)</h3>
  <p>Slots là các biến được sử dụng để lưu trữ và tái sử dụng thông tin trong một kịch bản. Bạn có thể lưu trữ thông tin đầu vào của người dùng từ node <strong>Điền vào chỗ trống</strong>, dữ liệu từ phản hồi của node <strong>API</strong>, hoặc đặt chúng trực tiếp bằng node <strong>Đặt Slot</strong>.</p>
- <p>Để sử dụng giá trị của một slot đã lưu trong các node khác (như Tin nhắn, API hoặc LLM), hãy sử dụng ký hiệu dấu ngoặc nhọn: <code>{'{tên_slot}'}</code>.</p>
- <p><strong>Ví dụ:</strong> Nếu bạn đã lưu tên người dùng trong một slot có tên là <code>userName</code>, bạn có thể sử dụng nó trong một node Tin nhắn như sau: <code>Xin chào, {'{userName}'}! Chào mừng.</code> Màn hình hiển thị Slot ở góc trên cùng bên trái của trình mô phỏng hiển thị các giá trị hiện tại của tất cả các slot ở định dạng dễ đọc.</p>
- 
+ <p>
+  Để sử dụng giá trị của một slot đã lưu, hãy sử dụng ký hiệu dấu ngoặc nhọn. Có hai loại:
+  <ul>
+    <li><code>{'{tên_slot}'}</code>: Được sử dụng trong hầu hết các node như <strong>Tin nhắn</strong>, <strong>LLM</strong>, và <strong>Liên kết</strong>.</li>
+    <li><code>{'{{tên_slot}}'}</code>: Chỉ được sử dụng <strong>bên trong node API</strong> (các trường URL, Headers, Body) để ngăn ngừa xung đột với cú pháp JSON.</li>
+  </ul>
+ </p>
+ <p><strong>Ví dụ:</strong> Nếu bạn đã lưu tên người dùng trong một slot có tên là <code>userName</code>, bạn có thể sử dụng nó trong một node Tin nhắn như sau: <code>Xin chào, {'{userName}'}! Chào mừng.</code> Màn hình hiển thị Slot hiển thị các giá trị hiện tại của tất cả các slot.</p>
+
  <h4>6.2.1. Tùy chọn Dropbox động (Liên kết Slot)</h4>
  <p>Trong một node <strong>Biểu mẫu</strong>, bạn có thể tự động điền các tùy chọn của một phần tử <strong>Dropbox</strong> từ một slot chứa một mảng.</p>
  <ul>
@@ -538,7 +556,7 @@ const HelpManual_vi = () => (
         <li>Node sẽ chỉ tiếp tục đến nhánh 'On Success' sau khi tất cả các lệnh gọi API đã hoàn thành thành công. Nếu bất kỳ một trong số chúng không thành công, nó sẽ tiếp tục đến nhánh 'On Error'.</li>
     </ul>
  </li>
- <li><strong>Yêu cầu động</strong>: Sử dụng các slot để thực hiện các lệnh gọi API động. Trong các trường URL, Headers hoặc Body, bạn có thể chèn các giá trị từ các thông tin đầu vào trước đó của người dùng hoặc các phản hồi API bằng cách sử dụng ký hiệu dấu ngoặc nhọn (ví dụ: <code>https://api.example.com/users/{'{userId}'}</code>).</li>
+ <li><strong>Yêu cầu động</strong>: Sử dụng các slot để thực hiện các lệnh gọi API động. Trong các trường URL, Headers hoặc Body, bạn có thể chèn các giá trị từ các thông tin đầu vào trước đó của người dùng hoặc các phản hồi API bằng cách sử dụng <strong>ký hiệu dấu ngoặc nhọn kép</strong> (ví dụ: <code>https://api.example.com/users/{'{{userId}}'}</code>).</li>
  <li><strong>Ánh xạ phản hồi</strong>: Sau khi gọi API thành công, bạn có thể trích xuất các giá trị từ phản hồi JSON và lưu chúng vào các slot mới hoặc hiện có. Trong phần "Ánh xạ phản hồi" của bộ điều khiển:
   <ul>
   <li><strong>Đường dẫn JSON</strong>: Chỉ định đường dẫn đến giá trị mong muốn trong phản hồi JSON (ví dụ: <code>data.user.name</code>).</li>

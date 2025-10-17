@@ -1,6 +1,6 @@
 import * as firebaseApi from './firebaseApi';
 import * as fastApi from './fastApi';
-import { interpolateMessage, getNestedValue } from './simulatorUtils'; // getNestedValue import
+import { interpolateMessageForApi, getNestedValue } from './simulatorUtils';
 import useStore from './store';
 
 const services = {
@@ -36,14 +36,12 @@ export const saveFormTemplate = firebaseApi.saveFormTemplate;
 export const deleteFormTemplate = firebaseApi.deleteFormTemplate;
 
 
-// --- 💡 수정된 부분 시작 ---
 export const testApiCall = async (apiCall) => {
   const { slots } = useStore.getState();
 
-  const interpolatedUrl = interpolateMessage(apiCall.url, slots);
-  const interpolatedHeaders = JSON.parse(interpolateMessage(apiCall.headers || '{}', slots));
+  const interpolatedUrl = interpolateMessageForApi(apiCall.url, slots);
+  const interpolatedHeaders = JSON.parse(interpolateMessageForApi(apiCall.headers || '{}', slots));
   
-  // Body 처리 로직 수정
   const rawBody = apiCall.body || '{}';
   const interpolatedBodyString = JSON.stringify(JSON.parse(rawBody), (key, value) => {
       if (typeof value === 'string') {
@@ -75,4 +73,3 @@ export const testApiCall = async (apiCall) => {
   
   return result;
 };
-// --- 💡 수정된 부분 끝 ---
