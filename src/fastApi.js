@@ -9,12 +9,11 @@ const handleApiResponse = async (response) => {
             const errorData = await response.json();
             errorDetail = errorData.detail ? JSON.stringify(errorData.detail) : errorDetail;
         } catch (e) {
-            // JSON 파싱 실패 시, 상태 코드로 오류 메시지 설정
+            // Failed to parse JSON, use status text
         }
         throw new Error(errorDetail);
     }
-    // DELETE와 같이 본문이 없는 성공 응답 처리
-    if (response.status === 204) {
+    if (response.status === 204) { // No Content
         return;
     }
     return response.json();
@@ -23,40 +22,50 @@ const handleApiResponse = async (response) => {
 export const fetchScenarios = async () => {
     const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}`);
     const data = await handleApiResponse(response);
-    // --- 💡 수정된 부분: API 응답이 어떤 형식이든 항상 배열을 반환하도록 보장 ---
     return data?.scenarios || (Array.isArray(data) ? data : []);
 };
 
-export const createScenario = async ({ newScenarioName, job }) => {
+export const createScenario = async ({ newScenarioName, job, user }) => {
     const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category_id: 'DEV_1000_S_1_1_1', name: newScenarioName, job: job }),
+        body: JSON.stringify({
+            category_id: 'DEV_1000_S_1_1_1',
+            name: newScenarioName,
+            job: job,
+            author_id: user.uid,
+            author_name: user.displayName,
+        }),
     });
     return handleApiResponse(response);
 };
 
-// --- 💡 추가된 부분 시작 ---
-export const cloneScenario = async ({ scenarioToClone, newName }) => {
+export const cloneScenario = async ({ scenarioToClone, newName, user }) => {
   const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       name: newName,
       job: scenarioToClone.job,
-      clone_from_id: scenarioToClone.id, // 원본 ID를 포함하여 요청
+      clone_from_id: scenarioToClone.id,
       category_id: 'DEV_1000_S_1_1_1',
+      author_id: user.uid,
+      author_name: user.displayName,
     }),
   });
   return handleApiResponse(response);
 };
-// --- 💡 추가된 부분 끝 ---
 
-export const renameScenario = async ({ oldScenario, newName, job }) => {
+export const renameScenario = async ({ oldScenario, newName, job, user }) => {
     const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}/${oldScenario.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName, job: job }),
+        body: JSON.stringify({
+            name: newName,
+            job: job,
+            updated_by: user.displayName,
+            updated_by_id: user.uid,
+        }),
     });
     return handleApiResponse(response);
 };
@@ -74,7 +83,7 @@ export const fetchScenarioData = async ({ scenarioId }) => {
     return handleApiResponse(response);
 };
 
-export const saveScenarioData = async ({ scenario, data }) => {
+export const saveScenarioData = async ({ scenario, data, user }) => {
     if (!scenario || !scenario.id) {
         throw new Error('No scenario selected to save.');
     }
@@ -85,6 +94,8 @@ export const saveScenarioData = async ({ scenario, data }) => {
         category_id: "111",
         name: scenario.name,
         ...data,
+        updated_by: user.displayName,
+        updated_by_id: user.uid,
     };
 
     const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}/${scenario.id}`, {

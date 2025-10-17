@@ -6,7 +6,7 @@ import {
 } from 'reactflow';
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from './firebase';
-import { createNodeData } from './nodeFactory';
+import { createNodeData, createFormElement } from './nodeFactory';
 import * as backendService from './backendService';
 
 const defaultColors = {
@@ -21,6 +21,7 @@ const defaultColors = {
   toast: '#95a5a6',
   iframe: '#2c3e50',
   scenario: '#7f8c8d',
+  setSlot: '#8e44ad',
 };
 
 const defaultTextColors = {
@@ -35,6 +36,7 @@ const defaultTextColors = {
   toast: '#ffffff',
   iframe: '#ffffff',
   scenario: '#ffffff',
+  setSlot: '#ffffff',
 }
 
 const useStore = create((set, get) => ({
@@ -146,21 +148,29 @@ const useStore = create((set, get) => ({
             newStyle.width = 250;
             newStyle.height = 50;
           } else {
-            const PADDING = 20;
+            const PADDING = 40;
             const childNodes = state.nodes.filter(child => child.parentNode === nodeId);
             if (childNodes.length > 0) {
               let minX = Infinity, minY = Infinity, maxX = 0, maxY = 0;
               childNodes.forEach(node => {
                 const x = node.position.x;
                 const y = node.position.y;
+                const nodeWidth = node.width || 250;
+                const nodeHeight = node.height || 150;
                 minX = Math.min(minX, x);
                 minY = Math.min(minY, y);
-                maxX = Math.max(maxX, x + (node.width || 250));
-                maxY = Math.max(maxY, y + (node.height || 150));
+                maxX = Math.max(maxX, x + nodeWidth);
+                maxY = Math.max(maxY, y + nodeHeight);
               });
               
               newStyle.width = (maxX - minX) + PADDING * 2;
               newStyle.height = (maxY - minY) + PADDING * 2;
+
+              childNodes.forEach(node => {
+                node.position.x -= (minX - PADDING);
+                node.position.y -= (minY - PADDING);
+              });
+
             } else {
               newStyle.width = 250;
               newStyle.height = 100;
@@ -225,7 +235,6 @@ const useStore = create((set, get) => ({
     set({ nodes: [...get().nodes, newNode] });
   },
 
-  // --- 👇 복원된 함수들 ---
   addReply: (nodeId) => {
     set((state) => ({
       nodes: state.nodes.map((node) => {
@@ -426,41 +435,60 @@ const useStore = create((set, get) => ({
       alert('Failed to import nodes from clipboard. Check console for details.');
     }
   },
-  // --- 👆 복원된 함수들 ---
-
-  addScenarioAsGroup: async (backend, scenario, position = { x: 200, y: 200 }) => {
+  
+  addScenarioAsGroup: async (backend, scenario, position) => {
     const { nodes: currentNodes, edges: currentEdges } = get();
     
     const scenarioData = await backendService.fetchScenarioData(backend, { scenarioId: scenario.id });
-    if (!scenarioData || !scenarioData.nodes) {
-      alert(`Failed to load scenario data for '${scenario.name}'.`);
+    if (!scenarioData || !scenarioData.nodes || scenarioData.nodes.length === 0) {
+      alert(`Failed to load scenario data for '${scenario.name}' or it is empty.`);
       return;
     }
 
+    const PADDING = 40;
+
+    let minX = Infinity, minY = Infinity, maxX = 0, maxY = 0;
+    scenarioData.nodes.forEach(node => {
+      minX = Math.min(minX, node.position.x);
+      minY = Math.min(minY, node.position.y);
+      const nodeWidth = node.width || 250;
+      const nodeHeight = node.height || 150;
+      maxX = Math.max(maxX, node.position.x + nodeWidth);
+      maxY = Math.max(maxY, node.position.y + nodeHeight);
+    });
+
+    const groupPosition = position ? position : { x: minX, y: minY };
+    const groupWidth = (maxX - minX) + PADDING * 2;
+    const groupHeight = (maxY - minY) + PADDING * 2;
+
     const idPrefix = `group-${scenario.id}-${Date.now()}`;
+    const groupNodeId = `group-${idPrefix}`;
     const idMapping = new Map();
     
     const childNodes = scenarioData.nodes.map(node => {
       const newId = `${idPrefix}-${node.id}`;
       idMapping.set(node.id, newId);
-      return { ...node, id: newId };
+      return { 
+        ...node, 
+        id: newId,
+        position: {
+          x: node.position.x - minX + PADDING,
+          y: node.position.y - minY + PADDING
+        },
+        parentNode: groupNodeId,
+        extent: 'parent'
+      };
     });
 
-    const groupNodeId = `group-${idPrefix}`;
     const groupNode = {
       id: groupNodeId,
       type: 'scenario',
-      position,
-      data: { label: scenario.name, scenarioId: scenario.id, isCollapsed: true },
-      style: { width: 250, height: 50 },
+      position: groupPosition,
+      data: { label: scenario.name, scenarioId: scenario.id, isCollapsed: false },
+      style: { width: groupWidth, height: groupHeight },
     };
 
-    childNodes.forEach(node => {
-      node.parentNode = groupNodeId;
-      node.extent = 'parent';
-    });
-
-    const newEdges = scenarioData.edges.map(edge => ({
+    const newEdges = (scenarioData.edges || []).map(edge => ({
       ...edge,
       id: `${idPrefix}-${edge.id}`,
       source: idMapping.get(edge.source),
@@ -484,12 +512,13 @@ const useStore = create((set, get) => ({
     }
   },
 
-  saveScenario: async (backend, scenario) => {
+  saveScenario: async (backend, scenario, user) => {
     try {
       const { nodes, edges } = get();
       await backendService.saveScenarioData(backend, {
         scenario,
         data: { nodes, edges },
+        user,
       });
       alert(`Scenario has been saved successfully!`);
     } catch (error) {

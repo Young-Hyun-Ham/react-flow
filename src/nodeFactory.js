@@ -68,6 +68,8 @@ export const createNodeData = (type) => {
       };
     case 'scenario':
         return { ...baseData, label: 'Imported Scenario', scenarioId: null };
+    case 'setSlot': // Added
+        return { ...baseData, assignments: [{ key: 'newSlot', value: 'someValue' }] };
     default:
       return baseData;
   }

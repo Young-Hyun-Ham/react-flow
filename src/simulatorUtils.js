@@ -1,8 +1,15 @@
 export const interpolateMessage = (message, slots) => {
-  if (!message) return '';
-  return message.replace(/\{([^}]+)\}/g, (match, key) => {
+  // message가 문자열이 아닐 경우를 대비해 String으로 변환합니다.
+  const messageStr = String(message || '');
+  if (!messageStr) return '';
+  
+  return messageStr.replace(/\{([^}]+)\}/g, (match, key) => {
     // getNestedValue를 사용하여 슬롯 내부의 객체 값에도 접근 가능하도록 수정
     const value = getNestedValue(slots, key);
+    // 값이 객체나 배열인 경우 JSON 문자열로 변환하여 반환
+    if (typeof value === 'object' && value !== null) {
+      return JSON.stringify(value);
+    }
     return value !== undefined ? value : match;
   });
 };
@@ -99,9 +106,9 @@ export const evaluateCondition = (slotValue, operator, condition, slots) => {
     case '<=':
       return !isNaN(numSlotValue) && !isNaN(numConditionValue) && numSlotValue <= numConditionValue;
     case 'contains':
-      return slotValue && slotValue.toString().includes(conditionValue);
+      return slotValue && String(slotValue).includes(conditionValue);
     case '!contains':
-      return !slotValue || !slotValue.toString().includes(conditionValue);
+      return !slotValue || !String(slotValue).includes(conditionValue);
     default:
       return false;
   }

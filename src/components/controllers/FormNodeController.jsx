@@ -98,33 +98,58 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
 
       {element.type === 'grid' && (
         <>
-          <div className={styles.gridControls}>
-            <div className={styles.formGroup}>
-              <label>Rows</label>
-              <input type="number" value={element.rows || 2} onChange={(e) => handleInputChange('rows', parseInt(e.target.value) || 1)} />
-            </div>
-             <div className={styles.formGroup}>
-              <label>Columns</label>
-              <input type="number" value={element.columns || 2} onChange={(e) => handleInputChange('columns', parseInt(e.target.value) || 1)} />
-            </div>
-          </div>
           <div className={styles.formGroup}>
-            <label>Grid Content</label>
-            <div className={styles.gridContentEditor} style={{ gridTemplateColumns: `repeat(${element.columns || 2}, 1fr)`}}>
-              {Array.from({ length: (element.rows || 2) * (element.columns || 2) }).map((_, i) => {
-                const rowIndex = Math.floor(i / (element.columns || 2));
-                const colIndex = i % (element.columns || 2);
-                return (
-                   <textarea
-                    key={i}
-                    className={styles.gridCellEditor}
-                    value={element.data?.[i] || ''}
-                    onChange={(e) => onGridCellChange(index, rowIndex, colIndex, e.target.value)}
-                  />
-                )
-              })}
-            </div>
+            <label>Data Slot</label>
+            <input
+              type="text"
+              placeholder="Bind to array in slot"
+              value={element.optionsSlot || ''}
+              onChange={(e) => handleInputChange('optionsSlot', e.target.value)}
+            />
           </div>
+          {element.optionsSlot && (
+            <div className={styles.formGroup}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                        type="checkbox"
+                        checked={element.hideNullColumns || false}
+                        onChange={(e) => handleInputChange('hideNullColumns', e.target.checked)}
+                    />
+                    Hide Columns with Null Values
+                </label>
+            </div>
+          )}
+          {!element.optionsSlot && (
+            <>
+              <div className={styles.gridControls}>
+                <div className={styles.formGroup}>
+                  <label>Rows</label>
+                  <input type="number" value={element.rows || 2} onChange={(e) => handleInputChange('rows', parseInt(e.target.value) || 1)} />
+                </div>
+                 <div className={styles.formGroup}>
+                  <label>Columns</label>
+                  <input type="number" value={element.columns || 2} onChange={(e) => handleInputChange('columns', parseInt(e.target.value) || 1)} />
+                </div>
+              </div>
+              <div className={styles.formGroup}>
+                <label>Grid Content (Fallback)</label>
+                <div className={styles.gridContentEditor} style={{ gridTemplateColumns: `repeat(${element.columns || 2}, 1fr)`}}>
+                  {Array.from({ length: (element.rows || 2) * (element.columns || 2) }).map((_, i) => {
+                    const rowIndex = Math.floor(i / (element.columns || 2));
+                    const colIndex = i % (element.columns || 2);
+                    return (
+                       <textarea
+                        key={i}
+                        className={styles.gridCellEditor}
+                        value={element.data?.[i] || ''}
+                        onChange={(e) => onGridCellChange(index, rowIndex, colIndex, e.target.value)}
+                      />
+                    )
+                  })}
+                </div>
+              </div>
+            </>
+          )}
         </>
       )}
 

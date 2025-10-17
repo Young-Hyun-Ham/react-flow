@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback, useMemo } from 'react'; // useMemo 추가
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import ReactFlow, { Controls, useReactFlow, MiniMap } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -12,7 +12,8 @@ import LinkNode from './nodes/LinkNode';
 import LlmNode from './nodes/LlmNode';
 import ToastNode from './nodes/ToastNode';
 import IframeNode from './nodes/IframeNode';
-import ScenarioNode from './nodes/ScenarioNode'; 
+import ScenarioNode from './nodes/ScenarioNode';
+import SetSlotNode from './nodes/SetSlotNode';
 import ScenarioGroupModal from './ScenarioGroupModal';
 import ChatbotSimulator from './ChatbotSimulator';
 import NodeController from './NodeController';
@@ -33,9 +34,10 @@ const nodeTypes = {
   toast: ToastNode,
   iframe: IframeNode,
   scenario: ScenarioNode,
+  setSlot: SetSlotNode,
 };
 
-function Flow({ scenario, backend, scenarios }) {
+function Flow({ scenario, backend, scenarios, user }) {
   const { 
     nodes, edges, onNodesChange, onEdgesChange, onConnect, 
     fetchScenario, saveScenario, addNode, selectedNodeId, 
@@ -60,12 +62,10 @@ function Flow({ scenario, backend, scenarios }) {
     }
   }, [scenario, backend, fetchScenario]);
   
-  // --- 💡 추가된 부분 시작 ---
   const visibleNodes = useMemo(() => {
     const collapsedGroupIds = new Set(nodes.filter(n => n.type === 'scenario' && n.data.isCollapsed).map(n => n.id));
     return nodes.filter(n => !n.parentNode || !collapsedGroupIds.has(n.parentNode));
   }, [nodes]);
-  // --- 💡 추가된 부분 끝 ---
 
   const handleNodeClick = (event, node) => {
     setSelectedNodeId(node.id);
@@ -149,6 +149,7 @@ function Flow({ scenario, backend, scenarios }) {
     { type: 'slotfilling', label: '+ SlotFilling' },
     { type: 'api', label: '+ API' },
     { type: 'llm', label: '+ LLM' },
+    { type: 'setSlot', label: '+ Set Slot' },
     { type: 'fixedmenu', label: '+ Fixed Menu' },
     { type: 'link', label: '+ Link' },
     { type: 'toast', label: '+ Toast' },
@@ -239,7 +240,7 @@ function Flow({ scenario, backend, scenarios }) {
       <div className={styles.mainContent} ref={reactFlowWrapper}>
         <SlotDisplay />
         <div className={styles.topRightControls}>
-          <div onClick={() => saveScenario(backend, scenario)}>
+          <div onClick={() => saveScenario(backend, scenario, user)}>
             <img src="/images/save.png" alt="Save Icon" className={styles.saveButton}/>
           </div>
           <div onClick={() => setIsSimulatorVisible(!isSimulatorVisible)}>
@@ -247,7 +248,7 @@ function Flow({ scenario, backend, scenarios }) {
           </div>
         </div>
         <ReactFlow
-          nodes={visibleNodes} // --- 💡 수정된 부분 ---
+          nodes={visibleNodes}
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}

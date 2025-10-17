@@ -82,7 +82,6 @@ export const DeleteIcon = () => (
   </svg>
 );
 
-// --- 💡 수정된 부분 시작 ---
 export const ExpandNodeIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -97,4 +96,11 @@ export const CollapseNodeIcon = () => (
         <path d="M5 12h14" />
     </svg>
 );
-// --- 💡 수정된 부분 끝 ---
+
+export const SetSlotIcon = () => ( // Added
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 20v-8m0-4V4"/>
+        <path d="M8 16l-4-4 4-4"/>
+        <path d="M16 8l4 4-4 4"/>
+    </svg>
+);

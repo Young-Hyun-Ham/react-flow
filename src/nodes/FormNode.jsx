@@ -38,6 +38,9 @@ function FormNode({ id, data }) {
         return (
           <div key={element.id} className={styles.previewElement}>
             <label className={styles.previewLabel}>{element.label || 'Grid'}</label>
+            {element.optionsSlot && (
+              <div className={styles.slotBindingInfo}>Bound to: {`{${element.optionsSlot}}`}</div>
+            )}
             <table className={styles.previewGridTable}>
               <tbody>
                 {[...Array(element.rows || 2)].map((_, rowIndex) => (

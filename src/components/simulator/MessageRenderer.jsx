@@ -43,6 +43,62 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                             if(el.validation.endDate) dateProps.max = el.validation.endDate;
                         }
                     }
+                    if (el.type === 'grid') {
+                        const gridData = Array.isArray(slots[el.optionsSlot]) ? slots[el.optionsSlot] : el.data;
+                        const isDynamicObjectArray = Array.isArray(gridData) && gridData.length > 0 && typeof gridData[0] === 'object' && gridData[0] !== null && !Array.isArray(gridData[0]);
+
+                        if (isDynamicObjectArray) {
+                            return (
+                                <div key={el.id}>
+                                    {gridData.map((dataObject, index) => {
+                                        let keys = Object.keys(dataObject);
+                                        if (el.hideNullColumns) {
+                                            keys = keys.filter(key => dataObject[key] !== null && dataObject[key] !== undefined && dataObject[key] !== "");
+                                        }
+
+                                        return (
+                                            <table key={`${el.id}-${index}`} className={styles.formGridTable} style={{ marginTop: index > 0 ? '15px' : '0' }}>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Label</th>
+                                                        <th>property</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {keys.map(key => (
+                                                        <tr key={key}>
+                                                            <td>{key}</td>
+                                                            <td>{interpolateMessage(dataObject[key] || '', slots)}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        } else {
+                            const rows = Array.isArray(gridData) && gridData.length > 0 ? gridData.length : (el.rows || 2);
+                            const columns = Array.isArray(gridData) && gridData.length > 0 && Array.isArray(gridData[0]) ? gridData[0].length : (el.columns || 2);
+
+                            return (
+                                <table key={el.id} className={styles.formGridTable}>
+                                    <tbody>
+                                        {[...Array(rows)].map((_, r) => (
+                                            <tr key={r}>
+                                                {[...Array(columns)].map((_, c) => {
+                                                    const cellValue = Array.isArray(gridData)
+                                                        ? (gridData[r] ? gridData[r][c] : '') 
+                                                        : (el.data ? el.data[r * columns + c] : '');
+                                                    return <td key={c}>{interpolateMessage(cellValue || '', slots)}</td>;
+                                                })}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            );
+                        }
+                    }
                     return (
                         <div key={el.id} className={styles.formElement}>
                             <label className={styles.formLabel}>{el.label}</label>
@@ -50,7 +106,6 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                             {el.type === 'date' && <input type="date" className={styles.formInput} value={formData[el.name] || ''} onChange={(e) => handleFormInputChange(el.name, e.target.value)} disabled={isCompleted} {...dateProps} />}
                             {el.type === 'checkbox' && el.options?.map(opt => <div key={opt} className={styles.checkboxOption}><input type="checkbox" id={`${el.id}-${opt}`} value={opt} checked={(formData[el.name] || []).includes(opt)} onChange={(e) => handleFormMultiInputChange(el.name, opt, e.target.checked)} disabled={isCompleted} /><label htmlFor={`${el.id}-${opt}`}>{opt}</label></div>)}
                             {el.type === 'dropbox' && (() => { const options = Array.isArray(slots[el.optionsSlot]) ? slots[el.optionsSlot] : el.options; return (<select className={styles.formInput} value={formData[el.name] || ''} onChange={(e) => handleFormInputChange(el.name, e.target.value)} disabled={isCompleted}><option value="" disabled>Select...</option>{(options || []).map(opt => { const v = typeof opt === 'object' ? opt.value : opt; const l = typeof opt === 'object' ? opt.label : opt; return <option key={v} value={v}>{l}</option>; })}</select>); })()}
-                            {el.type === 'grid' && <table className={styles.formGridTable}><tbody>{[...Array(el.rows || 2)].map((_, r) => <tr key={r}>{[...Array(el.columns || 2)].map((_, c) => <td key={c}>{interpolateMessage(el.data[r * (el.columns || 2) + c] || '', slots)}</td>)}</tr>)}</tbody></table>}
                         </div>
                     );
                 })}

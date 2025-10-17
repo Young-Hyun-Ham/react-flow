@@ -74,6 +74,10 @@ const HelpManual = () => (
   <td>Connects to a large language model to generate text based on a dynamic prompt. The flow can be branched based on keywords in the generated response.</td>
   </tr>
   <tr>
+  <td><strong>Set Slot</strong></td>
+  <td>Directly sets or updates the value of one or more slots. This is useful for initializing variables, marking progress, or manually changing a slot's value without user input.</td>
+  </tr>
+  <tr>
   <td><strong>Link</strong></td>
   <td>Delivers external website links to users.</td>
   </tr>
@@ -97,9 +101,9 @@ const HelpManual = () => (
  </ol>
 
  <h3>6.2. Using Slots (Variables)</h3>
- <p>Slots are variables used to store and reuse information within a scenario. You can store user input from a <strong>SlotFilling</strong> node or data from an <strong>API</strong> node's response into a slot.</p>
+ <p>Slots are variables used to store and reuse information within a scenario. You can store user input from a <strong>SlotFilling</strong> node, data from an <strong>API</strong> node's response, or set them directly with the <strong>Set Slot</strong> node.</p>
  <p>To use a stored slot value in other nodes (like Message, API, or LLM), use brace notation: <code>{'{slotName}'}</code>.</p>
- <p><strong>Example:</strong> If you stored a user's name in a slot called <code>userName</code>, you can use it in a Message node like this: <code>Hello, {'{userName}'}! Welcome.</code></p>
+ <p><strong>Example:</strong> If you stored a user's name in a slot called <code>userName</code>, you can use it in a Message node like this: <code>Hello, {'{userName}'}! Welcome.</code> The Slot Display in the top-left corner of the simulator shows the current values of all slots in a readable format.</p>
  
  <h4>6.2.1. Dynamic Dropbox Options (Slot Binding)</h4>
  <p>In a <strong>Form</strong> node, you can dynamically populate the options of a <strong>Dropbox</strong> element from a slot that contains an array.</p>
@@ -175,21 +179,21 @@ const HelpManual = () => (
  <li><strong>Duplicate Node</strong>: Click the <code>+ Duplicate Node</code> button that appears at the bottom of the left 'Add Node' panel when you select the node you want to duplicate.</li>
  </ul>
 
- <h3>6.7. Node Export/Import</h3>
-  <p>You can copy nodes from one scenario and paste them into another, making it easy to reuse complex flows.</p>
+ <h3>6.7. Node and Scenario Group Management</h3>
+  <p>You can reuse parts of scenarios or entire scenarios to build complex flows efficiently.</p>
   <ul>
-    <li><strong>Export Nodes</strong>:
+    <li><strong>Export/Import Nodes</strong>:
       <ol>
-        <li>On the canvas, select one or more nodes you wish to copy. You can select multiple nodes by holding down the <code>Shift</code> key and clicking on them.</li>
-        <li>In the left 'Add Node' panel, click the <code>Export Nodes</code> button.</li>
-        <li>The selected nodes and their connections will be copied to your clipboard.</li>
+        <li>Select one or more nodes (hold <code>Shift</code> to multi-select).</li>
+        <li>Click <code>Export Nodes</code> to copy them to the clipboard.</li>
+        <li>In another scenario, click <code>Import Nodes</code> to paste them.</li>
       </ol>
     </li>
-    <li><strong>Import Nodes</strong>:
+    <li><strong>Scenario as Group</strong>:
       <ol>
-        <li>Navigate to the scenario where you want to paste the nodes.</li>
-        <li>In the left panel, click the <code>Import Nodes</code> button.</li>
-        <li>The nodes from your clipboard will be pasted onto the canvas.</li>
+        <li>Click the <code>+ Scenario Group</code> button in the left panel.</li>
+        <li>Select a scenario from the modal to import it as a collapsible group.</li>
+        <li>The group node automatically resizes to fit its content. You can connect nodes from outside the group to its input handle, and connect its output handle to other nodes to integrate it into your main flow.</li>
       </ol>
     </li>
   </ul>
@@ -275,6 +279,10 @@ const HelpManual_ko = () => (
   <td>거대 언어 모델과 연동하여 동적인 프롬프트를 기반으로 텍스트를 생성합니다. 생성된 응답 내용의 키워드에 따라 흐름을 분기할 수 있습니다.</td>
   </tr>
   <tr>
+  <td><strong>슬롯<br/>설정</strong></td>
+  <td>하나 이상의 슬롯 값을 직접 설정하거나 업데이트합니다. 변수 초기화, 진행 상태 기록, 사용자 입력 없이 값을 수동으로 변경할 때 유용합니다.</td>
+  </tr>
+  <tr>
   <td><strong>링크</strong></td>
   <td>외부 웹사이트 링크를 사용자에게 전달합니다.</td>
   </tr>
@@ -298,9 +306,9 @@ const HelpManual_ko = () => (
  </ol>
 
  <h3>6.2. 슬롯(변수) 사용하기</h3>
- <p>슬롯은 시나리오 내에서 정보를 저장하고 재사용하기 위한 변수입니다. <strong>슬롯 채우기</strong> 노드를 통해 받은 사용자 입력이나 <strong>API</strong> 노드의 응답 데이터 등을 슬롯에 저장할 수 있습니다.</p>
+ <p>슬롯은 시나리오 내에서 정보를 저장하고 재사용하기 위한 변수입니다. <strong>슬롯 채우기</strong> 노드를 통해 받은 사용자 입력, <strong>API</strong> 노드의 응답 데이터, 또는 <strong>슬롯 설정</strong> 노드를 통해 직접 값을 할당할 수 있습니다.</p>
  <p>저장된 슬롯 값은 다른 노드(메시지, API, LLM 등)에서 중괄호 표기법(<code>{'{슬롯이름}'}</code>)을 사용하여 불러올 수 있습니다.</p>
- <p><strong>예시:</strong> <code>userName</code>이라는 슬롯에 사용자 이름을 저장했다면, 메시지 노드에서 <code>안녕하세요, {'{userName}'}님!</code> 과 같이 사용할 수 있습니다.</p>
+ <p><strong>예시:</strong> <code>userName</code>이라는 슬롯에 사용자 이름을 저장했다면, 메시지 노드에서 <code>안녕하세요, {'{userName}'}님!</code> 과 같이 사용할 수 있습니다. 시뮬레이터 좌측 상단의 슬롯 표시 창은 현재 모든 슬롯의 값을 가독성 좋게 보여줍니다.</p>
  
  <h4>6.2.1. 동적 Dropbox 옵션 (슬롯 바인딩)</h4>
  <p><strong>Form</strong> 노드에서, 배열을 담고 있는 슬롯을 이용하여 <strong>Dropbox</strong> 요소의 선택지를 동적으로 채울 수 있습니다.</p>
@@ -376,21 +384,20 @@ const HelpManual_ko = () => (
  <li><strong>노드 복제</strong>: 복제하고 싶은 노드를 선택했을 때 좌측 '노드 추가' 패널 하단에 나타나는 <code>+ Duplicate Node</code> 버튼을 클릭합니다.</li>
  </ul>
  
- <h3>6.7. 노드 내보내기/가져오기</h3>
- <p>특정 시나리오에서 만든 노드들을 복사하여 다른 시나리오에 붙여넣을 수 있습니다. 복잡한 흐름을 재사용할 때 유용합니다.</p>
+ <h3>6.7. 노드 및 시나리오 그룹 관리</h3>
+ <p>시나리오의 일부 또는 전체를 재사용하여 복잡한 흐름을 효율적으로 구성할 수 있습니다.</p>
  <ul>
-  <li><strong>노드 내보내기 (Export)</strong>:
+  <li><strong>노드 내보내기/가져오기</strong>:
    <ol>
-    <li>캔버스에서 복사하고 싶은 노드를 하나 이상 선택합니다. <code>Shift</code> 키를 누른 채 클릭하면 여러 노드를 선택할 수 있습니다.</li>
-    <li>왼쪽 '노드 추가' 패널에서 <code>Export Nodes</code> 버튼을 클릭합니다.</li>
-    <li>선택된 노드와 노드 간의 연결선 정보가 클립보드에 복사됩니다.</li>
+    <li><code>Shift</code> 키를 누른 채 여러 노드를 선택한 후, <code>Export Nodes</code> 버튼으로 클립보드에 복사합니다.</li>
+    <li>다른 시나리오에서 <code>Import Nodes</code> 버튼으로 붙여넣습니다.</li>
    </ol>
   </li>
-  <li><strong>노드 가져오기 (Import)</strong>:
+  <li><strong>시나리오 그룹으로 가져오기</strong>:
    <ol>
-    <li>노드를 붙여넣고 싶은 시나리오의 편집 화면으로 이동합니다.</li>
-    <li>왼쪽 패널에서 <code>Import Nodes</code> 버튼을 클릭합니다.</li>
-    <li>클립보드에 있던 노드들이 캔버스에 붙여넣어집니다.</li>
+    <li>왼쪽 패널에서 <code>+ Scenario Group</code> 버튼을 클릭합니다.</li>
+    <li>모달 창에서 원하는 시나리오를 선택하면, 해당 시나리오의 전체 내용이 하나의 접을 수 있는 그룹 노드로 캔버스에 추가됩니다.</li>
+    <li>그룹 노드는 내용에 맞게 크기가 자동으로 조절되며, 외부 노드와 연결하여 주 흐름에 통합할 수 있습니다.</li>
    </ol>
   </li>
  </ul>
@@ -476,6 +483,10 @@ const HelpManual_vi = () => (
   <td>Kết nối với một mô hình ngôn ngữ lớn để tạo văn bản dựa trên một lời nhắc động. Luồng có thể được phân nhánh dựa trên các từ khóa trong phản hồi được tạo ra.</td>
   </tr>
   <tr>
+  <td><strong>Đặt Slot</strong></td>
+  <td>Trực tiếp đặt hoặc cập nhật giá trị của một hoặc nhiều slot. Hữu ích để khởi tạo biến, đánh dấu tiến trình hoặc thay đổi giá trị của một slot theo cách thủ công mà không cần người dùng nhập.</td>
+  </tr>
+  <tr>
   <td><strong>Liên kết</strong></td>
   <td>Cung cấp các liên kết trang web bên ngoài cho người dùng.</td>
   </tr>
@@ -499,9 +510,9 @@ const HelpManual_vi = () => (
  </ol>
 
  <h3>6.2. Sử dụng Slots (Biến)</h3>
- <p>Slots là các biến được sử dụng để lưu trữ và tái sử dụng thông tin trong một kịch bản. Bạn có thể lưu trữ thông tin đầu vào của người dùng từ node <strong>Điền vào chỗ trống</strong> hoặc dữ liệu từ phản hồi của node <strong>API</strong> vào một slot.</p>
+ <p>Slots là các biến được sử dụng để lưu trữ và tái sử dụng thông tin trong một kịch bản. Bạn có thể lưu trữ thông tin đầu vào của người dùng từ node <strong>Điền vào chỗ trống</strong>, dữ liệu từ phản hồi của node <strong>API</strong>, hoặc đặt chúng trực tiếp bằng node <strong>Đặt Slot</strong>.</p>
  <p>Để sử dụng giá trị của một slot đã lưu trong các node khác (như Tin nhắn, API hoặc LLM), hãy sử dụng ký hiệu dấu ngoặc nhọn: <code>{'{tên_slot}'}</code>.</p>
- <p><strong>Ví dụ:</strong> Nếu bạn đã lưu tên người dùng trong một slot có tên là <code>userName</code>, bạn có thể sử dụng nó trong một node Tin nhắn như sau: <code>Xin chào, {'{userName}'}! Chào mừng.</code></p>
+ <p><strong>Ví dụ:</strong> Nếu bạn đã lưu tên người dùng trong một slot có tên là <code>userName</code>, bạn có thể sử dụng nó trong một node Tin nhắn như sau: <code>Xin chào, {'{userName}'}! Chào mừng.</code> Màn hình hiển thị Slot ở góc trên cùng bên trái của trình mô phỏng hiển thị các giá trị hiện tại của tất cả các slot ở định dạng dễ đọc.</p>
  
  <h4>6.2.1. Tùy chọn Dropbox động (Liên kết Slot)</h4>
  <p>Trong một node <strong>Biểu mẫu</strong>, bạn có thể tự động điền các tùy chọn của một phần tử <strong>Dropbox</strong> từ một slot chứa một mảng.</p>
@@ -577,24 +588,24 @@ const HelpManual_vi = () => (
  <li><strong>Nhân bản Node</strong>: Nhấp vào nút <code>+ Nhân bản Node</code> xuất hiện ở cuối bảng 'Thêm Node' bên trái khi bạn chọn node bạn muốn nhân bản.</li>
  </ul>
 
- <h3>6.7. Xuất/Nhập Node</h3>
-  <p>Bạn có thể sao chép các node từ một kịch bản và dán chúng vào một kịch bản khác, giúp dễ dàng tái sử dụng các luồng phức tạp.</p>
-  <ul>
-    <li><strong>Xuất Node</strong>:
-      <ol>
-        <li>Trên canvas, chọn một hoặc nhiều node bạn muốn sao chép. Bạn có thể chọn nhiều node bằng cách giữ phím <code>Shift</code> và nhấp vào chúng.</li>
-        <li>Trong bảng 'Thêm Node' bên trái, nhấp vào nút <code>Xuất Node</code>.</li>
-        <li>Các node đã chọn và các kết nối của chúng sẽ được sao chép vào khay nhớ tạm của bạn.</li>
-      </ol>
-    </li>
-    <li><strong>Nhập Node</strong>:
-      <ol>
-        <li>Điều hướng đến kịch bản nơi bạn muốn dán các node.</li>
-        <li>Trong bảng điều khiển bên trái, nhấp vào nút <code>Nhập Node</code>.</li>
-        <li>Các node từ khay nhớ tạm của bạn sẽ được dán vào canvas.</li>
-      </ol>
-    </li>
-  </ul>
+ <h3>6.7. Quản lý Node và Nhóm kịch bản</h3>
+ <p>Bạn có thể tái sử dụng các phần của kịch bản hoặc toàn bộ kịch bản để xây dựng các luồng phức tạp một cách hiệu quả.</p>
+ <ul>
+  <li><strong>Xuất/Nhập Node</strong>:
+   <ol>
+    <li>Chọn một hoặc nhiều node (giữ <code>Shift</code> để chọn nhiều).</li>
+    <li>Nhấp vào <code>Xuất Node</code> để sao chép chúng vào khay nhớ tạm.</li>
+    <li>Trong một kịch bản khác, nhấp vào <code>Nhập Node</code> để dán chúng.</li>
+   </ol>
+  </li>
+  <li><strong>Kịch bản dưới dạng Nhóm</strong>:
+   <ol>
+    <li>Nhấp vào nút <code>+ Nhóm kịch bản</code> trong bảng điều khiển bên trái.</li>
+    <li>Chọn một kịch bản từ cửa sổ bật lên để nhập nó dưới dạng một nhóm có thể thu gọn.</li>
+    <li>Node nhóm tự động thay đổi kích thước để phù hợp với nội dung của nó. Bạn có thể kết nối các node từ bên ngoài nhóm với tay cầm đầu vào của nó và kết nối tay cầm đầu ra của nó với các node khác để tích hợp nó vào luồng chính của bạn.</li>
+   </ol>
+  </li>
+ </ul>
 
  <h3>6.8. Lưu và Kiểm tra</h3>
  <ul>

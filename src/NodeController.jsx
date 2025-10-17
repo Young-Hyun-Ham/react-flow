@@ -11,8 +11,8 @@ import SlotFillingNodeController from './components/controllers/SlotFillingNodeC
 import BranchNodeController from './components/controllers/BranchNodeController';
 import LinkNodeController from './components/controllers/LinkNodeController';
 import FixedMenuNodeController from './components/controllers/FixedMenuNodeController';
+import SetSlotNodeController from './components/controllers/SetSlotNodeController'; // Added
 
-// 💡[수정된 부분] 노드 타입과 컨트롤러 컴포넌트를 매핑하는 객체
 const nodeControllerMap = {
   message: MessageNodeController,
   slotfilling: SlotFillingNodeController,
@@ -24,6 +24,7 @@ const nodeControllerMap = {
   llm: LlmNodeController,
   toast: ToastNodeController,
   iframe: IframeNodeController,
+  setSlot: SetSlotNodeController, // Added
 };
 
 function NodeController() {
@@ -65,7 +66,6 @@ function NodeController() {
     setIsDirty(false);
   };
 
-  // 💡[수정된 부분] 매핑 객체를 사용하여 동적으로 컴포넌트 렌더링
   const renderContent = () => {
     const ControllerComponent = nodeControllerMap[localNode.type];
     const commonProps = { localNode, setLocalNode };

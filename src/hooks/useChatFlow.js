@@ -63,13 +63,10 @@ export const useChatFlow = (nodes, edges) => {
       }
     } else {
       const sourceNode = nodes.find(n => n.id === sourceNodeId);
-      // --- 💡 수정된 부분 시작: 서브 시나리오 종료 처리 ---
       if (sourceNode?.parentNode) {
-        // 현재 노드가 그룹 내에 있고 더 이상 진행할 엣지가 없다면, 부모 그룹 노드에서부터 다시 흐름을 시작
         proceedToNextNode(null, sourceNode.parentNode, updatedSlots);
         return;
       }
-      // --- 💡 수정된 부분 끝 ---
       if(sourceNode?.type !== 'fixedmenu' && sourceNode?.type !== 'branch' && sourceNode?.type !== 'api') {
         setTimeout(() => setCurrentId(null), 500);
       }
@@ -80,27 +77,22 @@ export const useChatFlow = (nodes, edges) => {
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return;
 
-    // --- 💡 추가된 부분 시작: 서브 시나리오 진입 처리 ---
     if (node.type === 'scenario') {
       const childNodes = nodes.filter(n => n.parentNode === node.id);
       const childNodeIds = new Set(childNodes.map(n => n.id));
       
-      // 그룹 내에서 다른 노드의 target이 아닌 노드를 시작 노드로 찾음
       const startNode = childNodes.find(n => 
         !edges.some(e => e.target === n.id && childNodeIds.has(e.source))
       );
 
       if (startNode) {
-        // 그룹 노드 자체는 히스토리에 추가하지 않고, 바로 내부 시작 노드로 진행
         setCurrentId(startNode.id);
         addBotMessage(startNode.id, updatedSlots);
       } else {
-        // 시작 노드가 없으면 그룹을 바로 빠져나감
         proceedToNextNode(null, node.id, updatedSlots);
       }
       return;
     }
-    // --- 💡 추가된 부분 끝 ---
 
     if (node.type === 'api') {
       handleApiNode(node, updatedSlots);
@@ -109,6 +101,27 @@ export const useChatFlow = (nodes, edges) => {
     if (node.type === 'llm') {
       handleLlmNode(node, updatedSlots);
       return;
+    }
+    if (node.type === 'setSlot') { // Added
+        const newSlots = { ...updatedSlots };
+        node.data.assignments?.forEach(assignment => {
+            if (assignment.key) {
+                const interpolatedValue = interpolateMessage(assignment.value, updatedSlots);
+                try {
+                    // Try parsing as JSON if it looks like an object or array string
+                    if ((interpolatedValue.startsWith('{') && interpolatedValue.endsWith('}')) || (interpolatedValue.startsWith('[') && interpolatedValue.endsWith(']'))) {
+                        newSlots[assignment.key] = JSON.parse(interpolatedValue);
+                    } else {
+                        newSlots[assignment.key] = interpolatedValue;
+                    }
+                } catch (e) {
+                    newSlots[assignment.key] = interpolatedValue; // Assign as string if JSON parsing fails
+                }
+            }
+        });
+        setSlots(newSlots);
+        proceedToNextNode(null, nodeId, newSlots);
+        return;
     }
     if (node.type === 'fixedmenu') {
       setHistory([]);
@@ -137,7 +150,7 @@ export const useChatFlow = (nodes, edges) => {
     
     const isInteractive = node.type === 'form' || (node.type === 'branch' && node.data.evaluationType === 'BUTTON' && node.data.replies?.length > 0) || node.type === 'slotfilling';
     setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: !isInteractive || node.type === 'iframe', id: Date.now() }]);
-  }, [nodes, edges, proceedToNextNode]);
+  }, [nodes, edges, proceedToNextNode, setSlots]);
 
   const handleApiNode = useCallback(async (node, currentSlots) => {
     const loadingId = Date.now();
