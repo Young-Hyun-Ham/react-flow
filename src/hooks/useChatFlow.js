@@ -77,6 +77,11 @@ export const useChatFlow = (nodes, edges) => {
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return;
 
+    if (node.type === 'start') {
+        proceedToNextNode(null, nodeId, updatedSlots);
+        return;
+    }
+
     if (node.type === 'scenario') {
       const childNodes = nodes.filter(n => n.parentNode === node.id);
       const childNodeIds = new Set(childNodes.map(n => n.id));
@@ -102,20 +107,19 @@ export const useChatFlow = (nodes, edges) => {
       handleLlmNode(node, updatedSlots);
       return;
     }
-    if (node.type === 'setSlot') { // Added
+    if (node.type === 'setSlot') {
         const newSlots = { ...updatedSlots };
         node.data.assignments?.forEach(assignment => {
             if (assignment.key) {
                 const interpolatedValue = interpolateMessage(assignment.value, updatedSlots);
                 try {
-                    // Try parsing as JSON if it looks like an object or array string
                     if ((interpolatedValue.startsWith('{') && interpolatedValue.endsWith('}')) || (interpolatedValue.startsWith('[') && interpolatedValue.endsWith(']'))) {
                         newSlots[assignment.key] = JSON.parse(interpolatedValue);
                     } else {
                         newSlots[assignment.key] = interpolatedValue;
                     }
                 } catch (e) {
-                    newSlots[assignment.key] = interpolatedValue; // Assign as string if JSON parsing fails
+                    newSlots[assignment.key] = interpolatedValue;
                 }
             }
         });
@@ -152,26 +156,47 @@ export const useChatFlow = (nodes, edges) => {
     setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: !isInteractive || node.type === 'iframe', id: Date.now() }]);
   }, [nodes, edges, proceedToNextNode, setSlots]);
 
+  // --- 💡 수정된 부분 시작 ---
   const handleApiNode = useCallback(async (node, currentSlots) => {
     const loadingId = Date.now();
     setHistory(prev => [...prev, { type: 'loading', id: loadingId }]);
     let finalSlots = { ...currentSlots };
     try {
         const { isMulti, apis } = node.data;
-        const createApiPromise = (apiCall) => {
-            const interpolatedUrl = interpolateMessage(apiCall.url, currentSlots).replace('https://random-word-api.herokuapp.com', '/api/random-word');
+
+        const processApiCall = (apiCall) => {
+            const interpolatedUrl = interpolateMessage(apiCall.url, currentSlots);
             const interpolatedHeaders = JSON.parse(interpolateMessage(apiCall.headers || '{}', currentSlots));
-            const interpolatedBody = apiCall.method !== 'GET' && apiCall.body ? interpolateMessage(apiCall.body, currentSlots) : undefined;
+
+            // Body 처리: 슬롯 값이 문자열이 아닌 경우를 위해 replacer 함수 사용
+            const rawBody = apiCall.body || '{}';
+            const interpolatedBodyString = JSON.stringify(JSON.parse(rawBody), (key, value) => {
+                if (typeof value === 'string') {
+                    return value.replace(/{{([^}]+)}}/g, (match, slotKey) => {
+                        const slotValue = getNestedValue(currentSlots, slotKey);
+                        // 슬롯 값이 문자열이면 그대로 반환, 아니면 특별한 마커를 반환
+                        return typeof slotValue === 'string' ? slotValue : `___SLOT___${slotKey}`;
+                    });
+                }
+                return value;
+            });
+            
+            const finalBody = interpolatedBodyString.replace(/"___SLOT___([^"]+)"/g, (match, slotKey) => {
+                const slotValue = getNestedValue(currentSlots, slotKey);
+                return JSON.stringify(slotValue);
+            });
+            
             return fetch(interpolatedUrl, {
                 method: apiCall.method,
                 headers: { 'Content-Type': 'application/json', ...interpolatedHeaders },
-                body: interpolatedBody,
+                body: apiCall.method !== 'GET' ? finalBody : undefined,
             }).then(res => {
                 if (!res.ok) return res.json().then(err => Promise.reject({ status: res.status, body: err, apiName: apiCall.name }));
                 return res.json().then(data => ({ data, mapping: apiCall.responseMapping, apiName: apiCall.name }));
             });
         };
-        const promises = isMulti ? (apis || []).map(createApiPromise) : [createApiPromise(node.data)];
+
+        const promises = isMulti ? (apis || []).map(processApiCall) : [processApiCall(node.data)];
         const results = await Promise.allSettled(promises);
       
         const failedCalls = results.filter(r => r.status === 'rejected');
@@ -180,7 +205,7 @@ export const useChatFlow = (nodes, edges) => {
         const newSlots = {};
         results.forEach(res => {
             if (res.status === 'fulfilled') {
-                const { data, mapping, apiName } = res.value;
+                const { data, mapping } = res.value;
                 (mapping || []).forEach(m => {
                     if (m.path && m.slot) {
                         const value = getNestedValue(data, m.path);
@@ -200,6 +225,7 @@ export const useChatFlow = (nodes, edges) => {
         proceedToNextNode('onError', node.id, finalSlots);
     }
   }, [proceedToNextNode, setSlots]);
+  // --- 💡 수정된 부분 끝 ---
 
   const handleLlmNode = useCallback(async (node, currentSlots) => {
     const streamingMessageId = Date.now();
@@ -236,7 +262,14 @@ export const useChatFlow = (nodes, edges) => {
   
   const startSimulation = useCallback((startNodeId) => {
     setIsStarted(true);
-    let startNode = startNodeId ? nodes.find(n => n.id === startNodeId) : nodes.find(n => !edges.some(e => e.target === n.id));
+    let startNode = startNodeId 
+        ? nodes.find(n => n.id === startNodeId) 
+        : nodes.find(n => n.type === 'start');
+    
+    if (!startNode) {
+        startNode = nodes.find(n => !edges.some(e => e.target === n.id));
+    }
+
     if (startNode) {
       setSlots({});
       setFixedMenu(null);

@@ -1,6 +1,6 @@
 import * as firebaseApi from './firebaseApi';
 import * as fastApi from './fastApi';
-import { interpolateMessage } from './simulatorUtils';
+import { interpolateMessage, getNestedValue } from './simulatorUtils'; // getNestedValue import
 import useStore from './store';
 
 const services = {
@@ -22,9 +22,7 @@ export const renameScenario = (backend, args) => getService(backend).renameScena
 export const deleteScenario = (backend, args) => getService(backend).deleteScenario(args);
 export const fetchScenarioData = (backend, args) => getService(backend).fetchScenarioData(args);
 export const saveScenarioData = (backend, args) => getService(backend).saveScenarioData(args);
-// --- 💡 추가된 부분 시작 ---
 export const cloneScenario = (backend, args) => getService(backend).cloneScenario(args);
-// --- 💡 추가된 부분 끝 ---
 
 
 // API 템플릿 함수들
@@ -32,24 +30,40 @@ export const fetchApiTemplates = firebaseApi.fetchApiTemplates;
 export const saveApiTemplate = firebaseApi.saveApiTemplate;
 export const deleteApiTemplate = firebaseApi.deleteApiTemplate;
 
-// 💡[수정된 부분] Form 템플릿 관련 함수들을 모두 export 합니다.
+// Form 템플릿 관련 함수들
 export const fetchFormTemplates = firebaseApi.fetchFormTemplates;
 export const saveFormTemplate = firebaseApi.saveFormTemplate;
 export const deleteFormTemplate = firebaseApi.deleteFormTemplate;
 
 
-// API 테스트 함수
+// --- 💡 수정된 부분 시작 ---
 export const testApiCall = async (apiCall) => {
   const { slots } = useStore.getState();
 
   const interpolatedUrl = interpolateMessage(apiCall.url, slots);
   const interpolatedHeaders = JSON.parse(interpolateMessage(apiCall.headers || '{}', slots));
-  const interpolatedBody = apiCall.method !== 'GET' && apiCall.body ? interpolateMessage(apiCall.body, slots) : undefined;
+  
+  // Body 처리 로직 수정
+  const rawBody = apiCall.body || '{}';
+  const interpolatedBodyString = JSON.stringify(JSON.parse(rawBody), (key, value) => {
+      if (typeof value === 'string') {
+          return value.replace(/{{([^}]+)}}/g, (match, slotKey) => {
+              const slotValue = getNestedValue(slots, slotKey);
+              return typeof slotValue === 'string' ? slotValue : `___SLOT___${slotKey}`;
+          });
+      }
+      return value;
+  });
+
+  const finalBody = interpolatedBodyString.replace(/"___SLOT___([^"]+)"/g, (match, slotKey) => {
+    const slotValue = getNestedValue(slots, slotKey);
+    return JSON.stringify(slotValue);
+  });
 
   const options = {
     method: apiCall.method,
     headers: { 'Content-Type': 'application/json', ...interpolatedHeaders },
-    body: interpolatedBody,
+    body: apiCall.method !== 'GET' ? finalBody : undefined,
   };
 
   const response = await fetch(interpolatedUrl, options);
@@ -61,3 +75,4 @@ export const testApiCall = async (apiCall) => {
   
   return result;
 };
+// --- 💡 수정된 부분 끝 ---

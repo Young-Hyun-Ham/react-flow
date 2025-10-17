@@ -3,11 +3,15 @@ export const interpolateMessage = (message, slots) => {
   const messageStr = String(message || '');
   if (!messageStr) return '';
   
-  return messageStr.replace(/\{([^}]+)\}/g, (match, key) => {
+  // --- 💡 수정된 부분: Slot 참조 방식을 {{slotName}}으로 변경 ---
+  return messageStr.replace(/{{([^}]+)}}/g, (match, key) => {
     // getNestedValue를 사용하여 슬롯 내부의 객체 값에도 접근 가능하도록 수정
     const value = getNestedValue(slots, key);
     // 값이 객체나 배열인 경우 JSON 문자열로 변환하여 반환
     if (typeof value === 'object' && value !== null) {
+      // 💡 중요: JSON Body 내에서 객체/배열 슬롯을 사용할 때 따옴표 문제를 피하기 위해
+      // JSON.stringify 결과를 반환하지 않고, 직접 객체를 주입해야 합니다.
+      // 이 부분은 handleApiNode에서 처리하도록 하고, 여기서는 문자열화합니다.
       return JSON.stringify(value);
     }
     return value !== undefined ? value : match;
@@ -16,9 +20,7 @@ export const interpolateMessage = (message, slots) => {
 
 export const getNestedValue = (obj, path) => {
     if (!path) return undefined;
-    // 대괄호([]) 안의 숫자(인덱스)를 점(.) 표기법으로 변환합니다. 예: 'items[0]' -> 'items.0'
     const normalizedPath = path.replace(/\[(\d+)\]/g, '.$1');
-    // 점(.)을 기준으로 경로를 분리하여 객체를 탐색합니다.
     return normalizedPath.split('.').reduce((acc, part) => (acc && acc[part] !== undefined ? acc[part] : undefined), obj);
 };
 
@@ -31,14 +33,14 @@ export const validateInput = (value, validation) => {
     case 'phone number':
       return /^\d{2,3}-\d{3,4}-\d{4}$/.test(value);
     case 'custom':
-        if (validation.regex) { // Input type custom
+        if (validation.regex) {
             try {
                 return new RegExp(validation.regex).test(value);
             } catch (e) {
                 console.error("Invalid regex:", validation.regex);
                 return false;
             }
-        } else if (validation.startDate && validation.endDate) { // Date type custom
+        } else if (validation.startDate && validation.endDate) {
             if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
             const selectedDate = new Date(value);
             const startDate = new Date(validation.startDate);
@@ -65,16 +67,13 @@ export const validateInput = (value, validation) => {
   }
 };
 
-// --- 💡 수정된 부분 시작 ---
 export const evaluateCondition = (slotValue, operator, condition, slots) => {
   let conditionValue = condition.value;
-  // valueType이 'slot'이면, slots 객체에서 값을 가져옴
   if (condition.valueType === 'slot') {
     conditionValue = getNestedValue(slots, condition.value);
   }
   
   const lowerCaseConditionValue = String(conditionValue).toLowerCase();
-  // --- 💡 수정된 부분 끝 ---
   if (lowerCaseConditionValue === 'true' || lowerCaseConditionValue === 'false') {
     const boolConditionValue = lowerCaseConditionValue === 'true';
     const boolSlotValue = String(slotValue).toLowerCase() === 'true';
