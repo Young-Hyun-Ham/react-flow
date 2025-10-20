@@ -1,3 +1,5 @@
+/* src/ChatbotSimulator.module.css */
+
 .simulator {
   width: 100%;
   height: 100%;
@@ -406,10 +408,22 @@
   font-size: 0.9rem;
 }
 
+/* --- 👇 [추가] --- */
+.formGridTable tbody tr {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.formGridTable tbody tr:hover {
+  background-color: #e9ecef; /* 마우스 오버 시 배경색 변경 */
+}
+/* --- 👆 [추가 끝] --- */
+
 .formGridTable th {
   background-color: #f0f2f5;
   font-weight: bold;
 }
+
 
 .gridInput {
   width: 100%;

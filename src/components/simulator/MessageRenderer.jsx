@@ -4,6 +4,10 @@ import styles from '../../ChatbotSimulator.module.css';
 import { interpolateMessage, validateInput } from '../../simulatorUtils';
 
 const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, isCompleted, formData, handleFormInputChange, handleFormMultiInputChange }) => {
+    // --- 👇 [추가] 스토어에서 setSelectedRow 가져오기 ---
+    const setSelectedRow = useStore((state) => state.setSelectedRow);
+    // --- 👆 [추가 끝] ---
+
     if (!node) return null;
 
     if (node.type === 'iframe') {
@@ -43,47 +47,45 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                             if(el.validation.endDate) dateProps.max = el.validation.endDate;
                         }
                     }
-                    
+
                     // --- 💡 수정된 부분 시작 ---
                     if (el.type === 'grid') {
                         const gridDataFromSlot = el.optionsSlot ? slots[el.optionsSlot] : null;
                         const hasSlotData = Array.isArray(gridDataFromSlot) && gridDataFromSlot.length > 0;
-                    
+
                         if (hasSlotData) {
                             const isDynamicObjectArray = typeof gridDataFromSlot[0] === 'object' && gridDataFromSlot[0] !== null && !Array.isArray(gridDataFromSlot[0]);
                             if (isDynamicObjectArray) {
-                                // 데이터 슬롯이 객체 배열일 때의 렌더링 로직
-                                const displayKeys = el.displayKeys && el.displayKeys.length > 0 ? el.displayKeys : null;
+                                // 데이터 슬롯이 객체 배열일 때의 렌더링 로직 (사용자 요청 반영)
+                                const displayKeys = el.displayKeys && el.displayKeys.length > 0 ? el.displayKeys : Object.keys(gridDataFromSlot[0] || {});
+                                const filteredKeys = el.hideNullColumns
+                                    ? displayKeys.filter(key => gridDataFromSlot.some(obj => obj[key] !== null && obj[key] !== undefined && obj[key] !== ""))
+                                    : displayKeys;
+
                                 return (
-                                    <div key={el.id}>
-                                        {gridDataFromSlot.map((dataObject, index) => {
-                                            let keys = displayKeys || Object.keys(dataObject);
-                                            if (!displayKeys && el.hideNullColumns) {
-                                                keys = keys.filter(key => dataObject[key] !== null && dataObject[key] !== undefined && dataObject[key] !== "");
-                                            }
-                                            return (
-                                                <table key={`${el.id}-${index}`} className={styles.formGridTable} style={{ marginTop: index > 0 ? '15px' : '0' }}>
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Label</th>
-                                                            <th>Property</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {keys.map(key => (
-                                                            <tr key={key}>
-                                                                <td>{key}</td>
-                                                                <td>{interpolateMessage(dataObject[key] || '', slots)}</td>
-                                                            </tr>
+                                    <div key={el.id} style={{ overflowX: 'auto' }}> {/* 가로 스크롤 추가 */}
+                                        <table className={styles.formGridTable}>
+                                            <thead>
+                                                <tr>
+                                                    {filteredKeys.map(key => <th key={key}>{key}</th>)}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {gridDataFromSlot.map((dataObject, index) => (
+                                                    // --- 👇 [수정] onClick 핸들러 추가 ---
+                                                    <tr key={`${el.id}-${index}`} onClick={() => !isCompleted && setSelectedRow(dataObject)}>
+                                                    {/* --- 👆 [수정 끝] --- */}
+                                                        {filteredKeys.map(key => (
+                                                            <td key={key}>{interpolateMessage(dataObject[key] || '', slots)}</td>
                                                         ))}
-                                                    </tbody>
-                                                </table>
-                                            );
-                                        })}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 );
                             } else {
-                                // 데이터 슬롯이 2차원 배열일 때의 렌더링 로직
+                                // 데이터 슬롯이 2차원 배열일 때의 렌더링 로직 (기존 유지)
                                 const rows = gridDataFromSlot.length;
                                 const columns = gridDataFromSlot[0]?.length || 0;
                                  return (
@@ -102,7 +104,7 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                                 );
                             }
                         } else {
-                            // 데이터 슬롯이 없거나 유효하지 않을 때, 수동 입력 데이터를 렌더링
+                            // 데이터 슬롯이 없거나 유효하지 않을 때, 수동 입력 데이터를 렌더링 (기존 유지)
                             const rows = el.rows || 2;
                             const columns = el.columns || 2;
                             return (
@@ -124,6 +126,7 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                     }
                     // --- 💡 수정된 부분 끝 ---
 
+                    // --- 기존 Input, Date, Checkbox, Dropbox 렌더링 로직 ---
                     return (
                         <div key={el.id} className={styles.formElement}>
                             <label className={styles.formLabel}>{el.label}</label>
@@ -141,7 +144,7 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
             </div>
         );
     }
-    
+
     const message = interpolateMessage(node.data.content || node.data.label, slots);
     return (
         <div className={`${styles.message} ${styles.botMessage}`}>
@@ -159,7 +162,7 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
 const MessageRenderer = ({ item, nodes, onOptionClick, handleFormSubmit, handleFormDefault, formData, handleFormInputChange, handleFormMultiInputChange }) => {
     const slots = useStore((state) => state.slots);
     const historyRef = useRef(null);
-  
+
     useEffect(() => {
       if (historyRef.current) {
         historyRef.current.scrollTop = historyRef.current.scrollHeight;

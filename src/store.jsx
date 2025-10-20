@@ -6,7 +6,7 @@ import {
 } from 'reactflow';
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from './firebase';
-import { createNodeData } from './nodeFactory';
+import { createNodeData, createFormElement } from './nodeFactory'; // createFormElement 추가
 import * as backendService from './backendService';
 
 const defaultColors = {
@@ -21,7 +21,7 @@ const defaultColors = {
   toast: '#95a5a6',
   iframe: '#2c3e50',
   scenario: '#7f8c8d',
-  setSlot: '#8e44ad', // Added
+  setSlot: '#8e44ad',
 };
 
 const defaultTextColors = {
@@ -36,7 +36,7 @@ const defaultTextColors = {
   toast: '#ffffff',
   iframe: '#ffffff',
   scenario: '#ffffff',
-  setSlot: '#ffffff', // Added
+  setSlot: '#ffffff',
 }
 
 const useStore = create((set, get) => ({
@@ -47,12 +47,15 @@ const useStore = create((set, get) => ({
   nodeColors: defaultColors,
   nodeTextColors: defaultTextColors,
   slots: {},
+  selectedRow: null, // <<< [추가] 선택된 행 데이터 상태
 
   setAnchorNodeId: (nodeId) => {
     set((state) => ({
       anchorNodeId: state.anchorNodeId === nodeId ? null : nodeId,
     }));
   },
+
+  setSelectedRow: (row) => set({ selectedRow: row }), // <<< [추가] selectedRow 업데이트 함수
 
   setSlots: (newSlots) => set({ slots: newSlots }),
 
@@ -128,7 +131,7 @@ const useStore = create((set, get) => ({
       const nodesToRemoveSet = new Set(nodesToRemove);
       const remainingNodes = state.nodes.filter(n => !nodesToRemoveSet.has(n.id));
       const remainingEdges = state.edges.filter(e => !nodesToRemoveSet.has(e.source) && !nodesToRemoveSet.has(e.target));
-      
+
       return {
         nodes: remainingNodes,
         edges: remainingEdges,
@@ -136,7 +139,7 @@ const useStore = create((set, get) => ({
       };
     });
   },
-  
+
   toggleScenarioNode: (nodeId) => {
     set((state) => {
       const newNodes = state.nodes.map(n => {
@@ -162,7 +165,7 @@ const useStore = create((set, get) => ({
                 maxX = Math.max(maxX, x + nodeWidth);
                 maxY = Math.max(maxY, y + nodeHeight);
               });
-              
+
               newStyle.width = (maxX - minX) + PADDING * 2;
               newStyle.height = (maxY - minY) + PADDING * 2;
 
@@ -177,7 +180,7 @@ const useStore = create((set, get) => ({
               newStyle.height = 100;
             }
           }
-          
+
           return {
             ...n,
             style: newStyle,
@@ -189,7 +192,7 @@ const useStore = create((set, get) => ({
       return { nodes: newNodes };
     });
   },
-  
+
   deleteSelectedEdges: () => {
     set((state) => ({
       edges: state.edges.filter((edge) => !edge.selected),
@@ -374,8 +377,8 @@ const useStore = create((set, get) => ({
     const { nodes, edges } = get();
     const selectedNodes = nodes.filter(n => n.selected);
     const selectedNodeIds = new Set(selectedNodes.map(n => n.id));
-    
-    const relevantEdges = edges.filter(e => 
+
+    const relevantEdges = edges.filter(e =>
       selectedNodeIds.has(e.source) && selectedNodeIds.has(e.target)
     );
 
@@ -402,7 +405,7 @@ const useStore = create((set, get) => ({
         const oldId = node.id;
         const newId = `${node.type}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}-${index}`;
         idMapping.set(oldId, newId);
-        
+
         return {
           ...node,
           id: newId,
@@ -437,10 +440,10 @@ const useStore = create((set, get) => ({
       alert('Failed to import nodes from clipboard. Check console for details.');
     }
   },
-  
+
   addScenarioAsGroup: async (backend, scenario, position) => {
     const { nodes: currentNodes, edges: currentEdges } = get();
-    
+
     const scenarioData = await backendService.fetchScenarioData(backend, { scenarioId: scenario.id });
     if (!scenarioData || !scenarioData.nodes || scenarioData.nodes.length === 0) {
       alert(`Failed to load scenario data for '${scenario.name}' or it is empty.`);
@@ -466,12 +469,12 @@ const useStore = create((set, get) => ({
     const idPrefix = `group-${scenario.id}-${Date.now()}`;
     const groupNodeId = `group-${idPrefix}`;
     const idMapping = new Map();
-    
+
     const childNodes = scenarioData.nodes.map(node => {
       const newId = `${idPrefix}-${node.id}`;
       idMapping.set(node.id, newId);
-      return { 
-        ...node, 
+      return {
+        ...node,
         id: newId,
         position: {
           x: node.position.x - minX + PADDING,
@@ -502,7 +505,7 @@ const useStore = create((set, get) => ({
       edges: [...currentEdges, ...newEdges],
     });
   },
-  
+
   fetchScenario: async (backend, scenarioId) => {
     try {
       const data = await backendService.fetchScenarioData(backend, { scenarioId });
