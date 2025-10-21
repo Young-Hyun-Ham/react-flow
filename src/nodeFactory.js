@@ -24,8 +24,8 @@ export const createNodeData = (type) => {
         apis: [],
       };
     case 'branch':
-      return { 
-        ...baseData, 
+      return {
+        ...baseData,
         evaluationType: 'BUTTON',
         conditions: [{
           id: `cond-${Date.now()}`,
@@ -34,7 +34,7 @@ export const createNodeData = (type) => {
           value: '',
           valueType: 'value'
         }],
-        replies: [{ display: 'Condition 1', value: `cond_${Date.now()}` }] 
+        replies: [{ display: 'Condition 1', value: `cond_${Date.now()}` }]
       };
     case 'form':
       return {
@@ -49,11 +49,11 @@ export const createNodeData = (type) => {
     case 'link':
       return { ...baseData, content: 'https://', display: 'Link' };
     case 'llm':
-      return { 
-        ...baseData, 
+      return {
+        ...baseData,
         prompt: 'Ask me anything...',
         outputVar: 'llm_output',
-        conditions: [] 
+        conditions: []
       };
     case 'toast':
       return {
@@ -83,6 +83,7 @@ export const createFormElement = (elementType) => {
 
     switch (elementType) {
         case 'input':
+            // --- 💡 수정: defaultValueSlot 제거, defaultValue 추가 ---
             newElement = { id: newId, type: 'input', name: '', label: 'New Input', placeholder: '', validation: { type: 'text' }, defaultValue: '' };
             break;
         case 'date':

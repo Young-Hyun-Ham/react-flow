@@ -15,7 +15,7 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
   const handleValidationChange = (field, value) => {
     onUpdate(index, { ...element, validation: { ...element.validation, [field]: value } });
   };
-  
+
   const handleOptionChange = (optIndex, value) => {
     const newOptions = [...element.options];
     newOptions[optIndex] = value;
@@ -46,6 +46,20 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
 
       {element.type === 'input' && (
         <>
+          {/* --- 💡 수정된 부분 시작 --- */}
+          <div className={styles.formGroup}>
+            <label>Default Value (Optional)</label>
+            <input
+              type="text"
+              placeholder="Enter default value or {slot_name}"
+              value={element.defaultValue || ''}
+              onChange={(e) => handleInputChange('defaultValue', e.target.value)}
+            />
+            <p className={styles.instructionText} style={{ marginTop: '4px', fontSize: '0.75rem' }}>
+              Use <code>{'{slotName}'}</code> to reference a slot value, otherwise treated as literal text.
+            </p>
+          </div>
+         {/* --- 💡 수정된 부분 끝 --- */}
           <div className={styles.formGroup}>
             <label>Placeholder</label>
             <input type="text" value={element.placeholder || ''} onChange={(e) => handleInputChange('placeholder', e.target.value)} />
@@ -67,7 +81,7 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
           )}
         </>
       )}
-      
+
       {(element.type === 'checkbox' || element.type === 'dropbox') && (
         <>
           {element.type === 'dropbox' && (
@@ -111,14 +125,12 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
             <>
                 <div className={styles.formGroup}>
                     <label>Display Labels (comma-separated)</label>
-                    {/* --- 💡 수정된 부분 시작 --- */}
                     <input
                         type="text"
                         placeholder="e.g., name,email,phone"
                         value={Array.isArray(element.displayKeys) ? element.displayKeys.join(',') : element.displayKeys}
                         onChange={(e) => {
                             const value = e.target.value;
-                            // 쉼표로 끝나는 경우를 포함하여 문자열을 그대로 저장하고, 포커스가 아웃될 때 배열로 변환합니다.
                             handleInputChange('displayKeys', value);
                         }}
                         onBlur={(e) => {
@@ -126,7 +138,6 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
                             handleInputChange('displayKeys', value.split(',').map(k => k.trim()).filter(Boolean));
                         }}
                     />
-                    {/* --- 💡 수정된 부분 끝 --- */}
                     <p className={styles.instructionText} style={{marginTop: '4px', fontSize: '0.75rem'}}>
                         Specify which keys to display as labels. If empty, all keys will be shown.
                     </p>
@@ -220,7 +231,7 @@ function FormNodeController({ localNode, setLocalNode }) {
         }
       }));
     };
-    
+
     const localUpdateElement = (elementIndex, elementUpdate) => {
       setLocalNode(prev => {
         const newElements = [...prev.data.elements];
@@ -231,7 +242,7 @@ function FormNodeController({ localNode, setLocalNode }) {
         };
       });
     };
-    
+
     const localDeleteElement = (elementIndex) => {
       setLocalNode(prev => ({
         ...prev,
@@ -253,7 +264,7 @@ function FormNodeController({ localNode, setLocalNode }) {
             };
         });
     };
-    
+
     const localUpdateGridCell = (elementIndex, rowIndex, colIndex, value) => {
         setLocalNode(prev => {
             const newElements = JSON.parse(JSON.stringify(prev.data.elements));
@@ -316,20 +327,20 @@ function FormNodeController({ localNode, setLocalNode }) {
     const handleDragStart = (e, index) => {
       setDraggedItemIndex(index);
     };
-    
+
     const handleDragOver = (e, index) => {
       e.preventDefault();
     };
-    
+
     const handleDragLeave = (e) => {
     };
-    
+
     const handleDrop = (e, index) => {
       if (draggedItemIndex === null || draggedItemIndex === index) return;
       localMoveElement(draggedItemIndex, index);
       setDraggedItemIndex(null);
     };
-  
+
     const { data } = localNode;
     const elementTabs = ['input', 'date', 'grid', 'checkbox', 'dropbox'];
     const elements = data.elements || [];

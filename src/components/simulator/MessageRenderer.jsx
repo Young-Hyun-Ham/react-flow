@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import useStore from '../../store';
 import styles from '../../ChatbotSimulator.module.css';
-import { interpolateMessage, validateInput } from '../../simulatorUtils';
+import { interpolateMessage, validateInput, getNestedValue } from '../../simulatorUtils'; // getNestedValue 추가
 
 // 💡 [수정된 부분] handleGridRowClick 프롭 추가
 const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, isCompleted, formData, handleFormInputChange, handleFormMultiInputChange, handleGridRowClick }) => {
@@ -61,7 +61,7 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                         }
                     }
 
-                    // --- 💡 수정된 부분 시작 ---
+                    // --- 💡 Grid 렌더링 수정된 부분 시작 ---
                     if (el.type === 'grid') {
                         const gridDataFromSlot = el.optionsSlot ? slots[el.optionsSlot] : null;
                         const hasSlotData = Array.isArray(gridDataFromSlot) && gridDataFromSlot.length > 0;
@@ -69,14 +69,14 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                         if (hasSlotData) {
                             const isDynamicObjectArray = typeof gridDataFromSlot[0] === 'object' && gridDataFromSlot[0] !== null && !Array.isArray(gridDataFromSlot[0]);
                             if (isDynamicObjectArray) {
-                                // 데이터 슬롯이 객체 배열일 때의 렌더링 로직 (사용자 요청 반영)
+                                // 데이터 슬롯이 객체 배열일 때
                                 const displayKeys = el.displayKeys && el.displayKeys.length > 0 ? el.displayKeys : Object.keys(gridDataFromSlot[0] || {});
                                 const filteredKeys = el.hideNullColumns
                                     ? displayKeys.filter(key => gridDataFromSlot.some(obj => obj[key] !== null && obj[key] !== undefined && obj[key] !== ""))
                                     : displayKeys;
 
                                 return (
-                                    <div key={el.id} style={{ overflowX: 'auto' }}> {/* 가로 스크롤 추가 */}
+                                    <div key={el.id} style={{ overflowX: 'auto' }}>
                                         <table className={styles.formGridTable}>
                                             <thead>
                                                 <tr>
@@ -85,9 +85,7 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                                             </thead>
                                             <tbody>
                                                 {gridDataFromSlot.map((dataObject, index) => (
-                                                    // --- 👇 [수정] onClick 핸들러 변경: setSelectedRow -> handleGridRowClick ---
                                                     <tr key={`${el.id}-${index}`} onClick={() => !isCompleted && handleGridRowClick(dataObject)}>
-                                                    {/* --- 👆 [수정 끝] --- */}
                                                         {filteredKeys.map(key => (
                                                             <td key={key}>{interpolateMessage(dataObject[key] || '', slots)}</td>
                                                         ))}
@@ -98,7 +96,7 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                                     </div>
                                 );
                             } else {
-                                // 데이터 슬롯이 2차원 배열일 때의 렌더링 로직 (기존 유지)
+                                // 데이터 슬롯이 2차원 배열일 때
                                 const rows = gridDataFromSlot.length;
                                 const columns = gridDataFromSlot[0]?.length || 0;
                                  return (
@@ -117,7 +115,7 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                                 );
                             }
                         } else {
-                            // 데이터 슬롯이 없거나 유효하지 않을 때, 수동 입력 데이터를 렌더링 (기존 유지)
+                            // 데이터 슬롯이 없거나 유효하지 않을 때 (수동 데이터)
                             const rows = el.rows || 2;
                             const columns = el.columns || 2;
                             return (
@@ -137,20 +135,41 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                             );
                         }
                     }
-                    // --- 💡 수정된 부분 끝 ---
+                    // --- 💡 Grid 렌더링 수정된 부분 끝 ---
+
+                    // --- 💡 Input defaultValue 처리 시작 ---
+                    let initialValue = '';
+                    if (el.type === 'input') {
+                        const defaultValueConfig = el.defaultValue || '';
+                        const slotMatch = defaultValueConfig.match(/^\{(.+)\}$/); // {slotName} 형식인지 확인
+
+                        if (slotMatch) {
+                            // 슬롯 값 참조
+                            initialValue = interpolateMessage(getNestedValue(slots, slotMatch[1]) || '', slots);
+                        } else {
+                            // 리터럴 값
+                            initialValue = defaultValueConfig;
+                        }
+                        // formData에 값이 있으면 우선 적용
+                        initialValue = formData[el.name] ?? initialValue;
+                    } else {
+                         initialValue = formData[el.name] ?? el.defaultValue ?? '';
+                    }
+                    // --- 💡 Input defaultValue 처리 끝 ---
 
                     // --- 기존 Input, Date, Checkbox, Dropbox 렌더링 로직 ---
                     return (
                         <div key={el.id} className={styles.formElement}>
                             <label className={styles.formLabel}>{el.label}</label>
-                            {el.type === 'input' && <input type={el.validation?.type === 'email' ? 'email' : 'text'} className={styles.formInput} placeholder={el.placeholder} value={formData[el.name] || ''} onChange={(e) => handleFormInputChange(el.name, e.target.value)} disabled={isCompleted} />}
+                            {/* --- 💡 수정: value 대신 defaultValue 사용 및 initialValue 적용 --- */}
+                            {el.type === 'input' && <input type={el.validation?.type === 'email' ? 'email' : 'text'} className={styles.formInput} placeholder={el.placeholder} defaultValue={initialValue} onChange={(e) => handleFormInputChange(el.name, e.target.value)} disabled={isCompleted} />}
+                            {/* --- 💡 수정 끝 --- */}
                             {el.type === 'date' && <input type="date" className={styles.formInput} value={formData[el.name] || ''} onChange={(e) => handleFormInputChange(el.name, e.target.value)} disabled={isCompleted} {...dateProps} />}
                             {el.type === 'checkbox' && el.options?.map(opt => <div key={opt} className={styles.checkboxOption}><input type="checkbox" id={`${el.id}-${opt}`} value={opt} checked={(formData[el.name] || []).includes(opt)} onChange={(e) => handleFormMultiInputChange(el.name, opt, e.target.checked)} disabled={isCompleted} /><label htmlFor={`${el.id}-${opt}`}>{opt}</label></div>)}
                             {el.type === 'dropbox' && (() => { const options = Array.isArray(slots[el.optionsSlot]) ? slots[el.optionsSlot] : el.options; return (<select className={styles.formInput} value={formData[el.name] || ''} onChange={(e) => handleFormInputChange(el.name, e.target.value)} disabled={isCompleted}><option value="" disabled>Select...</option>{(options || []).map(opt => { const v = typeof opt === 'object' ? opt.value : opt; const l = typeof opt === 'object' ? opt.label : opt; return <option key={v} value={v}>{l}</option>; })}</select>); })()}
                         </div>
                     );
                 })}
-                {/* --- 💡 [수정된 부분] : hasSlotBoundGrid가 true가 아닐 때만 버튼을 보여줍니다. --- */}
                 {!hasSlotBoundGrid && (
                     <div className={styles.formButtonContainer}>
                         <button className={styles.formDefaultButton} onClick={onFormDefault} disabled={isCompleted}>Default</button>
