@@ -2,7 +2,8 @@ import React, { useRef, useEffect } from 'react';
 import MessageRenderer from './MessageRenderer';
 import styles from '../../ChatbotSimulator.module.css';
 
-const MessageHistory = ({ history, nodes, onOptionClick, handleFormSubmit, handleFormDefault, formData, handleFormInputChange, handleFormMultiInputChange }) => {
+// 💡 [수정된 부분] handleGridRowClick 프롭 추가
+const MessageHistory = ({ history, nodes, onOptionClick, handleFormSubmit, handleFormDefault, formData, handleFormInputChange, handleFormMultiInputChange, handleGridRowClick }) => {
     const historyRef = useRef(null);
 
     useEffect(() => {
@@ -24,6 +25,7 @@ const MessageHistory = ({ history, nodes, onOptionClick, handleFormSubmit, handl
                     formData={formData}
                     handleFormInputChange={handleFormInputChange}
                     handleFormMultiInputChange={handleFormMultiInputChange}
+                    handleGridRowClick={handleGridRowClick} // 💡 [수정된 부분]
                 />
             ))}
         </div>

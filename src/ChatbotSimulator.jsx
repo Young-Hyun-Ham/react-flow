@@ -89,6 +89,25 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
     setFormData(defaultData);
   };
 
+  // --- 💡 [추가된 부분] ---
+  /**
+   * 그리드 행 클릭 시 호출되는 핸들러.
+   * 1. 폼 상호작용 완료 처리
+   * 2. 'selectedRow' 슬롯에 클릭된 행의 데이터 저장
+   * 3. 다음 노드로 진행
+   */
+  const handleGridRowClick = (rowData) => {
+    completeCurrentInteraction();
+    // 기존 formData와 함께 selectedRow를 슬롯에 저장
+    const newSlots = { ...slots, ...formData, selectedRow: rowData };
+    setSlots(newSlots);
+    setFormData({});
+    // 사용자 액션으로 "Row selected" 메시지 추가
+    setHistory(prev => [...prev, { type: 'user', message: "Row selected." }]);
+    proceedToNextNode(null, currentId, newSlots);
+  };
+  // --- 💡 [추가 끝] ---
+
   return (
     <div className={`${styles.simulator} ${isExpanded ? styles.expanded : ''}`}>
       <SimulatorHeader isVisible={isVisible} isExpanded={isExpanded} setIsExpanded={setIsExpanded} onStart={() => startSimulation()} />
@@ -120,6 +139,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
             formData={formData}
             handleFormInputChange={handleFormInputChange}
             handleFormMultiInputChange={handleFormMultiInputChange}
+            handleGridRowClick={handleGridRowClick} // 💡 [추가된 부분]
         />
        )
       }

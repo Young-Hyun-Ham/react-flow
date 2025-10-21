@@ -3,7 +3,8 @@ import useStore from '../../store';
 import styles from '../../ChatbotSimulator.module.css';
 import { interpolateMessage, validateInput } from '../../simulatorUtils';
 
-const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, isCompleted, formData, handleFormInputChange, handleFormMultiInputChange }) => {
+// 💡 [수정된 부분] handleGridRowClick 프롭 추가
+const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, isCompleted, formData, handleFormInputChange, handleFormMultiInputChange, handleGridRowClick }) => {
     // --- 👇 [추가] 스토어에서 setSelectedRow 가져오기 ---
     const setSelectedRow = useStore((state) => state.setSelectedRow);
     // --- 👆 [추가 끝] ---
@@ -34,6 +35,18 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
     }
 
     if (node.type === 'form') {
+        // --- 💡 [추가된 부분] ---
+        // 폼 요소 중 'optionsSlot'이 있고, 해당 슬롯이 '객체 배열'인 그리드가 있는지 확인
+        const hasSlotBoundGrid = node.data.elements?.some(el =>
+            el.type === 'grid' &&
+            el.optionsSlot &&
+            Array.isArray(slots[el.optionsSlot]) &&
+            slots[el.optionsSlot].length > 0 && // 배열이 비어있지 않고
+            typeof slots[el.optionsSlot][0] === 'object' && // 첫 번째 항목이 객체이며
+            slots[el.optionsSlot][0] !== null // null이 아닌지 확인
+        );
+        // --- 💡 [추가 끝] ---
+
         return (
             <div className={`${styles.message} ${styles.botMessage} ${styles.formContainer}`}>
                 <h3>{node.data.title}</h3>
@@ -72,8 +85,8 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                                             </thead>
                                             <tbody>
                                                 {gridDataFromSlot.map((dataObject, index) => (
-                                                    // --- 👇 [수정] onClick 핸들러 추가 ---
-                                                    <tr key={`${el.id}-${index}`} onClick={() => !isCompleted && setSelectedRow(dataObject)}>
+                                                    // --- 👇 [수정] onClick 핸들러 변경: setSelectedRow -> handleGridRowClick ---
+                                                    <tr key={`${el.id}-${index}`} onClick={() => !isCompleted && handleGridRowClick(dataObject)}>
                                                     {/* --- 👆 [수정 끝] --- */}
                                                         {filteredKeys.map(key => (
                                                             <td key={key}>{interpolateMessage(dataObject[key] || '', slots)}</td>
@@ -137,10 +150,13 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                         </div>
                     );
                 })}
-                <div className={styles.formButtonContainer}>
-                    <button className={styles.formDefaultButton} onClick={onFormDefault} disabled={isCompleted}>Default</button>
-                    <button className={styles.formSubmitButton} onClick={onFormSubmit} disabled={isCompleted}>Submit</button>
-                </div>
+                {/* --- 💡 [수정된 부분] : hasSlotBoundGrid가 true가 아닐 때만 버튼을 보여줍니다. --- */}
+                {!hasSlotBoundGrid && (
+                    <div className={styles.formButtonContainer}>
+                        <button className={styles.formDefaultButton} onClick={onFormDefault} disabled={isCompleted}>Default</button>
+                        <button className={styles.formSubmitButton} onClick={onFormSubmit} disabled={isCompleted}>Submit</button>
+                    </div>
+                )}
             </div>
         );
     }
@@ -159,7 +175,8 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
 };
 
 
-const MessageRenderer = ({ item, nodes, onOptionClick, handleFormSubmit, handleFormDefault, formData, handleFormInputChange, handleFormMultiInputChange }) => {
+// 💡 [수정된 부분] handleGridRowClick 프롭 추가
+const MessageRenderer = ({ item, nodes, onOptionClick, handleFormSubmit, handleFormDefault, formData, handleFormInputChange, handleFormMultiInputChange, handleGridRowClick }) => {
     const slots = useStore((state) => state.slots);
     const historyRef = useRef(null);
 
@@ -189,7 +206,8 @@ const MessageRenderer = ({ item, nodes, onOptionClick, handleFormSubmit, handleF
             return (
                 <div className={styles.messageRow}>
                     <img src="/images/avatar.png" alt="Avatar" className={styles.avatar} />
-                    {item.message ? <div className={`${styles.message} ${styles.botMessage}`}>{item.message}</div> : <BotMessage node={node} slots={slots} onOptionClick={onOptionClick} onFormSubmit={handleFormSubmit} onFormDefault={handleFormDefault} isCompleted={item.isCompleted} formData={formData} handleFormInputChange={handleFormInputChange} handleFormMultiInputChange={handleFormMultiInputChange} />}
+                    {/* 💡 [수정된 부분] handleGridRowClick 프롭 전달 */}
+                    {item.message ? <div className={`${styles.message} ${styles.botMessage}`}>{item.message}</div> : <BotMessage node={node} slots={slots} onOptionClick={onOptionClick} onFormSubmit={handleFormSubmit} onFormDefault={handleFormDefault} isCompleted={item.isCompleted} formData={formData} handleFormInputChange={handleFormInputChange} handleFormMultiInputChange={handleFormMultiInputChange} handleGridRowClick={handleGridRowClick} />}
                 </div>
             );
         case 'user':
