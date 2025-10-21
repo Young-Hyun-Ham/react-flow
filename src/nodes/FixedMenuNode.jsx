@@ -2,28 +2,42 @@ import { Handle, Position } from 'reactflow';
 import styles from './ChatNodes.module.css';
 import useStore from '../store';
 import { useEffect, useRef } from 'react';
-import { AnchorIcon } from '../components/Icons';
+// <<< [수정] StartNodeIcon 추가 >>>
+import { AnchorIcon, StartNodeIcon } from '../components/Icons';
 
 function FixedMenuNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);
   const anchorNodeId = useStore((state) => state.anchorNodeId);
   const setAnchorNodeId = useStore((state) => state.setAnchorNodeId);
+  const startNodeId = useStore((state) => state.startNodeId); // <<< [추가]
+  const setStartNodeId = useStore((state) => state.setStartNodeId); // <<< [추가]
   const branchOptionRefs = useRef([]);
   const nodeColor = useStore((state) => state.nodeColors.fixedmenu);
   const textColor = useStore((state) => state.nodeTextColors.fixedmenu);
-  
+
   const isAnchored = anchorNodeId === id;
+  const isStartNode = startNodeId === id; // <<< [추가]
 
   useEffect(() => {
     branchOptionRefs.current = branchOptionRefs.current.slice(0, data.replies?.length);
   }, [data.replies]);
 
   return (
-    <div className={`${styles.nodeWrapper} ${isAnchored ? styles.anchored : ''}`}>
+    // <<< [수정] isStartNode 클래스 추가 >>>
+    <div className={`${styles.nodeWrapper} ${isAnchored ? styles.anchored : ''} ${isStartNode ? styles.startNode : ''}`}>
       <Handle type="target" position={Position.Left} />
       <div className={styles.nodeHeader} style={{ backgroundColor: nodeColor, color: textColor }}>
         <span className={styles.headerTextContent}>Fixed Menu</span>
         <div className={styles.headerButtons}>
+            {/* <<< [추가] 시작 노드 설정 버튼 >>> */}
+            <button
+              onClick={(e) => { e.stopPropagation(); setStartNodeId(id); }}
+              className={`${styles.startNodeButton} ${isStartNode ? styles.active : ''}`}
+              title="Set as Start Node"
+            >
+              <StartNodeIcon />
+            </button>
+            {/* <<< [추가 끝] >>> */}
             <button
               onClick={(e) => { e.stopPropagation(); setAnchorNodeId(id); }}
               className={`${styles.anchorButton} ${isAnchored ? styles.active : ''}`}
@@ -58,9 +72,13 @@ function FixedMenuNode({ id, data }) {
                 />
               </div>
             ))}
+             {(data.replies?.length === 0) && (
+                <div className={styles.formElementsPlaceholder}>No menus added.</div>
+             )}
           </div>
         </div>
       </div>
+      {/* Fixed menu node does not have a default output handle */}
     </div>
   );
 }

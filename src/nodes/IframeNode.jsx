@@ -1,19 +1,30 @@
 import { Handle, Position } from 'reactflow';
 import styles from './ChatNodes.module.css';
 import useStore from '../store';
-import { AnchorIcon, IframeIcon } from '../components/Icons';
+// <<< [수정] StartNodeIcon 추가 >>>
+import { AnchorIcon, IframeIcon, StartNodeIcon } from '../components/Icons';
 
 function IframeNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);
   const anchorNodeId = useStore((state) => state.anchorNodeId);
   const setAnchorNodeId = useStore((state) => state.setAnchorNodeId);
+  const startNodeId = useStore((state) => state.startNodeId); // <<< [추가]
+  const setStartNodeId = useStore((state) => state.setStartNodeId); // <<< [추가]
   const nodeColor = useStore((state) => state.nodeColors.iframe);
   const textColor = useStore((state) => state.nodeTextColors.iframe);
 
   const isAnchored = anchorNodeId === id;
+  const isStartNode = startNodeId === id; // <<< [추가]
+
+  // Calculate width dynamically, ensuring a minimum width
+  const nodeWidth = Math.max(parseInt(data.width || '250', 10) + 40, 250);
 
   return (
-    <div className={`${styles.nodeWrapper} ${isAnchored ? styles.anchored : ''}`} style={{width: data.width ? `${parseInt(data.width) + 40}px` : '300px'}}>
+    // <<< [수정] isStartNode 클래스 추가 및 스타일 수정 >>>
+    <div
+        className={`${styles.nodeWrapper} ${isAnchored ? styles.anchored : ''} ${isStartNode ? styles.startNode : ''}`}
+        style={{width: `${nodeWidth}px`}} // Use calculated width
+    >
       <Handle type="target" position={Position.Left} />
 
       <div className={styles.nodeHeader} style={{ backgroundColor: nodeColor, color: textColor }}>
@@ -22,6 +33,15 @@ function IframeNode({ id, data }) {
             <span className={styles.headerTextContent}>iFrame</span>
         </div>
         <div className={styles.headerButtons}>
+            {/* <<< [추가] 시작 노드 설정 버튼 >>> */}
+            <button
+              onClick={(e) => { e.stopPropagation(); setStartNodeId(id); }}
+              className={`${styles.startNodeButton} ${isStartNode ? styles.active : ''}`}
+              title="Set as Start Node"
+            >
+              <StartNodeIcon />
+            </button>
+            {/* <<< [추가 끝] >>> */}
             <button
               onClick={(e) => { e.stopPropagation(); setAnchorNodeId(id); }}
               className={`${styles.anchorButton} ${isAnchored ? styles.active : ''}`}
@@ -50,13 +70,22 @@ function IframeNode({ id, data }) {
           />
         </div>
         <div className={styles.section}>
-            <iframe
-                src={data.url}
-                width={data.width || '100%'}
-                height={data.height || '200'}
-                style={{ border: '1px solid #ccc', borderRadius: '4px' }}
-                title="iframe-preview"
-            ></iframe>
+             {/* Preview iframe - handle potential errors or invalid URLs */}
+             {data.url ? (
+                 <iframe
+                     // Use data.url directly; error handling might be complex here
+                     src={data.url}
+                     width={data.width || '100%'}
+                     height={data.height || '200'}
+                     style={{ border: '1px solid #ccc', borderRadius: '4px' }}
+                     title="iframe-preview"
+                     // sandbox attribute can enhance security but might break functionality
+                     // sandbox="allow-scripts allow-same-origin"
+                     onError={(e) => console.warn("Iframe preview error:", e)} // Basic error logging
+                 ></iframe>
+             ) : (
+                <div className={styles.formElementsPlaceholder}>No URL provided.</div>
+             )}
         </div>
       </div>
 

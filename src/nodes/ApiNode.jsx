@@ -2,13 +2,16 @@ import { Handle, Position } from 'reactflow';
 import styles from './ChatNodes.module.css';
 import useStore from '../store';
 import useAlert from '../hooks/useAlert';
-import { AnchorIcon, PlayIcon } from '../components/Icons';
+// <<< [수정] StartNodeIcon 추가 >>>
+import { AnchorIcon, PlayIcon, StartNodeIcon } from '../components/Icons';
 import * as backendService from '../backendService'; // 💡[추가된 부분]
 
 function ApiNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);
   const anchorNodeId = useStore((state) => state.anchorNodeId);
   const setAnchorNodeId = useStore((state) => state.setAnchorNodeId);
+  const startNodeId = useStore((state) => state.startNodeId); // <<< [추가]
+  const setStartNodeId = useStore((state) => state.setStartNodeId); // <<< [추가]
   const nodeColor = useStore((state) => state.nodeColors.api);
   const textColor = useStore((state) => state.nodeTextColors.api);
   const { showAlert } = useAlert();
@@ -16,6 +19,7 @@ function ApiNode({ id, data }) {
   const isMulti = data.isMulti;
 
   const isAnchored = anchorNodeId === id;
+  const isStartNode = startNodeId === id; // <<< [추가]
 
   const handleApiTest = async (e) => {
     e.stopPropagation();
@@ -31,13 +35,23 @@ function ApiNode({ id, data }) {
   };
 
   return (
-    <div className={`${styles.nodeWrapper} ${isAnchored ? styles.anchored : ''}`}>
+    // <<< [수정] isStartNode 클래스 추가 >>>
+    <div className={`${styles.nodeWrapper} ${isAnchored ? styles.anchored : ''} ${isStartNode ? styles.startNode : ''}`}>
       <Handle type="target" position={Position.Left} />
       <div className={styles.nodeHeader} style={{ backgroundColor: nodeColor, color: textColor }}>
         <span className={styles.headerTextContent}>
           {isMulti ? `API (${apiCount} calls)` : 'API'}
         </span>
         <div className={styles.headerButtons}>
+            {/* <<< [추가] 시작 노드 설정 버튼 >>> */}
+            <button
+              onClick={(e) => { e.stopPropagation(); setStartNodeId(id); }}
+              className={`${styles.startNodeButton} ${isStartNode ? styles.active : ''}`}
+              title="Set as Start Node"
+            >
+              <StartNodeIcon />
+            </button>
+            {/* <<< [추가 끝] >>> */}
             <button
               onClick={(e) => { e.stopPropagation(); setAnchorNodeId(id); }}
               className={`${styles.anchorButton} ${isAnchored ? styles.active : ''}`}
@@ -61,6 +75,9 @@ function ApiNode({ id, data }) {
                     {api.name || 'API Call'}
                 </div>
             ))}
+             {(!data.apis || data.apis.length === 0) && (
+                <div className={styles.formElementsPlaceholder}>No API calls configured.</div>
+             )}
           </div>
         ) : (
           <>

@@ -30,15 +30,15 @@ export const createScenario = async ({ newScenarioName, job }) => {
   if (docSnap.exists()) {
     throw new Error('A scenario with that name already exists.');
   }
-  // 생성 시에는 name 속성을 데이터에 포함
-  await setDoc(newScenarioRef, { name: newScenarioName, job, nodes: [], edges: [] });
-  return { id: newScenarioName, name: newScenarioName, job, nodes: [], edges: [] };
+  // 생성 시에는 name 속성을 데이터에 포함, startNodeId는 null로 초기화
+  await setDoc(newScenarioRef, { name: newScenarioName, job, nodes: [], edges: [], startNodeId: null });
+  return { id: newScenarioName, name: newScenarioName, job, nodes: [], edges: [], startNodeId: null };
 };
 
 export const renameScenario = async ({ oldScenario, newName, job }) => {
     // ID로 문서를 참조하도록 수정 (name 대신 id 사용)
     const oldDocRef = doc(db, 'scenarios', oldScenario.id);
-  
+
     if (oldScenario.name !== newName) {
       // 이름이 변경되면 새 ID로 문서를 만들고 기존 문서는 삭제
       const newDocRef = doc(db, 'scenarios', newName);
@@ -46,11 +46,11 @@ export const renameScenario = async ({ oldScenario, newName, job }) => {
       if (newDocSnap.exists()) {
         throw new Error('A scenario with that name already exists.');
       }
-  
+
       const oldDocSnap = await getDoc(oldDocRef);
       if (oldDocSnap.exists()) {
         const batch = writeBatch(db);
-        // 새 데이터에 name과 job을 명확히 설정
+        // 새 데이터에 name과 job을 명확히 설정 (startNodeId도 유지)
         const newData = { ...oldDocSnap.data(), name: newName, job };
         batch.set(newDocRef, newData);
         batch.delete(oldDocRef);
@@ -89,6 +89,7 @@ export const cloneScenario = async ({ scenarioToClone, newName }) => {
     ...originalData,
     name: newName,
     job: scenarioToClone.job, // 원본의 job 정보를 유지
+    // startNodeId는 originalData에 포함되어 있으므로 유지됨
   };
 
   await setDoc(newDocRef, newData);
@@ -98,14 +99,16 @@ export const cloneScenario = async ({ scenarioToClone, newName }) => {
 
 
 export const fetchScenarioData = async ({ scenarioId }) => {
-  if (!scenarioId) return { nodes: [], edges: [] };
+  if (!scenarioId) return { nodes: [], edges: [], startNodeId: null }; // startNodeId 기본값 추가
   const scenarioDocRef = doc(db, "scenarios", scenarioId);
   const docSnap = await getDoc(scenarioDocRef);
   if (docSnap.exists()) {
-    return docSnap.data();
+    const data = docSnap.data();
+    // startNodeId가 없으면 null로 반환
+    return { ...data, startNodeId: data.startNodeId || null };
   }
   console.log(`No such document for scenario: ${scenarioId}!`);
-  return { nodes: [], edges: [] };
+  return { nodes: [], edges: [], startNodeId: null }; // startNodeId 기본값 추가
 };
 
 export const saveScenarioData = async ({ scenario, data }) => {
@@ -113,7 +116,8 @@ export const saveScenarioData = async ({ scenario, data }) => {
     throw new Error('No scenario selected to save.');
   }
   const scenarioDocRef = doc(db, "scenarios", scenario.id);
-  await setDoc(scenarioDocRef, data);
+  // data 객체에 nodes, edges, startNodeId가 모두 포함됨
+  await setDoc(scenarioDocRef, data, { merge: true }); // merge: true 옵션으로 기존 필드 유지
 };
 
 export const fetchApiTemplates = async () => {

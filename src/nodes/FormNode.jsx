@@ -1,20 +1,25 @@
 import { Handle, Position } from 'reactflow';
 import styles from './ChatNodes.module.css';
 import useStore from '../store';
-import { AnchorIcon } from '../components/Icons';
+// <<< [수정] StartNodeIcon 추가 >>>
+import { AnchorIcon, StartNodeIcon } from '../components/Icons';
 
 function FormNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);
   const anchorNodeId = useStore((state) => state.anchorNodeId);
   const setAnchorNodeId = useStore((state) => state.setAnchorNodeId);
-  const updateNodeData = useStore((state) => state.updateNodeData);
+  const startNodeId = useStore((state) => state.startNodeId); // <<< [추가]
+  const setStartNodeId = useStore((state) => state.setStartNodeId); // <<< [추가]
+  const updateNodeData = useStore((state) => state.updateNodeData); // updateNodeData는 이미 있음
   const nodeColor = useStore((state) => state.nodeColors.form);
   const textColor = useStore((state) => state.nodeTextColors.form);
-  
+
   const isAnchored = anchorNodeId === id;
+  const isStartNode = startNodeId === id; // <<< [추가]
 
   const renderElementPreview = (element) => {
-    switch (element.type) {
+    // ... (기존 renderElementPreview 함수 내용은 동일)
+     switch (element.type) {
       case 'input':
         return (
           <div key={element.id} className={styles.previewElement}>
@@ -54,9 +59,11 @@ function FormNode({ id, data }) {
                   <tr key={rowIndex}>
                     {[...Array(element.columns || 2)].map((_, colIndex) => {
                       const cellIndex = rowIndex * (element.columns || 2) + colIndex;
+                      // Ensure data exists and access element safely
+                      const cellValue = element.data && element.data[cellIndex] !== undefined ? element.data[cellIndex] : '';
                       return (
                         <td key={colIndex}>
-                          {element.data[cellIndex] || ''}
+                          {cellValue}
                         </td>
                       );
                     })}
@@ -81,6 +88,11 @@ function FormNode({ id, data }) {
           </div>
         );
       case 'dropbox':
+         // optionsSlot이 있고, fallback 옵션이 없으면 기본 옵션 표시
+         const displayOptions = element.optionsSlot && (!element.options || element.options.length === 0)
+             ? ['Option 1', 'Option 2']
+             : (element.options || ['Option 1', 'Option 2']);
+
         return (
           <div key={element.id} className={styles.previewElement}>
             <label className={styles.previewLabel}>{element.label || 'Dropbox'}</label>
@@ -88,9 +100,11 @@ function FormNode({ id, data }) {
               <div className={styles.slotBindingInfo}>Bound to: {`{${element.optionsSlot}}`}</div>
             )}
             <select className={styles.previewInput} disabled>
-              {(element.options && element.options.length > 0 ? element.options : ['Option 1', 'Option 2']).map((opt, i) => (
-                <option key={i}>{opt}</option>
-              ))}
+               {displayOptions.map((opt, i) => {
+                   const value = typeof opt === 'object' ? opt.value : opt;
+                   const label = typeof opt === 'object' ? opt.label : opt;
+                   return <option key={value || i} value={value}>{label}</option>;
+               })}
             </select>
           </div>
         );
@@ -101,11 +115,21 @@ function FormNode({ id, data }) {
 
 
   return (
-    <div className={`${styles.nodeWrapper} ${styles.formNodeWrapper} ${isAnchored ? styles.anchored : ''}`}>
+    // <<< [수정] isStartNode 클래스 추가 >>>
+    <div className={`${styles.nodeWrapper} ${styles.formNodeWrapper} ${isAnchored ? styles.anchored : ''} ${isStartNode ? styles.startNode : ''}`}>
       <Handle type="target" position={Position.Left} />
       <div className={styles.nodeHeader} style={{ backgroundColor: nodeColor, color: textColor }}>
         <span className={styles.headerTextContent}>Form</span>
         <div className={styles.headerButtons}>
+            {/* <<< [추가] 시작 노드 설정 버튼 >>> */}
+            <button
+              onClick={(e) => { e.stopPropagation(); setStartNodeId(id); }}
+              className={`${styles.startNodeButton} ${isStartNode ? styles.active : ''}`}
+              title="Set as Start Node"
+            >
+              <StartNodeIcon />
+            </button>
+            {/* <<< [추가 끝] >>> */}
             <button
               onClick={(e) => { e.stopPropagation(); setAnchorNodeId(id); }}
               className={`${styles.anchorButton} ${isAnchored ? styles.active : ''}`}
@@ -118,11 +142,11 @@ function FormNode({ id, data }) {
       </div>
       <div className={styles.nodeBody}>
         <div className={styles.section}>
+          {/* Form Title is now readOnly, edited in Controller */}
           <input
             className={`${styles.textInput} ${styles.formTitleInput}`}
             value={data.title}
-            onChange={(e) => updateNodeData(id, { title: e.target.value })}
-            readOnly
+            readOnly // Controller에서 수정하므로 readOnly로 변경
             placeholder="Form Title"
           />
         </div>

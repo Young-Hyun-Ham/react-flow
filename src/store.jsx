@@ -44,6 +44,7 @@ const useStore = create((set, get) => ({
   edges: [],
   selectedNodeId: null,
   anchorNodeId: null,
+  startNodeId: null, // <<< [추가] 시작 노드 ID 상태
   nodeColors: defaultColors,
   nodeTextColors: defaultTextColors,
   slots: {},
@@ -54,6 +55,18 @@ const useStore = create((set, get) => ({
       anchorNodeId: state.anchorNodeId === nodeId ? null : nodeId,
     }));
   },
+
+  // <<< [추가] 시작 노드 설정 함수 >>>
+  setStartNodeId: (nodeId) => {
+    set((state) => {
+      // 이미 시작 노드이면 null로 설정 (토글 방식)
+      if (state.startNodeId === nodeId) {
+        return { startNodeId: null };
+      }
+      return { startNodeId: nodeId };
+    });
+  },
+  // <<< [추가 끝] >>>
 
   setSelectedRow: (row) => set({ selectedRow: row }), // <<< [추가] selectedRow 업데이트 함수
 
@@ -132,10 +145,14 @@ const useStore = create((set, get) => ({
       const remainingNodes = state.nodes.filter(n => !nodesToRemoveSet.has(n.id));
       const remainingEdges = state.edges.filter(e => !nodesToRemoveSet.has(e.source) && !nodesToRemoveSet.has(e.target));
 
+      // <<< [수정] 삭제되는 노드가 시작 노드이면 startNodeId 초기화 >>>
+      const newStartNodeId = state.startNodeId === nodeId ? null : state.startNodeId;
+
       return {
         nodes: remainingNodes,
         edges: remainingEdges,
         selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId,
+        startNodeId: newStartNodeId, // <<< [수정]
       };
     });
   },
@@ -509,22 +526,29 @@ const useStore = create((set, get) => ({
   fetchScenario: async (backend, scenarioId) => {
     try {
       const data = await backendService.fetchScenarioData(backend, { scenarioId });
-      set({ nodes: data.nodes || [], edges: data.edges || [], selectedNodeId: null });
+      // <<< [추가] 시나리오 로드 시 startNodeId도 설정 (백엔드에 저장된 값이 있다면) >>>
+      set({
+        nodes: data.nodes || [],
+        edges: data.edges || [],
+        selectedNodeId: null,
+        startNodeId: data.startNodeId || null // <<< [추가]
+      });
     } catch (error) {
       console.error("Error fetching scenario:", error);
       alert('Failed to load scenario details.');
-      set({ nodes: [], edges: [], selectedNodeId: null });
+      set({ nodes: [], edges: [], selectedNodeId: null, startNodeId: null }); // <<< [수정] startNodeId 초기화 추가
     }
   },
 
   saveScenario: async (backend, scenario) => {
     try {
-      const { nodes, edges } = get();
+      const { nodes, edges, startNodeId } = get(); // <<< [수정] startNodeId 가져오기
       await backendService.saveScenarioData(backend, {
         scenario,
-        data: { nodes, edges },
+        // <<< [수정] 저장 데이터에 startNodeId 포함 >>>
+        data: { nodes, edges, startNodeId },
       });
-      alert(`Scenario has been saved successfully!`);
+      alert(`Scenario '${scenario.name}' has been saved successfully!`); // 시나리오 이름 포함
     } catch (error) {
       console.error("Error saving scenario:", error);
       alert(`Failed to save scenario: ${error.message}`);
