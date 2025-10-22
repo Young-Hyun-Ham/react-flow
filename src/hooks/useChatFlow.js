@@ -1,5 +1,8 @@
+// src/hooks/useChatFlow.js
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import useStore from '../store';
+// --- 👇 [수정] evaluateCondition 추가 ---
 import { interpolateMessage, interpolateMessageForApi, getNestedValue, evaluateCondition } from '../simulatorUtils';
 
 export const useChatFlow = (nodes, edges) => {
@@ -200,7 +203,11 @@ export const useChatFlow = (nodes, edges) => {
         for (const condition of conditions) {
             const slotValue = getNestedValue(updatedSlots, condition.slot); // Use getNestedValue for consistency
             if (evaluateCondition(slotValue, condition.operator, condition, updatedSlots)) {
-                const handleId = sourceNode.data.replies[conditions.indexOf(condition)]?.value;
+                // --- 👇 [수정] conditions 배열과 replies 배열 인덱스 동기화 가정 제거 ---
+                // 조건에 맞는 reply의 value를 찾아서 sourceHandleId로 사용
+                const matchingReply = sourceNode.data.replies[conditions.indexOf(condition)];
+                const handleId = matchingReply?.value;
+                // --- 👆 [수정 끝] ---
                 if(handleId) {
                   nextEdge = edges.find(edge => edge.source === sourceNodeId && edge.sourceHandle === handleId);
                   if (nextEdge) break;
@@ -304,12 +311,24 @@ export const useChatFlow = (nodes, edges) => {
             if (assignment.key) {
                 const interpolatedValue = interpolateMessage(assignment.value, updatedSlots);
                 try {
-                    if ((interpolatedValue.startsWith('{') && interpolatedValue.endsWith('}')) || (interpolatedValue.startsWith('[') && interpolatedValue.endsWith(']'))) {
-                        newSlots[assignment.key] = JSON.parse(interpolatedValue);
+                    // Check if the interpolated value looks like JSON object or array
+                    const trimmedValue = interpolatedValue.trim();
+                    if ((trimmedValue.startsWith('{') && trimmedValue.endsWith('}')) || (trimmedValue.startsWith('[') && trimmedValue.endsWith(']'))) {
+                        newSlots[assignment.key] = JSON.parse(trimmedValue);
                     } else {
-                        newSlots[assignment.key] = interpolatedValue;
+                        // Handle potential boolean or number conversions, otherwise keep as string
+                        if (trimmedValue.toLowerCase() === 'true') {
+                            newSlots[assignment.key] = true;
+                        } else if (trimmedValue.toLowerCase() === 'false') {
+                             newSlots[assignment.key] = false;
+                        } else if (!isNaN(trimmedValue) && trimmedValue !== '') {
+                            newSlots[assignment.key] = Number(trimmedValue);
+                        } else {
+                            newSlots[assignment.key] = interpolatedValue; // Keep as string if not JSON, boolean, or number
+                        }
                     }
                 } catch (e) {
+                     // If JSON parsing fails or other errors, treat as string
                     newSlots[assignment.key] = interpolatedValue;
                 }
             }
@@ -318,6 +337,47 @@ export const useChatFlow = (nodes, edges) => {
         proceedToNextNode(null, nodeId, newSlots);
         return;
     }
+    // --- 👇 [수정 시작] Form 노드 Default Value 처리 로직 통합 ---
+    if (node.type === 'form') {
+      let initialSlotsUpdate = {};
+      (node.data.elements || []).forEach(element => {
+        if (element.type === 'input' && element.name && element.defaultValue !== undefined && element.defaultValue !== '') {
+          const defaultValueConfig = element.defaultValue;
+          let resolvedValue;
+          const slotMatch = typeof defaultValueConfig === 'string' ? defaultValueConfig.match(/^\{(.+)\}$/) : null;
+
+          if (slotMatch) {
+            resolvedValue = getNestedValue(updatedSlots, slotMatch[1]);
+          } else {
+            resolvedValue = defaultValueConfig;
+          }
+
+          if (resolvedValue !== undefined && updatedSlots[element.name] === undefined) {
+             initialSlotsUpdate[element.name] = resolvedValue;
+          }
+        }
+        else if ((element.type === 'date' || element.type === 'dropbox') && element.name && element.defaultValue !== undefined && element.defaultValue !== '') {
+             if (updatedSlots[element.name] === undefined) {
+                  initialSlotsUpdate[element.name] = element.defaultValue;
+             }
+        } else if (element.type === 'checkbox' && element.name && Array.isArray(element.defaultValue)) {
+              if (updatedSlots[element.name] === undefined) {
+                  initialSlotsUpdate[element.name] = element.defaultValue;
+              }
+        }
+      });
+
+      const finalSlotsForForm = { ...updatedSlots, ...initialSlotsUpdate };
+      if (Object.keys(initialSlotsUpdate).length > 0) {
+        setSlots(finalSlotsForForm); // Update global state
+      }
+
+      setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: false, id: Date.now() }]);
+      // Stop here for form node, wait for user input
+      return;
+    }
+    // --- 👆 [수정 끝] ---
+
     if (node.type === 'fixedmenu') {
       setHistory([]);
       setFixedMenu({ nodeId: node.id, ...node.data });
@@ -349,13 +409,20 @@ export const useChatFlow = (nodes, edges) => {
 
     // Add message to history
     const isInteractive = node.type === 'form' || (node.type === 'branch' && node.data.evaluationType === 'BUTTON' && node.data.replies?.length > 0) || node.type === 'slotfilling';
-    setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: !isInteractive || node.type === 'iframe', id: Date.now() }]);
+    // --- 👇 [수정] form 타입 메시지 추가는 위에서 처리했으므로 제외 ---
+    if (node.type !== 'form') {
+      setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: !isInteractive || node.type === 'iframe', id: Date.now() }]);
+    }
+    // --- 👆 [수정 끝] ---
+
 
     // --- Automatically proceed for non-interactive nodes after adding message ---
-    if (!isInteractive && node.type !== 'fixedmenu') { // Don't auto-proceed from fixedmenu
+    // --- 👇 [수정] form 타입 제외 ---
+    if (!isInteractive && node.type !== 'fixedmenu' && node.type !== 'form') { // Don't auto-proceed from fixedmenu or form
         // Delay slightly before proceeding to allow message rendering
         setTimeout(() => proceedToNextNode(null, nodeId, updatedSlots), 100); // Short delay
     }
+    // --- 👆 [수정 끝] ---
     // For interactive nodes, the flow stops here, waiting for user input (handled by click handlers)
 
   // <<< [수정] 의존성 배열에서 proceedToNextNode 제거, nodes, edges, setSlots, handleApiNode, handleLlmNode 추가 >>>
