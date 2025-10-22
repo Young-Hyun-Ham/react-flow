@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import useStore from '../store';
-// --- 👇 [수정] evaluateCondition 추가 ---
-import { interpolateMessage, interpolateMessageForApi, getNestedValue, evaluateCondition } from '../simulatorUtils';
+// --- 👇 [수정] interpolateMessageForApi 제거, interpolateMessage 만 사용 ---
+import { interpolateMessage, getNestedValue, evaluateCondition } from '../simulatorUtils';
 
 export const useChatFlow = (nodes, edges) => {
   const [history, setHistory] = useState([]);
@@ -14,8 +14,6 @@ export const useChatFlow = (nodes, edges) => {
   const { slots, setSlots, anchorNodeId, startNodeId } = useStore();
   const currentNode = nodes.find(n => n.id === currentId);
 
-  // --- handleApiNode와 handleLlmNode를 useCallback 밖으로 이동시키거나, ---
-  // --- proceedToNextNode와 addBotMessage보다 먼저 useCallback으로 정의합니다. ---
   const handleApiNode = useCallback(async (node, currentSlots) => {
     const loadingId = Date.now();
     setHistory(prev => [...prev, { type: 'loading', id: loadingId }]);
@@ -24,33 +22,26 @@ export const useChatFlow = (nodes, edges) => {
         const { isMulti, apis } = node.data;
 
         const processApiCall = (apiCall) => {
-            const interpolatedUrl = interpolateMessageForApi(apiCall.url, currentSlots);
-            const interpolatedHeaders = JSON.parse(interpolateMessageForApi(apiCall.headers || '{}', currentSlots));
+            // --- 👇 [수정] interpolateMessage 사용 ---
+            const interpolatedUrl = interpolateMessage(apiCall.url, currentSlots);
+            const interpolatedHeaders = JSON.parse(interpolateMessage(apiCall.headers || '{}', currentSlots));
+            // --- 👆 [수정 끝] ---
 
             const rawBody = apiCall.body || '{}';
             let finalBody;
              try {
                 // 문자열 내 {{slot}} 치환 후 JSON 파싱
+                // --- 👇 [수정] interpolateMessage 사용 ---
                 const interpolatedBodyString = JSON.stringify(JSON.parse(rawBody), (key, value) => {
                     if (typeof value === 'string') {
-                        return value.replace(/{{([^}]+)}}/g, (match, slotKey) => {
-                            const slotValue = getNestedValue(currentSlots, slotKey);
-                            // 객체나 배열이면 특수 마커 사용, 아니면 문자열 그대로 반환
-                            return typeof slotValue === 'object' && slotValue !== null ? `___SLOT_${JSON.stringify(slotValue)}___` : String(slotValue ?? match);
-                        });
+                        // interpolateMessage 함수는 이제 {{}}를 처리하므로 그대로 사용
+                        return interpolateMessage(value, currentSlots);
                     }
                     return value;
                 });
-                 // 특수 마커를 실제 값으로 복원
-                 finalBody = interpolatedBodyString.replace(/"___SLOT_([^"]+?)___"/g, (match, jsonString) => {
-                     try {
-                         // 추가 이스케이프 제거
-                         return jsonString.replace(/\\"/g, '"');
-                     } catch (e) {
-                         console.error("Error parsing slot marker", e);
-                         return '""'; // 복원 실패 시 빈 문자열
-                     }
-                 });
+                // --- 👆 [수정 끝] ---
+                 // 값 복원 로직은 {{}} 구문과 getNestedValue가 처리하므로 단순화 가능
+                 finalBody = interpolatedBodyString;
              } catch (e) {
                  console.error("Error processing API body:", e);
                  throw new Error(`Invalid JSON body format: ${e.message}`);
@@ -63,7 +54,6 @@ export const useChatFlow = (nodes, edges) => {
             }).then(async res => { // async 추가
                 const resBody = await res.json().catch(() => null); // JSON 파싱 실패 대비
                 if (!res.ok) {
-                    // 오류 응답 처리 개선
                     const errorDetail = resBody ? (resBody.detail || JSON.stringify(resBody)) : res.statusText;
                     throw new Error(`API call '${apiCall.name || 'Unnamed'}' failed with status ${res.status}: ${errorDetail}`);
                  }
@@ -76,7 +66,6 @@ export const useChatFlow = (nodes, edges) => {
 
         const failedCalls = results.filter(r => r.status === 'rejected');
         if (failedCalls.length > 0) {
-            // 여러 실패 중 첫 번째 실패 메시지를 사용
              throw new Error(failedCalls[0].reason.message || `API call '${failedCalls[0].reason.apiName || 'Unnamed'}' failed.`);
         }
 
@@ -95,18 +84,16 @@ export const useChatFlow = (nodes, edges) => {
 
         finalSlots = { ...currentSlots, ...newSlots };
         setSlots(finalSlots);
-        setHistory(prev => prev.filter(item => item.id !== loadingId)); // 로딩 메시지 제거
-        // proceedToNextNode는 아래에서 정의되므로 직접 호출
+        setHistory(prev => prev.filter(item => item.id !== loadingId));
         proceedToNextNode('onSuccess', node.id, finalSlots);
     } catch (error) {
         console.error("API Error:", error);
-        setHistory(prev => prev.filter(item => item.id !== loadingId)); // 로딩 메시지 제거
-        // 오류 메시지를 봇 메시지로 표시
+        setHistory(prev => prev.filter(item => item.id !== loadingId));
         setHistory(prev => [...prev, { type: 'bot', message: `API Error: ${error.message}`, id: loadingId }]);
-        // proceedToNextNode는 아래에서 정의되므로 직접 호출
         proceedToNextNode('onError', node.id, finalSlots);
     }
-  }, [setSlots, nodes, edges, anchorNodeId]); // proceedToNextNode 제거, nodes, edges, anchorNodeId 추가
+  // --- 👇 [수정] 의존성 배열에서 proceedToNextNode 제거 ---
+  }, [setSlots, nodes, edges, anchorNodeId]);
 
 
   const handleLlmNode = useCallback(async (node, currentSlots) => {
@@ -114,7 +101,9 @@ export const useChatFlow = (nodes, edges) => {
     let accumulatedContent = '';
     setHistory(prev => [...prev, { type: 'bot_streaming', id: streamingMessageId, content: '', isStreaming: true }]);
     try {
+        // --- 👇 [수정] interpolateMessage 사용 ---
         const interpolatedPrompt = interpolateMessage(node.data.prompt, currentSlots);
+        // --- 👆 [수정 끝] ---
         const response = await fetch('/api/proxy/chat/completion', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -163,31 +152,23 @@ export const useChatFlow = (nodes, edges) => {
             finalSlots[node.data.outputVar] = accumulatedContent;
             setSlots(finalSlots);
         }
-         // proceedToNextNode는 아래에서 정의되므로 직접 호출
         proceedToNextNode(null, node.id, finalSlots);
     }
-  }, [setSlots, nodes, edges, anchorNodeId]); // proceedToNextNode 제거, nodes, edges, anchorNodeId 추가
+  // --- 👇 [수정] 의존성 배열에서 proceedToNextNode 제거 ---
+  }, [setSlots, nodes, edges, anchorNodeId]);
 
 
-  // proceedToNextNode와 addBotMessage는 서로를 호출하므로, forwardRef나 다른 상태 관리 기법이 이상적일 수 있으나,
-  // 우선 정의 순서를 조정하고 의존성 배열에서 서로를 제거하여 오류를 해결합니다.
-  // useRef를 사용하여 최신 함수 참조를 유지하는 방법도 고려할 수 있습니다.
-
-  // Mutable ref to hold the latest addBotMessage function
   const addBotMessageRef = useRef(null);
 
   const proceedToNextNode = useCallback((sourceHandleId, sourceNodeId, updatedSlots) => {
+    // ... (이 함수 내부는 변경 없음) ...
     if (sourceNodeId === anchorNodeId) {
         setCurrentId(null);
         return;
     }
-
     if (!sourceNodeId) return;
-
     const sourceNode = nodes.find(n => n.id === sourceNodeId);
     let nextEdge;
-
-    // ... (기존 nextEdge 찾는 로직은 동일) ...
     if (sourceNode && sourceNode.type === 'llm' && sourceNode.data.conditions?.length > 0) {
         const llmOutput = updatedSlots[sourceNode.data.outputVar] || '';
         const matchedCondition = sourceNode.data.conditions.find(cond =>
@@ -197,74 +178,58 @@ export const useChatFlow = (nodes, edges) => {
             nextEdge = edges.find(edge => edge.source === sourceNodeId && edge.sourceHandle === matchedCondition.id);
         }
     }
-
     if (sourceNode && sourceNode.type === 'branch' && sourceNode.data.evaluationType === 'CONDITION') {
         const conditions = sourceNode.data.conditions || [];
         for (const condition of conditions) {
-            const slotValue = getNestedValue(updatedSlots, condition.slot); // Use getNestedValue for consistency
+            const slotValue = getNestedValue(updatedSlots, condition.slot);
             if (evaluateCondition(slotValue, condition.operator, condition, updatedSlots)) {
-                // --- 👇 [수정] conditions 배열과 replies 배열 인덱스 동기화 가정 제거 ---
-                // 조건에 맞는 reply의 value를 찾아서 sourceHandleId로 사용
                 const matchingReply = sourceNode.data.replies[conditions.indexOf(condition)];
                 const handleId = matchingReply?.value;
-                // --- 👆 [수정 끝] ---
                 if(handleId) {
                   nextEdge = edges.find(edge => edge.source === sourceNodeId && edge.sourceHandle === handleId);
                   if (nextEdge) break;
                 }
             }
         }
-         // If no condition matched, check for a default edge
          if (!nextEdge) {
             nextEdge = edges.find(edge => edge.source === sourceNodeId && edge.sourceHandle === 'default');
          }
     }
-
-     // Default edge finding logic if no specific handle matched yet
     if (!nextEdge) {
         if (sourceHandleId) {
             nextEdge = edges.find(edge => edge.source === sourceNodeId && edge.sourceHandle === sourceHandleId);
         } else {
-             // Try 'default' first for LLM/API nodes, then no handle
             nextEdge = edges.find(edge => edge.source === sourceNodeId && edge.sourceHandle === 'default') ||
                        edges.find(edge => edge.source === sourceNodeId && !edge.sourceHandle);
         }
     }
-
-
     if (nextEdge) {
       const nextNode = nodes.find(node => node.id === nextEdge.target);
       if (nextNode) {
         setCurrentId(nextNode.id);
-        // Use the ref to call the latest addBotMessage
         if (addBotMessageRef.current) {
              setTimeout(() => addBotMessageRef.current(nextNode.id, updatedSlots), 500);
         }
       } else {
          console.warn(`Next node with id ${nextEdge.target} not found.`);
-         setCurrentId(null); // Stop simulation if next node is missing
+         setCurrentId(null);
       }
     } else {
       const sourceNode = nodes.find(n => n.id === sourceNodeId);
-      // If the source node is inside a group, try moving out of the group
       if (sourceNode?.parentNode) {
-         // Find the edge originating from the parent group node
          const parentEdge = edges.find(edge => edge.source === sourceNode.parentNode);
          if (parentEdge) {
-            // Proceed from the parent node using its edge
              proceedToNextNode(parentEdge.sourceHandle, sourceNode.parentNode, updatedSlots);
          } else {
-            // No outgoing edge from parent, end simulation
             setCurrentId(null);
          }
         return;
       }
-      // If it's not a node type that waits for user input, end the flow
       if(sourceNode?.type !== 'fixedmenu' && sourceNode?.type !== 'form' && sourceNode?.type !== 'slotfilling' && !(sourceNode?.type === 'branch' && sourceNode.data.evaluationType === 'BUTTON')) {
-        setTimeout(() => setCurrentId(null), 500); // End simulation after a short delay
+        setTimeout(() => setCurrentId(null), 500);
       }
     }
-  // <<< [수정] 의존성 배열에서 addBotMessage 제거, nodes, edges, anchorNodeId 추가 >>>
+  // --- 👇 [수정] 의존성 배열 변경 없음 (이전과 동일) ---
   }, [edges, nodes, anchorNodeId]);
 
 
@@ -280,18 +245,13 @@ export const useChatFlow = (nodes, edges) => {
     if (node.type === 'scenario') {
       const childNodes = nodes.filter(n => n.parentNode === node.id);
       const childNodeIds = new Set(childNodes.map(n => n.id));
-
-      // Find the "start" node within the group (no incoming edge *within* the group)
       const startNode = childNodes.find(n =>
         !edges.some(e => e.target === n.id && childNodeIds.has(e.source))
       );
-
       if (startNode) {
         setCurrentId(startNode.id);
-        // Call addBotMessage for the child start node
-        addBotMessageRef.current(startNode.id, updatedSlots); // Use ref here
+        addBotMessageRef.current(startNode.id, updatedSlots);
       } else {
-        // If no start node found inside, proceed from the group node itself
         proceedToNextNode(null, node.id, updatedSlots);
       }
       return;
@@ -309,26 +269,20 @@ export const useChatFlow = (nodes, edges) => {
         const newSlots = { ...updatedSlots };
         node.data.assignments?.forEach(assignment => {
             if (assignment.key) {
+                // --- 👇 [수정] interpolateMessage 사용 ---
                 const interpolatedValue = interpolateMessage(assignment.value, updatedSlots);
+                // --- 👆 [수정 끝] ---
                 try {
-                    // Check if the interpolated value looks like JSON object or array
                     const trimmedValue = interpolatedValue.trim();
                     if ((trimmedValue.startsWith('{') && trimmedValue.endsWith('}')) || (trimmedValue.startsWith('[') && trimmedValue.endsWith(']'))) {
                         newSlots[assignment.key] = JSON.parse(trimmedValue);
                     } else {
-                        // Handle potential boolean or number conversions, otherwise keep as string
-                        if (trimmedValue.toLowerCase() === 'true') {
-                            newSlots[assignment.key] = true;
-                        } else if (trimmedValue.toLowerCase() === 'false') {
-                             newSlots[assignment.key] = false;
-                        } else if (!isNaN(trimmedValue) && trimmedValue !== '') {
-                            newSlots[assignment.key] = Number(trimmedValue);
-                        } else {
-                            newSlots[assignment.key] = interpolatedValue; // Keep as string if not JSON, boolean, or number
-                        }
+                        if (trimmedValue.toLowerCase() === 'true') newSlots[assignment.key] = true;
+                        else if (trimmedValue.toLowerCase() === 'false') newSlots[assignment.key] = false;
+                        else if (!isNaN(trimmedValue) && trimmedValue !== '') newSlots[assignment.key] = Number(trimmedValue);
+                        else newSlots[assignment.key] = interpolatedValue;
                     }
                 } catch (e) {
-                     // If JSON parsing fails or other errors, treat as string
                     newSlots[assignment.key] = interpolatedValue;
                 }
             }
@@ -337,39 +291,32 @@ export const useChatFlow = (nodes, edges) => {
         proceedToNextNode(null, nodeId, newSlots);
         return;
     }
-    // --- 👇 [수정 시작] Form 노드 Default Value 처리 로직 (덮어쓰기 적용) ---
+
     if (node.type === 'form') {
       let initialSlotsUpdate = {};
       (node.data.elements || []).forEach(element => {
         if (element.type === 'input' && element.name && element.defaultValue !== undefined && element.defaultValue !== '') {
           const defaultValueConfig = element.defaultValue;
           let resolvedValue;
-          const slotMatch = typeof defaultValueConfig === 'string' ? defaultValueConfig.match(/^\{(.+)\}$/) : null;
+          // --- 👇 [수정] 슬롯 참조 구문 변경 ({slot} -> {{slot}}) 반영 확인 ---
+          // 여기서는 Default Value 문자열 자체에 슬롯 구문이 있는지 확인하는 것이 아니라,
+          // interpolateMessage 함수가 {{}}를 처리하도록 수정되었으므로, 해당 함수를 호출하여 처리합니다.
+          // const slotMatch = typeof defaultValueConfig === 'string' ? defaultValueConfig.match(/^\{(.+)\}$/) : null; // 이전 코드
+          // if (slotMatch) { ... } // 이전 코드
+          // --- 👇 [수정] interpolateMessage 사용 ---
+          resolvedValue = interpolateMessage(defaultValueConfig, updatedSlots);
+          // --- 👆 [수정 끝] ---
 
-          if (slotMatch) {
-            resolvedValue = getNestedValue(updatedSlots, slotMatch[1]);
-          } else {
-            resolvedValue = defaultValueConfig;
-          }
-
-          // --- 👇 [수정] 기존 슬롯 값 존재 여부 체크 제거 (항상 덮어쓰기) ---
           if (resolvedValue !== undefined) {
              initialSlotsUpdate[element.name] = resolvedValue;
           }
-          // --- 👆 [수정 끝] ---
         }
         else if ((element.type === 'date' || element.type === 'dropbox') && element.name && element.defaultValue !== undefined && element.defaultValue !== '') {
-             // --- 👇 [수정] 기존 슬롯 값 존재 여부 체크 제거 (항상 덮어쓰기) ---
-             // if (updatedSlots[element.name] === undefined) {
-                  initialSlotsUpdate[element.name] = element.defaultValue;
-             // }
-             // --- 👆 [수정 끝] ---
+            // date, dropbox는 슬롯 치환이 필요 없을 수 있지만, 일관성을 위해 추가 (필요시 제거)
+             initialSlotsUpdate[element.name] = interpolateMessage(String(element.defaultValue), updatedSlots);
         } else if (element.type === 'checkbox' && element.name && Array.isArray(element.defaultValue)) {
-             // --- 👇 [수정] 기존 슬롯 값 존재 여부 체크 제거 (항상 덮어쓰기) ---
-              // if (updatedSlots[element.name] === undefined) {
-                  initialSlotsUpdate[element.name] = element.defaultValue;
-              // }
-             // --- 👆 [수정 끝] ---
+             // checkbox 기본값은 배열이므로 치환하지 않음
+              initialSlotsUpdate[element.name] = element.defaultValue;
         }
       });
 
@@ -379,10 +326,8 @@ export const useChatFlow = (nodes, edges) => {
       }
 
       setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: false, id: Date.now() }]);
-      // Stop here for form node, wait for user input
       return;
     }
-    // --- 👆 [수정 끝] ---
 
     if (node.type === 'fixedmenu') {
       setHistory([]);
@@ -391,19 +336,21 @@ export const useChatFlow = (nodes, edges) => {
       return;
     }
     if (node.type === 'link') {
+      // --- 👇 [수정] interpolateMessage 사용 ---
       const url = interpolateMessage(node.data.content, updatedSlots);
       const display = interpolateMessage(node.data.display, updatedSlots);
-      // Add message immediately, mark as completed
+      // --- 👆 [수정 끝] ---
       setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: true, id: Date.now(), linkData: { url, display } }]);
       if (url) {
           window.open(url, '_blank', 'noopener,noreferrer');
       }
-      // Proceed immediately after adding message and opening link
       proceedToNextNode(null, nodeId, updatedSlots);
       return;
     }
     if (node.type === 'toast') {
+      // --- 👇 [수정] interpolateMessage 사용 ---
       const message = interpolateMessage(node.data.message, updatedSlots);
+      // --- 👆 [수정 끝] ---
       alert(`[${node.data.toastType || 'info'}] ${message}`);
       proceedToNextNode(null, nodeId, updatedSlots);
       return;
@@ -413,28 +360,18 @@ export const useChatFlow = (nodes, edges) => {
         return;
     }
 
-    // Add message to history
     const isInteractive = node.type === 'form' || (node.type === 'branch' && node.data.evaluationType === 'BUTTON' && node.data.replies?.length > 0) || node.type === 'slotfilling';
-    // --- 👇 [수정] form 타입 메시지 추가는 위에서 처리했으므로 제외 ---
     if (node.type !== 'form') {
       setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: !isInteractive || node.type === 'iframe', id: Date.now() }]);
     }
-    // --- 👆 [수정 끝] ---
 
-
-    // --- Automatically proceed for non-interactive nodes after adding message ---
-    // --- 👇 [수정] form 타입 제외 ---
-    if (!isInteractive && node.type !== 'fixedmenu' && node.type !== 'form') { // Don't auto-proceed from fixedmenu or form
-        // Delay slightly before proceeding to allow message rendering
-        setTimeout(() => proceedToNextNode(null, nodeId, updatedSlots), 100); // Short delay
+    if (!isInteractive && node.type !== 'fixedmenu' && node.type !== 'form') {
+        setTimeout(() => proceedToNextNode(null, nodeId, updatedSlots), 100);
     }
-    // --- 👆 [수정 끝] ---
-    // For interactive nodes, the flow stops here, waiting for user input (handled by click handlers)
 
-  // <<< [수정] 의존성 배열에서 proceedToNextNode 제거, nodes, edges, setSlots, handleApiNode, handleLlmNode 추가 >>>
+  // --- 👇 [수정] 의존성 배열 변경 (proceedToNextNode 포함) ---
   }, [nodes, edges, setSlots, handleApiNode, handleLlmNode, proceedToNextNode]);
 
-  // Update the ref whenever addBotMessage function changes
   useEffect(() => {
     addBotMessageRef.current = addBotMessage;
   }, [addBotMessage]);
@@ -443,7 +380,6 @@ export const useChatFlow = (nodes, edges) => {
   const startSimulation = useCallback(() => {
     setIsStarted(true);
     let effectiveStartNodeId = startNodeId;
-
     if (!effectiveStartNodeId) {
       let startNode = nodes.find(n => n.type === 'start');
       if (!startNode) {
@@ -451,13 +387,11 @@ export const useChatFlow = (nodes, edges) => {
       }
       effectiveStartNodeId = startNode?.id;
     }
-
     if (effectiveStartNodeId) {
       setSlots({});
       setFixedMenu(null);
       setHistory([]);
       setCurrentId(effectiveStartNodeId);
-      // Use the ref to call the latest addBotMessage
       if (addBotMessageRef.current) {
           addBotMessageRef.current(effectiveStartNodeId, {});
       }
@@ -465,14 +399,13 @@ export const useChatFlow = (nodes, edges) => {
         console.warn("No start node found for simulation.");
         setIsStarted(false);
     }
-  }, [nodes, edges, setSlots, startNodeId]); // addBotMessage 제거
+  // --- 👇 [수정] 의존성 배열 변경 없음 ---
+  }, [nodes, edges, setSlots, startNodeId]);
 
   useEffect(() => {
     setIsStarted(false);
     setHistory([]);
   }, [nodes, edges]);
-
-  // Removed the auto-proceed useEffect block as auto-proceeding is now handled within addBotMessage
 
   return {
     history, setHistory, currentId, currentNode, fixedMenu, isStarted, startSimulation, proceedToNextNode

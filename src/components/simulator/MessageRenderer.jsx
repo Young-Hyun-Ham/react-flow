@@ -1,13 +1,13 @@
+// src/components/simulator/MessageRenderer.jsx
+
 import React, { useRef, useEffect } from 'react';
 import useStore from '../../store';
 import styles from '../../ChatbotSimulator.module.css';
-import { interpolateMessage, validateInput, getNestedValue } from '../../simulatorUtils'; // getNestedValue 추가
+// --- 👇 [수정] interpolateMessageForApi 제거 ---
+import { interpolateMessage, validateInput, getNestedValue } from '../../simulatorUtils';
 
-// 💡 [수정된 부분] handleGridRowClick 프롭 추가
 const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, isCompleted, formData, handleFormInputChange, handleFormMultiInputChange, handleGridRowClick }) => {
-    // --- 👇 [추가] 스토어에서 setSelectedRow 가져오기 ---
     const setSelectedRow = useStore((state) => state.setSelectedRow);
-    // --- 👆 [추가 끝] ---
 
     if (!node) return null;
 
@@ -15,7 +15,9 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
         return (
             <div className={`${styles.message} ${styles.botMessage} ${styles.iframeContainer}`}>
                 <iframe
+                    // --- 👇 [수정] interpolateMessage 사용 ---
                     src={interpolateMessage(node.data.url, slots)}
+                    // --- 👆 [수정 끝] ---
                     width={node.data.width || '100%'}
                     height={node.data.height || '250'}
                     style={{ border: 'none', borderRadius: '18px' }}
@@ -26,30 +28,29 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
     }
 
     if (node.type === 'link') {
-        return (
-            <div className={`${styles.message} ${styles.botMessage}`}>
-                <span>Opening link in a new tab: </span>
-                <a href={node.data.content} target="_blank" rel="noopener noreferrer">{node.data.display || node.data.content}</a>
-            </div>
-        );
+        // Link 노드는 addBotMessage에서 linkData로 처리하므로 여기서는 렌더링 불필요
+        // (만약 linkData가 없다면 여기서 렌더링)
+        // const url = interpolateMessage(node.data.content, slots);
+        // const display = interpolateMessage(node.data.display, slots);
+        // return ( ... )
+        return null; // 通常は useChatFlow で処理
     }
 
     if (node.type === 'form') {
-        // --- 💡 [추가된 부분] ---
-        // 폼 요소 중 'optionsSlot'이 있고, 해당 슬롯이 '객체 배열'인 그리드가 있는지 확인
         const hasSlotBoundGrid = node.data.elements?.some(el =>
             el.type === 'grid' &&
             el.optionsSlot &&
             Array.isArray(slots[el.optionsSlot]) &&
-            slots[el.optionsSlot].length > 0 && // 배열이 비어있지 않고
-            typeof slots[el.optionsSlot][0] === 'object' && // 첫 번째 항목이 객체이며
-            slots[el.optionsSlot][0] !== null // null이 아닌지 확인
+            slots[el.optionsSlot].length > 0 &&
+            typeof slots[el.optionsSlot][0] === 'object' &&
+            slots[el.optionsSlot][0] !== null
         );
-        // --- 💡 [추가 끝] ---
 
         return (
             <div className={`${styles.message} ${styles.botMessage} ${styles.formContainer}`}>
-                <h3>{node.data.title}</h3>
+                {/* --- 👇 [수정] interpolateMessage 사용 --- */}
+                <h3>{interpolateMessage(node.data.title, slots)}</h3>
+                 {/* --- 👆 [수정 끝] --- */}
                 {node.data.elements?.map(el => {
                     const dateProps = {};
                     if (el.type === 'date') {
@@ -61,7 +62,6 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                         }
                     }
 
-                    // --- 💡 Grid 렌더링 수정된 부분 시작 ---
                     if (el.type === 'grid') {
                         const gridDataFromSlot = el.optionsSlot ? slots[el.optionsSlot] : null;
                         const hasSlotData = Array.isArray(gridDataFromSlot) && gridDataFromSlot.length > 0;
@@ -69,7 +69,6 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                         if (hasSlotData) {
                             const isDynamicObjectArray = typeof gridDataFromSlot[0] === 'object' && gridDataFromSlot[0] !== null && !Array.isArray(gridDataFromSlot[0]);
                             if (isDynamicObjectArray) {
-                                // 데이터 슬롯이 객체 배열일 때
                                 const displayKeys = el.displayKeys && el.displayKeys.length > 0 ? el.displayKeys : Object.keys(gridDataFromSlot[0] || {});
                                 const filteredKeys = el.hideNullColumns
                                     ? displayKeys.filter(key => gridDataFromSlot.some(obj => obj[key] !== null && obj[key] !== undefined && obj[key] !== ""))
@@ -80,15 +79,19 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                                         <table className={styles.formGridTable}>
                                             <thead>
                                                 <tr>
-                                                    {filteredKeys.map(key => <th key={key}>{key}</th>)}
+                                                    {/* --- 👇 [수정] interpolateMessage 사용 --- */}
+                                                    {filteredKeys.map(key => <th key={key}>{interpolateMessage(key, slots)}</th>)}
+                                                    {/* --- 👆 [수정 끝] --- */}
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {gridDataFromSlot.map((dataObject, index) => (
                                                     <tr key={`${el.id}-${index}`} onClick={() => !isCompleted && handleGridRowClick(dataObject)}>
+                                                        {/* --- 👇 [수정] interpolateMessage 사용 --- */}
                                                         {filteredKeys.map(key => (
                                                             <td key={key}>{interpolateMessage(dataObject[key] || '', slots)}</td>
                                                         ))}
+                                                        {/* --- 👆 [수정 끝] --- */}
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -96,7 +99,6 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                                     </div>
                                 );
                             } else {
-                                // 데이터 슬롯이 2차원 배열일 때
                                 const rows = gridDataFromSlot.length;
                                 const columns = gridDataFromSlot[0]?.length || 0;
                                  return (
@@ -106,7 +108,9 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                                                 <tr key={r}>
                                                     {[...Array(columns)].map((_, c) => {
                                                         const cellValue = gridDataFromSlot[r] ? gridDataFromSlot[r][c] : '';
+                                                        {/* --- 👇 [수정] interpolateMessage 사용 --- */}
                                                         return <td key={c}>{interpolateMessage(cellValue || '', slots)}</td>;
+                                                        {/* --- 👆 [수정 끝] --- */}
                                                     })}
                                                 </tr>
                                             ))}
@@ -115,7 +119,6 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                                 );
                             }
                         } else {
-                            // 데이터 슬롯이 없거나 유효하지 않을 때 (수동 데이터)
                             const rows = el.rows || 2;
                             const columns = el.columns || 2;
                             return (
@@ -126,7 +129,9 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                                                 {[...Array(columns)].map((_, c) => {
                                                     const cellIndex = r * columns + c;
                                                     const cellValue = el.data && el.data[cellIndex] ? el.data[cellIndex] : '';
+                                                    {/* --- 👇 [수정] interpolateMessage 사용 --- */}
                                                     return <td key={c}>{interpolateMessage(cellValue, slots)}</td>;
+                                                    {/* --- 👆 [수정 끝] --- */}
                                                 })}
                                             </tr>
                                         ))}
@@ -135,38 +140,27 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                             );
                         }
                     }
-                    // --- 💡 Grid 렌더링 수정된 부분 끝 ---
 
-                    // --- 💡 Input defaultValue 처리 시작 ---
                     let initialValue = '';
                     if (el.type === 'input') {
                         const defaultValueConfig = el.defaultValue || '';
-                        const slotMatch = defaultValueConfig.match(/^\{(.+)\}$/); // {slotName} 형식인지 확인
-
-                        if (slotMatch) {
-                            // 슬롯 값 참조
-                            initialValue = interpolateMessage(getNestedValue(slots, slotMatch[1]) || '', slots);
-                        } else {
-                            // 리터럴 값
-                            initialValue = defaultValueConfig;
-                        }
-                        // formData에 값이 있으면 우선 적용
+                        // --- 👇 [수정] interpolateMessage 사용 ---
+                        initialValue = interpolateMessage(defaultValueConfig, slots);
+                        // --- 👆 [수정 끝] ---
                         initialValue = formData[el.name] ?? initialValue;
                     } else {
                          initialValue = formData[el.name] ?? el.defaultValue ?? '';
                     }
-                    // --- 💡 Input defaultValue 처리 끝 ---
 
-                    // --- 기존 Input, Date, Checkbox, Dropbox 렌더링 로직 ---
                     return (
                         <div key={el.id} className={styles.formElement}>
-                            <label className={styles.formLabel}>{el.label}</label>
-                            {/* --- 💡 수정: value 대신 defaultValue 사용 및 initialValue 적용 --- */}
-                            {el.type === 'input' && <input type={el.validation?.type === 'email' ? 'email' : 'text'} className={styles.formInput} placeholder={el.placeholder} defaultValue={initialValue} onChange={(e) => handleFormInputChange(el.name, e.target.value)} disabled={isCompleted} />}
-                            {/* --- 💡 수정 끝 --- */}
+                            {/* --- 👇 [수정] interpolateMessage 사용 --- */}
+                            <label className={styles.formLabel}>{interpolateMessage(el.label, slots)}</label>
+                             {/* --- 👆 [수정 끝] --- */}
+                            {el.type === 'input' && <input type={el.validation?.type === 'email' ? 'email' : 'text'} className={styles.formInput} placeholder={interpolateMessage(el.placeholder, slots)} defaultValue={initialValue} onChange={(e) => handleFormInputChange(el.name, e.target.value)} disabled={isCompleted} />}
                             {el.type === 'date' && <input type="date" className={styles.formInput} value={formData[el.name] || ''} onChange={(e) => handleFormInputChange(el.name, e.target.value)} disabled={isCompleted} {...dateProps} />}
-                            {el.type === 'checkbox' && el.options?.map(opt => <div key={opt} className={styles.checkboxOption}><input type="checkbox" id={`${el.id}-${opt}`} value={opt} checked={(formData[el.name] || []).includes(opt)} onChange={(e) => handleFormMultiInputChange(el.name, opt, e.target.checked)} disabled={isCompleted} /><label htmlFor={`${el.id}-${opt}`}>{opt}</label></div>)}
-                            {el.type === 'dropbox' && (() => { const options = Array.isArray(slots[el.optionsSlot]) ? slots[el.optionsSlot] : el.options; return (<select className={styles.formInput} value={formData[el.name] || ''} onChange={(e) => handleFormInputChange(el.name, e.target.value)} disabled={isCompleted}><option value="" disabled>Select...</option>{(options || []).map(opt => { const v = typeof opt === 'object' ? opt.value : opt; const l = typeof opt === 'object' ? opt.label : opt; return <option key={v} value={v}>{l}</option>; })}</select>); })()}
+                            {el.type === 'checkbox' && el.options?.map(opt => <div key={opt} className={styles.checkboxOption}><input type="checkbox" id={`${el.id}-${opt}`} value={opt} checked={(formData[el.name] || []).includes(opt)} onChange={(e) => handleFormMultiInputChange(el.name, opt, e.target.checked)} disabled={isCompleted} /><label htmlFor={`${el.id}-${opt}`}>{interpolateMessage(opt, slots)}</label></div>)}
+                            {el.type === 'dropbox' && (() => { const options = Array.isArray(slots[el.optionsSlot]) ? slots[el.optionsSlot] : el.options; return (<select className={styles.formInput} value={formData[el.name] || ''} onChange={(e) => handleFormInputChange(el.name, e.target.value)} disabled={isCompleted}><option value="" disabled>Select...</option>{(options || []).map(opt => { const v = typeof opt === 'object' ? opt.value : opt; const l = typeof opt === 'object' ? opt.label : opt; return <option key={v} value={v}>{interpolateMessage(l, slots)}</option>; })}</select>); })()}
                         </div>
                     );
                 })}
@@ -180,13 +174,17 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
         );
     }
 
+    // --- 👇 [수정] interpolateMessage 사용 ---
     const message = interpolateMessage(node.data.content || node.data.label, slots);
+    // --- 👆 [수정 끝] ---
     return (
         <div className={`${styles.message} ${styles.botMessage}`}>
             <div>{message}</div>
             {node.type === 'branch' && node.data.evaluationType === 'BUTTON' && (
                 <div className={styles.branchButtonsContainer}>
-                    {node.data.replies?.map(reply => <button key={reply.value} className={styles.branchButton} onClick={() => onOptionClick(reply)} disabled={isCompleted}>{reply.display}</button>)}
+                    {/* --- 👇 [수정] interpolateMessage 사용 --- */}
+                    {node.data.replies?.map(reply => <button key={reply.value} className={styles.branchButton} onClick={() => onOptionClick(reply)} disabled={isCompleted}>{interpolateMessage(reply.display, slots)}</button>)}
+                    {/* --- 👆 [수정 끝] --- */}
                 </div>
             )}
         </div>
@@ -194,7 +192,6 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
 };
 
 
-// 💡 [수정된 부분] handleGridRowClick 프롭 추가
 const MessageRenderer = ({ item, nodes, onOptionClick, handleFormSubmit, handleFormDefault, formData, handleFormInputChange, handleFormMultiInputChange, handleGridRowClick }) => {
     const slots = useStore((state) => state.slots);
     const historyRef = useRef(null);
@@ -210,6 +207,7 @@ const MessageRenderer = ({ item, nodes, onOptionClick, handleFormSubmit, handleF
             return (
                 <div className={styles.messageRow}>
                     <img src={item.isStreaming ? "/images/avatar-loading.png" : "/images/avatar.png"} alt="Avatar" className={styles.avatar} />
+                    {/* Streaming content doesn't need interpolation here as it comes directly */}
                     <div className={`${styles.message} ${styles.botMessage}`}>{item.content}</div>
                 </div>
             );
@@ -222,16 +220,30 @@ const MessageRenderer = ({ item, nodes, onOptionClick, handleFormSubmit, handleF
             );
         case 'bot':
             const node = nodes.find(n => n.id === item.nodeId);
+            // Link data handling from useChatFlow (already interpolated)
+            if (item.linkData) {
+                return (
+                     <div className={styles.messageRow}>
+                        <img src="/images/avatar.png" alt="Avatar" className={styles.avatar} />
+                        <div className={`${styles.message} ${styles.botMessage}`}>
+                           <span>Opening link: </span>
+                           <a href={item.linkData.url} target="_blank" rel="noopener noreferrer">{item.linkData.display || item.linkData.url}</a>
+                        </div>
+                    </div>
+                );
+            }
             return (
                 <div className={styles.messageRow}>
                     <img src="/images/avatar.png" alt="Avatar" className={styles.avatar} />
-                    {/* 💡 [수정된 부분] handleGridRowClick 프롭 전달 */}
-                    {item.message ? <div className={`${styles.message} ${styles.botMessage}`}>{item.message}</div> : <BotMessage node={node} slots={slots} onOptionClick={onOptionClick} onFormSubmit={handleFormSubmit} onFormDefault={handleFormDefault} isCompleted={item.isCompleted} formData={formData} handleFormInputChange={handleFormInputChange} handleFormMultiInputChange={handleFormMultiInputChange} handleGridRowClick={handleGridRowClick} />}
+                     {/* --- 👇 [수정] interpolateMessage 사용 (일반 메시지) --- */}
+                    {item.message ? <div className={`${styles.message} ${styles.botMessage}`}>{interpolateMessage(item.message, slots)}</div> : <BotMessage node={node} slots={slots} onOptionClick={onOptionClick} onFormSubmit={handleFormSubmit} onFormDefault={handleFormDefault} isCompleted={item.isCompleted} formData={formData} handleFormInputChange={handleFormInputChange} handleFormMultiInputChange={handleFormMultiInputChange} handleGridRowClick={handleGridRowClick} />}
+                    {/* --- 👆 [수정 끝] --- */}
                 </div>
             );
         case 'user':
             return (
                 <div className={`${styles.messageRow} ${styles.userRow}`}>
+                    {/* User messages don't need interpolation */}
                     <div className={`${styles.message} ${styles.userMessage}`}>{item.message}</div>
                 </div>
             );

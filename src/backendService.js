@@ -1,6 +1,9 @@
+// src/backendService.js
+
 import * as firebaseApi from './firebaseApi';
 import * as fastApi from './fastApi';
-import { interpolateMessageForApi, getNestedValue } from './simulatorUtils';
+// --- 👇 [수정] interpolateMessageForApi 제거 ---
+import { interpolateMessage, getNestedValue } from './simulatorUtils';
 import useStore from './store';
 
 const services = {
@@ -39,37 +42,45 @@ export const deleteFormTemplate = firebaseApi.deleteFormTemplate;
 export const testApiCall = async (apiCall) => {
   const { slots } = useStore.getState();
 
-  const interpolatedUrl = interpolateMessageForApi(apiCall.url, slots);
-  const interpolatedHeaders = JSON.parse(interpolateMessageForApi(apiCall.headers || '{}', slots));
-  
-  const rawBody = apiCall.body || '{}';
-  const interpolatedBodyString = JSON.stringify(JSON.parse(rawBody), (key, value) => {
-      if (typeof value === 'string') {
-          return value.replace(/{{([^}]+)}}/g, (match, slotKey) => {
-              const slotValue = getNestedValue(slots, slotKey);
-              return typeof slotValue === 'string' ? slotValue : `___SLOT___${slotKey}`;
-          });
-      }
-      return value;
-  });
+  // --- 👇 [수정] interpolateMessage 사용 ---
+  const interpolatedUrl = interpolateMessage(apiCall.url, slots);
+  const interpolatedHeaders = JSON.parse(interpolateMessage(apiCall.headers || '{}', slots));
 
-  const finalBody = interpolatedBodyString.replace(/"___SLOT___([^"]+)"/g, (match, slotKey) => {
-    const slotValue = getNestedValue(slots, slotKey);
-    return JSON.stringify(slotValue);
-  });
+  const rawBody = apiCall.body || '{}';
+  // Body 처리 로직은 interpolateMessage가 {{}}를 처리하므로 단순화 가능
+  const finalBody = interpolateMessage(rawBody, slots);
+  // --- 👆 [수정 끝] ---
+
 
   const options = {
     method: apiCall.method,
     headers: { 'Content-Type': 'application/json', ...interpolatedHeaders },
-    body: apiCall.method !== 'GET' ? finalBody : undefined,
+    // GET, HEAD 메서드가 아닐 경우에만 body 포함
+    body: (apiCall.method !== 'GET' && apiCall.method !== 'HEAD') ? finalBody : undefined,
   };
 
   const response = await fetch(interpolatedUrl, options);
-  const result = await response.json();
+
+  // --- 👇 [수정] 응답 본문 파싱 개선 ---
+  let result;
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+      try {
+          result = await response.json();
+      } catch (e) {
+          // JSON 파싱 실패 시 텍스트로 처리
+          result = await response.text();
+      }
+  } else {
+      result = await response.text();
+  }
+  // --- 👆 [수정 끝] ---
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${JSON.stringify(result, null, 2)}`);
+      // 오류 메시지를 좀 더 명확하게
+      const errorMessage = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+      throw new Error(`HTTP ${response.status}: ${errorMessage}`);
   }
-  
+
   return result;
 };
