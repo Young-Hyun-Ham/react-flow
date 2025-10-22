@@ -337,7 +337,7 @@ export const useChatFlow = (nodes, edges) => {
         proceedToNextNode(null, nodeId, newSlots);
         return;
     }
-    // --- 👇 [수정 시작] Form 노드 Default Value 처리 로직 통합 ---
+    // --- 👇 [수정 시작] Form 노드 Default Value 처리 로직 (덮어쓰기 적용) ---
     if (node.type === 'form') {
       let initialSlotsUpdate = {};
       (node.data.elements || []).forEach(element => {
@@ -352,18 +352,24 @@ export const useChatFlow = (nodes, edges) => {
             resolvedValue = defaultValueConfig;
           }
 
-          if (resolvedValue !== undefined && updatedSlots[element.name] === undefined) {
+          // --- 👇 [수정] 기존 슬롯 값 존재 여부 체크 제거 (항상 덮어쓰기) ---
+          if (resolvedValue !== undefined) {
              initialSlotsUpdate[element.name] = resolvedValue;
           }
+          // --- 👆 [수정 끝] ---
         }
         else if ((element.type === 'date' || element.type === 'dropbox') && element.name && element.defaultValue !== undefined && element.defaultValue !== '') {
-             if (updatedSlots[element.name] === undefined) {
+             // --- 👇 [수정] 기존 슬롯 값 존재 여부 체크 제거 (항상 덮어쓰기) ---
+             // if (updatedSlots[element.name] === undefined) {
                   initialSlotsUpdate[element.name] = element.defaultValue;
-             }
+             // }
+             // --- 👆 [수정 끝] ---
         } else if (element.type === 'checkbox' && element.name && Array.isArray(element.defaultValue)) {
-              if (updatedSlots[element.name] === undefined) {
+             // --- 👇 [수정] 기존 슬롯 값 존재 여부 체크 제거 (항상 덮어쓰기) ---
+              // if (updatedSlots[element.name] === undefined) {
                   initialSlotsUpdate[element.name] = element.defaultValue;
-              }
+              // }
+             // --- 👆 [수정 끝] ---
         }
       });
 
