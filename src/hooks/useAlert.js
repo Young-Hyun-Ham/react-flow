@@ -7,6 +7,6 @@ const useAlert = () => {
     throw new Error('useAlert must be used within an AlertProvider');
   }
   return context;
-};
+}; 
 
 export default useAlert;
