@@ -1,5 +1,12 @@
 // src/hooks/useChatFlow.js
 
+// ========================================================================
+// == Chatbot Scenario Execution Reference Implementation ==
+// This hook defines the standard logic for executing chatbot scenarios
+// based on the defined node and edge structures. The actual chatbot engine
+// should aim to replicate this behavior as closely as possible.
+// ========================================================================
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import useStore from '../store';
 import { interpolateMessage, getNestedValue, evaluateCondition } from '../simulatorUtils';
