@@ -13,10 +13,19 @@ export const PlayIcon = () => (
     </svg>
 );
 
-// <<< [추가] 시작 노드 아이콘 >>>
+// <<< [수정] 시작 노드 아이콘 >>>
 export const StartNodeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <polygon points="5 3 19 12 5 21 5 3"></polygon>
+  </svg>
+);
+// <<< [수정 끝] >>>
+
+// <<< [추가] 딜레이 노드 아이콘 >>>
+export const DelayNodeIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"></circle>
+    <polyline points="12 6 12 12 16 14"></polyline>
   </svg>
 );
 // <<< [추가 끝] >>>

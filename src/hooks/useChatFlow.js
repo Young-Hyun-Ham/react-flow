@@ -317,6 +317,19 @@ export const useChatFlow = (nodes, edges) => {
         proceedToNextNode(null, nodeId, newSlots); // Proceed with updated slots
         return;
     }
+
+    // <<< [추가] 딜레이 노드 처리 >>>
+    if (node.type === 'delay') {
+        const duration = node.data.duration || 0;
+        // 지정된 시간(ms)만큼 기다린 후 다음 노드로 진행
+        setTimeout(() => {
+            proceedToNextNode(null, nodeId, updatedSlots);
+        }, duration);
+        // 딜레이 중에는 아무 메시지도 표시하지 않고 바로 return
+        return;
+    }
+    // <<< [추가 끝] >>>
+
     // Handle Form node - set initial values from defaults/slots
     if (node.type === 'form') {
       let initialSlotsUpdate = {};

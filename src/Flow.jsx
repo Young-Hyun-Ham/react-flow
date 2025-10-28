@@ -12,8 +12,9 @@ import LinkNode from './nodes/LinkNode';
 import LlmNode from './nodes/LlmNode';
 import ToastNode from './nodes/ToastNode';
 import IframeNode from './nodes/IframeNode';
-import ScenarioNode from './nodes/ScenarioNode'; 
+import ScenarioNode from './nodes/ScenarioNode';
 import SetSlotNode from './nodes/SetSlotNode'; // Added
+import DelayNode from './nodes/DelayNode'; // <<< [추가]
 import ScenarioGroupModal from './ScenarioGroupModal';
 import ChatbotSimulator from './ChatbotSimulator';
 import NodeController from './NodeController';
@@ -35,17 +36,18 @@ const nodeTypes = {
   iframe: IframeNode,
   scenario: ScenarioNode,
   setSlot: SetSlotNode, // Added
+  delay: DelayNode, // <<< [추가]
 };
 
 function Flow({ scenario, backend, scenarios }) {
-  const { 
-    nodes, edges, onNodesChange, onEdgesChange, onConnect, 
-    fetchScenario, saveScenario, addNode, selectedNodeId, 
-    setSelectedNodeId, duplicateNode, deleteSelectedEdges, 
+  const {
+    nodes, edges, onNodesChange, onEdgesChange, onConnect,
+    fetchScenario, saveScenario, addNode, selectedNodeId,
+    setSelectedNodeId, duplicateNode, deleteSelectedEdges,
     nodeColors, setNodeColor, nodeTextColors, setNodeTextColor,
     exportSelectedNodes, importNodes, addScenarioAsGroup
   } = useStore();
-  
+
   const { getNodes, project } = useReactFlow();
   const reactFlowWrapper = useRef(null);
   const selectedNodesCount = getNodes().filter(n => n.selected).length;
@@ -55,13 +57,13 @@ function Flow({ scenario, backend, scenarios }) {
   const [isColorSettingsVisible, setIsColorSettingsVisible] = useState(false);
   const [isSimulatorExpanded, setIsSimulatorExpanded] = useState(false);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
-  
+
   useEffect(() => {
     if (scenario) {
       fetchScenario(backend, scenario.id);
     }
   }, [scenario, backend, fetchScenario]);
-  
+
   const visibleNodes = useMemo(() => {
     const collapsedGroupIds = new Set(nodes.filter(n => n.type === 'scenario' && n.data.isCollapsed).map(n => n.id));
     return nodes.filter(n => !n.parentNode || !collapsedGroupIds.has(n.parentNode));
@@ -136,7 +138,7 @@ function Flow({ scenario, backend, scenarios }) {
         x: event.clientX - reactFlowBounds.left,
         y: event.clientY - reactFlowBounds.top,
       });
-      
+
       addNode(type, position);
     },
     [project, addNode]
@@ -150,12 +152,13 @@ function Flow({ scenario, backend, scenarios }) {
     { type: 'api', label: '+ API' },
     { type: 'llm', label: '+ LLM' },
     { type: 'setSlot', label: '+ Set Slot' }, // Added
+    { type: 'delay', label: '+ Delay' }, // <<< [추가]
     { type: 'fixedmenu', label: '+ Fixed Menu' },
     { type: 'link', label: '+ Link' },
     { type: 'toast', label: '+ Toast' },
     { type: 'iframe', label: '+ iFrame' },
   ];
-  
+
   const visibleNodeButtons = nodeButtons.filter(button => button.type !== 'fixedmenu');
 
   return (
@@ -183,14 +186,14 @@ function Flow({ scenario, backend, scenarios }) {
                     <div key={type} className={styles.colorSettingItem}>
                         <span>{label.replace('+ ', '')}</span>
                         <div className={styles.colorInputs}>
-                          <input 
-                              type="color" 
-                              value={nodeColors[type]} 
+                          <input
+                              type="color"
+                              value={nodeColors[type]}
                               onChange={(e) => setNodeColor(type, e.target.value)}
                           />
-                          <input 
-                              type="color" 
-                              value={nodeTextColors[type]} 
+                          <input
+                              type="color"
+                              value={nodeTextColors[type]}
                               onChange={(e) => setNodeTextColor(type, e.target.value)}
                           />
                         </div>
@@ -200,21 +203,21 @@ function Flow({ scenario, backend, scenarios }) {
         )}
 
         {visibleNodeButtons.map(({ type, label }) => (
-            <button 
+            <button
                 key={type}
-                onClick={() => addNode(type)} 
+                onClick={() => addNode(type)}
                 onDragStart={(event) => onDragStart(event, type)}
                 draggable
-                className={styles.sidebarButton} 
-                style={{ 
-                    backgroundColor: nodeColors[type], 
-                    color: nodeTextColors[type] 
+                className={styles.sidebarButton}
+                style={{
+                    backgroundColor: nodeColors[type],
+                    color: nodeTextColors[type]
                 }}
             >
                 {label}
             </button>
         ))}
-        
+
         <div className={styles.separator} />
         <button onClick={() => setIsGroupModalOpen(true)} className={styles.sidebarButton} style={{backgroundColor: '#7f8c8d', color: 'white'}}>
           + Scenario Group
@@ -278,9 +281,9 @@ function Flow({ scenario, backend, scenarios }) {
         style={{ width: isSimulatorExpanded ? 'max(600px, 50%)' : isSimulatorVisible ? `${rightPanelWidth}px` : '0' }}
       >
         <div className={styles.panel}>
-          <ChatbotSimulator 
-            nodes={nodes} 
-            edges={edges} 
+          <ChatbotSimulator
+            nodes={nodes}
+            edges={edges}
             isVisible={isSimulatorVisible}
             isExpanded={isSimulatorExpanded}
             setIsExpanded={setIsSimulatorExpanded}
