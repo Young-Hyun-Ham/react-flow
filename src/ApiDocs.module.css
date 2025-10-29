@@ -1,3 +1,5 @@
+/* src/ApiDocs.module.css */
+
 .container {
   max-width: 900px;
   margin: 40px auto;
@@ -90,22 +92,29 @@
   line-height: 1.6;
 }
 
+/* --- 👇 [수정] Grid 레이아웃 제거 --- */
 .endpointBody dl {
-  display: grid;
-  grid-template-columns: 150px 1fr;
-  gap: 10px;
-  align-items: center;
+  /* display: grid; */ /* 제거 */
+  /* grid-template-columns: 150px 1fr; */ /* 제거 */
+  /* gap: 10px; */ /* 제거 */
+  /* align-items: center; */ /* 제거 */
 }
+/* --- 👆 [수정 끝] --- */
 
+/* --- 👇 [수정] dt, dd 스타일 조정 --- */
 .endpointBody dt {
   font-weight: bold;
   color: #606770;
+  margin-top: 15px; /* 항목 간 간격 추가 */
+  margin-bottom: 5px; /* dd와의 간격 조정 */
 }
 
 .endpointBody dd {
   margin: 0;
   font-family: 'Courier New', Courier, monospace;
+  margin-left: 0; /* 들여쓰기 제거 (선택 사항) */
 }
+/* --- 👆 [수정 끝] --- */
 
 .endpointBody pre {
   background-color: #272822;
