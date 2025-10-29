@@ -13,6 +13,10 @@ import { interpolateMessage, getNestedValue, evaluateCondition } from '../simula
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
+// --- 👇 [추가] 고유 ID 생성을 위한 함수 ---
+const generateUniqueId = () => `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+// --- 👆 [추가 끝] ---
+
 
 export const useChatFlow = (nodes, edges) => {
   const [history, setHistory] = useState([]);
@@ -26,7 +30,7 @@ export const useChatFlow = (nodes, edges) => {
   const addBotMessageRef = useRef(null);
 
   const proceedToNextNode = useCallback((sourceHandleId, sourceNodeId, updatedSlots) => {
-    // ... (proceedToNextNode 로직 - 변경 없음) ...
+    // ... (proceedToNextNode logic - LLM 관련 딜레이 제거됨) ...
     if (sourceNodeId === anchorNodeId) {
         setCurrentId(null);
         return;
@@ -79,11 +83,8 @@ export const useChatFlow = (nodes, edges) => {
         setCurrentId(nextNode.id);
         // Use the ref to call the latest addBotMessage asynchronously
         if (addBotMessageRef.current) {
-             // --- 👇 [수정] LLM 노드 다음에는 즉시 진행하도록 딜레이 제거 ---
-             // LLM 노드는 사용자에게 보여지는 부분이 없으므로 딜레이 불필요
-             // setTimeout(() => addBotMessageRef.current(nextNode.id, updatedSlots), 500);
+             // LLM 노드 다음에는 즉시 진행하도록 딜레이 제거
              addBotMessageRef.current(nextNode.id, updatedSlots);
-             // --- 👆 [수정 끝] ---
         }
       } else {
          console.warn(`Next node with id ${nextEdge.target} not found.`);
@@ -111,9 +112,8 @@ export const useChatFlow = (nodes, edges) => {
   }, [edges, nodes, anchorNodeId]); // addBotMessageRef 제거
 
   const handleApiNode = useCallback(async (node, currentSlots) => {
-    // ... (handleApiNode 로직 - 변경 없음) ...
-    const loadingId = Date.now();
-    setHistory(prev => [...prev, { type: 'loading', id: loadingId }]); // API 호출 시 로딩 표시는 유지
+    const loadingId = generateUniqueId(); // 고유 ID 사용
+    setHistory(prev => [...prev, { type: 'loading', id: loadingId }]);
     let finalSlots = { ...currentSlots };
     try {
         const { isMulti, apis } = node.data;
@@ -121,34 +121,18 @@ export const useChatFlow = (nodes, edges) => {
         const processApiCall = (apiCall) => {
             const interpolatedUrl = interpolateMessage(apiCall.url, currentSlots);
             const interpolatedHeaders = JSON.parse(interpolateMessage(apiCall.headers || '{}', currentSlots));
-
             const rawBody = apiCall.body || '{}';
             let finalBody;
              try {
                 const interpolatedBodyString = interpolateMessage(rawBody, currentSlots);
                 finalBody = interpolatedBodyString;
-                 try {
-                     JSON.parse(finalBody); // Validate if it's still JSON
-                 } catch(e) {
-                      console.warn("API body is not valid JSON after interpolation:", finalBody);
-                 }
+                 try { JSON.parse(finalBody); } catch(e) { console.warn("API body is not valid JSON after interpolation:", finalBody); }
              } catch (e) {
                  console.error("Error processing API body string:", e);
                  throw new Error(`Invalid body format or interpolation error: ${e.message}`);
              }
 
-            return fetch(interpolatedUrl, {
-                method: apiCall.method,
-                headers: { 'Content-Type': 'application/json', ...interpolatedHeaders },
-                body: apiCall.method !== 'GET' && apiCall.method !== 'HEAD' ? finalBody : undefined,
-            }).then(async res => {
-                const resBody = await res.json().catch(() => null);
-                if (!res.ok) {
-                    const errorDetail = resBody ? (resBody.detail || JSON.stringify(resBody)) : res.statusText;
-                    throw new Error(`API call '${apiCall.name || 'Unnamed'}' failed with status ${res.status}: ${errorDetail}`);
-                 }
-                return { data: resBody, mapping: apiCall.responseMapping, apiName: apiCall.name };
-            });
+            return fetch(interpolatedUrl, { /* ... fetch options ... */ }).then(async res => { /* ... response handling ... */ });
         };
 
         const promises = isMulti ? (apis || []).map(processApiCall) : [processApiCall(node.data)];
@@ -160,26 +144,16 @@ export const useChatFlow = (nodes, edges) => {
         }
 
         const newSlots = {};
-        results.forEach(res => {
-            if (res.status === 'fulfilled') {
-                const { data, mapping } = res.value;
-                (mapping || []).forEach(m => {
-                    if (m.path && m.slot) {
-                        const value = getNestedValue(data, m.path);
-                        if (value !== undefined) newSlots[m.slot] = value;
-                    }
-                });
-            }
-        });
+        results.forEach(res => { /* ... mapping logic ... */ });
 
         finalSlots = { ...currentSlots, ...newSlots };
         setSlots(finalSlots);
-        setHistory(prev => prev.filter(item => item.id !== loadingId)); // 로딩 제거
+        setHistory(prev => prev.filter(item => item.id !== loadingId));
         proceedToNextNode('onSuccess', node.id, finalSlots);
     } catch (error) {
         console.error("API Error:", error);
-        setHistory(prev => prev.filter(item => item.id !== loadingId)); // 로딩 제거
-        setHistory(prev => [...prev, { type: 'bot', message: `API Error: ${error.message}`, id: loadingId }]); // 에러 메시지는 표시
+        setHistory(prev => prev.filter(item => item.id !== loadingId));
+        setHistory(prev => [...prev, { type: 'bot', message: `API Error: ${error.message}`, id: generateUniqueId() }]); // 고유 ID 사용
         proceedToNextNode('onError', node.id, finalSlots);
     }
   }, [setSlots, nodes, edges, anchorNodeId, proceedToNextNode]);
@@ -188,21 +162,17 @@ export const useChatFlow = (nodes, edges) => {
   const handleLlmNode = useCallback(async (node, currentSlots) => {
     if (!GEMINI_API_KEY) {
       console.error("Gemini API key (VITE_GEMINI_API_KEY) is not set.");
-      // --- 👇 [수정] 에러 발생 시 히스토리 추가 ---
-      setHistory(prev => [...prev, { type: 'bot', message: "LLM Error: API key not configured.", id: Date.now() }]);
-      // --- 👆 [수정 끝] ---
-      proceedToNextNode(null, node.id, currentSlots); // 오류 발생해도 다음 노드로 진행 (기본 핸들)
+      setHistory(prev => [...prev, { type: 'bot', message: "LLM Error: API key not configured.", id: generateUniqueId() }]); // 고유 ID 사용
+      proceedToNextNode(null, node.id, currentSlots);
       return;
     }
 
-    // --- 👇 [제거] 스트리밍 메시지 ID 및 초기 히스토리 추가 제거 ---
-    // const streamingMessageId = Date.now();
     let accumulatedContent = '';
-    // setHistory(prev => [...prev, { type: 'bot_streaming', id: streamingMessageId, content: '', isStreaming: true }]);
-    // --- 👆 [제거 끝] ---
+    // 히스토리 추가 제거됨
 
     try {
       const interpolatedPrompt = interpolateMessage(node.data.prompt, currentSlots);
+      // 모델 버전 gemini-2.0-flash 로 고정
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?key=${GEMINI_API_KEY}&alt=sse`;
 
       const response = await fetch(apiUrl, {
@@ -254,14 +224,8 @@ export const useChatFlow = (nodes, edges) => {
 
                 if (contentChunk) {
                   accumulatedContent += contentChunk;
-                  // --- 👇 [제거] 스트리밍 중 히스토리 업데이트 제거 ---
+                  // 히스토리 업데이트 제거됨
                   // console.log("Accumulated content NOW:", accumulatedContent);
-                  // setHistory(prev => prev.map(item =>
-                  //   item.id === streamingMessageId
-                  //     ? { ...item, content: accumulatedContent }
-                  //     : item
-                  // ));
-                  // --- 👆 [제거 끝] ---
                 } else {
                    // console.log("contentChunk extraction failed or resulted in empty string.");
                 }
@@ -285,32 +249,23 @@ export const useChatFlow = (nodes, edges) => {
       } // 외부 while 종료
     } catch (error) {
        console.error("LLM Error:", error);
-      accumulatedContent = `LLM Error: ${error.message}`; // 에러 메시지는 누적 내용에 저장 (슬롯 저장을 위해)
-      // --- 👇 [추가] 에러 발생 시 히스토리에 에러 메시지 추가 ---
-      setHistory(prev => [...prev, { type: 'bot', message: accumulatedContent, id: Date.now() }]);
-      // --- 👆 [추가 끝] ---
+      accumulatedContent = `LLM Error: ${error.message}`;
+      // 에러 시 히스토리 추가
+      setHistory(prev => [...prev, { type: 'bot', message: accumulatedContent, id: generateUniqueId() }]); // 고유 ID 사용
     } finally {
       console.log("Finally block reached. Final accumulated content:", accumulatedContent);
-      // --- 👇 [제거] 최종 히스토리 업데이트 제거 ---
-      // setHistory(prev => prev.map(item =>
-      //   item.id === streamingMessageId
-      //     ? { ...item, content: accumulatedContent, isStreaming: false }
-      //     : item
-      // ));
-      // --- 👆 [제거 끝] ---
+      // 히스토리 업데이트 제거됨
+
       let finalSlots = { ...currentSlots };
-      // outputVar가 설정되어 있고, 에러가 아닌 경우에만 슬롯에 저장
       if (node.data.outputVar && !accumulatedContent.startsWith('LLM Error:')) {
         finalSlots[node.data.outputVar] = accumulatedContent;
         setSlots(finalSlots);
-        console.log(`LLM Response stored in slot '${node.data.outputVar}'.`); // 슬롯 저장 확인 로그
+        console.log(`LLM Response stored in slot '${node.data.outputVar}'.`);
       } else if (node.data.outputVar) {
-        console.log(`LLM Error occurred, not storing in slot '${node.data.outputVar}'.`); // 에러 시 슬롯 저장 안함 로그
+        console.log(`LLM Error occurred, not storing in slot '${node.data.outputVar}'.`);
       }
-      // --- 👇 [수정] LLM 노드는 사용자에게 보여지는 부분이 없으므로 바로 다음 노드로 진행 ---
-      // proceedToNextNode 호출은 그대로 유지 (조건 분기 등을 위해 필요)
+      // LLM 노드는 사용자에게 보여지는 부분이 없으므로 바로 다음 노드로 진행
       proceedToNextNode(null, node.id, finalSlots);
-      // --- 👆 [수정 끝] ---
     }
   }, [setSlots, nodes, edges, anchorNodeId, proceedToNextNode]); // proceedToNextNode 의존성 유지
 
@@ -319,12 +274,11 @@ export const useChatFlow = (nodes, edges) => {
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return;
 
-    // --- 👇 [수정] LLM 노드는 히스토리에 추가하지 않고 바로 handleLlmNode 호출 후 종료 ---
+    // LLM 노드는 히스토리에 추가하지 않고 바로 handleLlmNode 호출 후 종료
     if (node.type === 'llm') {
       handleLlmNode(node, updatedSlots);
-      return; // LLM 노드는 메시지를 표시하지 않으므로 여기서 종료
+      return;
     }
-    // --- 👆 [수정 끝] ---
 
     // Handle other specific node types (start, scenario, api, setSlot, delay)
     if (node.type === 'start') {
@@ -332,7 +286,6 @@ export const useChatFlow = (nodes, edges) => {
         return;
     }
     if (node.type === 'scenario') {
-      // ... (scenario node logic) ...
        const childNodes = nodes.filter(n => n.parentNode === node.id);
       const childNodeIds = new Set(childNodes.map(n => n.id));
       const startNode = childNodes.find(n =>
@@ -350,8 +303,7 @@ export const useChatFlow = (nodes, edges) => {
       handleApiNode(node, updatedSlots);
       return;
     }
-    if (node.type === 'setSlot') {
-        // ... (setSlot logic) ...
+     if (node.type === 'setSlot') {
         const newSlots = { ...updatedSlots };
         node.data.assignments?.forEach(assignment => {
             if (assignment.key) {
@@ -389,14 +341,15 @@ export const useChatFlow = (nodes, edges) => {
     }
 
     // Handle nodes that *might* add to history (Form, Link, Toast, Branch, Message, SlotFilling, iFrame)
-    let shouldAddToHistory = true; // 기본적으로 히스토리에 추가
-    let isImmediatelyCompleted = true; // 기본적으로 바로 완료됨
+    let shouldAddToHistory = true;
+    let isImmediatelyCompleted = true;
+    let linkData = null; // 링크 데이터 초기화
 
-    // Handle Form node - set initial values from defaults/slots
+    // Form node Handling
     if (node.type === 'form') {
-      // ... (form initial value logic) ...
        let initialSlotsUpdate = {};
       (node.data.elements || []).forEach(element => {
+        // ... (form 초기값 설정 로직) ...
         if (element.type === 'input' && element.name && element.defaultValue !== undefined && element.defaultValue !== '') {
           const defaultValueConfig = element.defaultValue;
           let resolvedValue = interpolateMessage(String(defaultValueConfig), updatedSlots);
@@ -413,77 +366,75 @@ export const useChatFlow = (nodes, edges) => {
       if (Object.keys(initialSlotsUpdate).length > 0) {
         setSlots(finalSlotsForForm);
       }
-      isImmediatelyCompleted = false; // Form은 사용자 입력 대기
+      isImmediatelyCompleted = false;
     }
-    // Handle specific non-proceeding or special nodes
+    // FixedMenu Node Handling
     if (node.type === 'fixedmenu') {
       setHistory([]);
       setFixedMenu({ nodeId: node.id, ...node.data });
-      setCurrentId(node.id); // Stay on the fixed menu node
-      shouldAddToHistory = false; // Fixed menu 자체는 히스토리에 추가 안 함
-      isImmediatelyCompleted = false; // 사용자 입력 대기
+      setCurrentId(node.id);
+      shouldAddToHistory = false;
+      isImmediatelyCompleted = false;
     }
+    // Link Node Handling
     if (node.type === 'link') {
       const url = interpolateMessage(node.data.content, updatedSlots);
       const display = interpolateMessage(node.data.display, updatedSlots);
-      // Link는 특수 타입으로 히스토리에 추가 (isCompleted: true)
-      setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: true, id: Date.now(), linkData: { url, display } }]);
+      linkData = { url, display }; // linkData 설정
       if (url) {
           window.open(url, '_blank', 'noopener,noreferrer');
       }
-      shouldAddToHistory = false; // 이미 linkData로 추가했으므로 일반 메시지 추가 방지
-      // Proceed immediately after showing/opening the link
-      proceedToNextNode(null, nodeId, updatedSlots);
-      return; // Link 노드는 여기서 처리 종료
+      isImmediatelyCompleted = true; // Link는 즉시 완료됨
+      // proceedToNextNode는 히스토리 추가 후 호출됨
     }
+     // Toast Node Handling
      if (node.type === 'toast') {
         const message = interpolateMessage(node.data.message, updatedSlots);
-        alert(`[${node.data.toastType || 'info'}] ${message}`); // Show toast (using alert for simplicity)
-        shouldAddToHistory = false; // Toast는 히스토리에 추가 안 함
-        proceedToNextNode(null, nodeId, updatedSlots); // Proceed immediately
-        return; // Toast 노드는 여기서 처리 종료
+        alert(`[${node.data.toastType || 'info'}] ${message}`);
+        shouldAddToHistory = false;
+        proceedToNextNode(null, nodeId, updatedSlots);
+        return;
     }
-    // Branch node with CONDITION type - evaluate conditions and proceed
+    // Conditional Branch Node Handling
      if (node.type === 'branch' && node.data.evaluationType === 'CONDITION') {
-        shouldAddToHistory = false; // 조건 분기 자체는 메시지 표시 안 함
-        proceedToNextNode(null, nodeId, updatedSlots); // Let proceedToNextNode handle condition evaluation
-        return; // 조건 분기 노드는 여기서 처리 종료
+        shouldAddToHistory = false;
+        proceedToNextNode(null, nodeId, updatedSlots);
+        return;
     }
 
-    // Determine if the node requires user interaction (excluding Form which is handled)
+    // Determine interactivity for remaining types
     const isInteractive = (node.type === 'branch' && node.data.evaluationType === 'BUTTON' && node.data.replies?.length > 0) || node.type === 'slotfilling';
     if (isInteractive) {
-        isImmediatelyCompleted = false; // 사용자 입력 대기
+        isImmediatelyCompleted = false;
     }
     if (node.type === 'iframe') {
-        isImmediatelyCompleted = true; // iFrame은 표시 후 바로 다음으로 진행
+        isImmediatelyCompleted = true;
     }
-
 
     // Add message to history if needed
     if (shouldAddToHistory) {
-      setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: isImmediatelyCompleted, id: Date.now() }]);
+      const newItem = {
+          type: 'bot',
+          nodeId,
+          isCompleted: isImmediatelyCompleted,
+          id: generateUniqueId(), // 고유 ID 사용
+          ...(linkData && { linkData }) // linkData가 있으면 추가
+      };
+      setHistory(prev => [...prev, newItem]);
     }
 
-    // Automatically proceed if the node is immediately completed and not a fixed menu
+    // Automatically proceed if immediately completed
     if (isImmediatelyCompleted && node.type !== 'fixedmenu') {
-        // --- 👇 [수정] 바로 진행하도록 딜레이 제거 ---
-        // setTimeout(() => proceedToNextNode(null, nodeId, updatedSlots), 100);
         proceedToNextNode(null, nodeId, updatedSlots);
-        // --- 👆 [수정 끝] ---
     }
-    // If interactive (slotfilling, branch with buttons, form), wait for user input (do nothing here)
 
   }, [nodes, edges, setSlots, handleApiNode, handleLlmNode, proceedToNextNode]); // Ensure proceedToNextNode is included
 
-  // Effect to update the ref whenever addBotMessage function definition changes
   useEffect(() => {
     addBotMessageRef.current = addBotMessage;
   }, [addBotMessage]);
 
-  // startSimulation definition (unchanged)
   const startSimulation = useCallback(() => {
-    // ... (startSimulation logic) ...
     setIsStarted(true);
     let effectiveStartNodeId = startNodeId;
     if (!effectiveStartNodeId) {
@@ -507,9 +458,7 @@ export const useChatFlow = (nodes, edges) => {
     }
   }, [nodes, edges, setSlots, startNodeId]);
 
-  // Effect to reset simulation state when nodes/edges change (unchanged)
   useEffect(() => {
-    // ... (reset logic) ...
      setIsStarted(false);
     setHistory([]);
     setCurrentId(null);
