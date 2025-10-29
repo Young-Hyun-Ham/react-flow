@@ -3,6 +3,7 @@ const TENANT_ID = '1000';
 const STAGE_ID = 'DEV';
 
 const handleApiResponse = async (response) => {
+    // ... (기존 에러 핸들링 로직) ...
     if (!response.ok) {
         let errorDetail = `HTTP error! status: ${response.status}`;
         try {
@@ -13,7 +14,6 @@ const handleApiResponse = async (response) => {
         }
         throw new Error(errorDetail);
     }
-    // DELETE와 같이 본문이 없는 성공 응답 처리
     if (response.status === 204) {
         return;
     }
@@ -23,81 +23,98 @@ const handleApiResponse = async (response) => {
 export const fetchScenarios = async () => {
     const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}`);
     const data = await handleApiResponse(response);
-    // FastAPI 응답 구조에 맞춰 scenarios 배열 또는 빈 배열 반환
     const scenarios = data?.scenarios || (Array.isArray(data) ? data : []);
-     // job 속성이 없는 경우 'Process'를 기본값으로 설정 (클라이언트 측에서 처리)
+    // <<< [수정] description 필드 추가 (기본값 빈 문자열) ---
     return scenarios.map(scenario => ({
        ...scenario,
        job: scenario.job || 'Process',
+       description: scenario.description || '', // description 추가
     }));
+    // --- [수정 끝] >>>
 };
 
-export const createScenario = async ({ newScenarioName, job }) => {
+// <<< [수정] description 파라미터 추가 ---
+export const createScenario = async ({ newScenarioName, job, description }) => {
+// --- [수정 끝] >>>
     const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // FastAPI 요청 본문에 맞게 수정 (start_node_id 추가)
+        // <<< [수정] description 필드 추가 ---
         body: JSON.stringify({
-            category_id: 'DEV_1000_S_1_1_1', // 필요시 수정
+            category_id: 'DEV_1000_S_1_1_1',
             name: newScenarioName,
             job: job,
+            description: description, // description 추가
             nodes: [],
             edges: [],
-            start_node_id: null // FastAPI 스키마에 맞게 snake_case 사용
+            start_node_id: null
         }),
+        // --- [수정 끝] >>>
     });
     const data = await handleApiResponse(response);
-    // 응답 데이터에 startNodeId (camelCase) 추가
-    return { ...data, startNodeId: data.start_node_id };
+    // <<< [수정] 응답에 description 추가 ---
+    return { ...data, startNodeId: data.start_node_id, description: data.description || '' };
+    // --- [수정 끝] >>>
 };
 
-// --- 💡 추가된 부분 시작 ---
 export const cloneScenario = async ({ scenarioToClone, newName }) => {
   const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    // <<< [수정] 복제 요청 시 description 포함 (백엔드 스키마에 따라 달라질 수 있음) ---
+    // 백엔드가 clone_from_id를 받아서 description까지 복사한다면 이 필드는 불필요할 수 있습니다.
+    // 만약 description을 명시적으로 보내야 한다면 scenarioToClone.description을 추가합니다.
     body: JSON.stringify({
       name: newName,
       job: scenarioToClone.job,
-      clone_from_id: scenarioToClone.id, // 원본 ID를 포함하여 요청
-      category_id: 'DEV_1000_S_1_1_1', // 필요시 수정
+      clone_from_id: scenarioToClone.id,
+      category_id: 'DEV_1000_S_1_1_1',
+      // description: scenarioToClone.description // 필요시 추가
     }),
+    // --- [수정 끝] >>>
   });
   const data = await handleApiResponse(response);
-   // 응답 데이터에 startNodeId (camelCase) 추가
-  return { ...data, startNodeId: data.start_node_id };
+  // <<< [수정] 응답에 description 추가 ---
+  return { ...data, startNodeId: data.start_node_id, description: data.description || '' };
+  // --- [수정 끝] >>>
 };
-// --- 💡 추가된 부분 끝 ---
 
-export const renameScenario = async ({ oldScenario, newName, job }) => {
+// <<< [수정] description 파라미터 추가 ---
+export const renameScenario = async ({ oldScenario, newName, job, description }) => {
+// --- [수정 끝] >>>
     const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}/${oldScenario.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName, job: job }), // FastAPI 필드에 맞게 전송
+        // <<< [수정] 요청 본문에 description 추가 ---
+        body: JSON.stringify({ name: newName, job: job, description: description }),
+        // --- [수정 끝] >>>
     });
     const data = await handleApiResponse(response);
-    // 응답 데이터에 startNodeId (camelCase) 추가
-    return { ...data, startNodeId: data.start_node_id };
+     // <<< [수정] 응답에 description 추가 ---
+    return { ...data, startNodeId: data.start_node_id, description: data.description || '' };
+     // --- [수정 끝] >>>
 };
 
 export const deleteScenario = async ({ scenarioId }) => {
     const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}/${scenarioId}`, {
         method: 'DELETE',
     });
-    return handleApiResponse(response); // 성공 시 204 No Content 반환 예상
+    return handleApiResponse(response);
 };
 
 export const fetchScenarioData = async ({ scenarioId }) => {
-    if (!scenarioId) return { nodes: [], edges: [], startNodeId: null };
+    if (!scenarioId) return { nodes: [], edges: [], startNodeId: null, description: '' }; // description 기본값 추가
     const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}/${scenarioId}`);
     const data = await handleApiResponse(response);
-    // FastAPI 응답에서 start_node_id를 startNodeId로 변환
+    // <<< [수정] description 로드 추가 ---
     return {
         ...data,
         nodes: data.nodes || [],
         edges: data.edges || [],
-        startNodeId: data.start_node_id || null
+        startNodeId: data.start_node_id || null,
+        description: data.description || '' // description 추가
     };
+    // --- [수정 끝] >>>
 };
 
 export const saveScenarioData = async ({ scenario, data }) => {
@@ -105,16 +122,19 @@ export const saveScenarioData = async ({ scenario, data }) => {
         throw new Error('No scenario selected to save.');
     }
 
+    // <<< [수정] payload에 description 포함 ---
     const payload = {
-        ten_id: TENANT_ID, // FastAPI 스키마에 맞게 수정
-        stg_id: STAGE_ID, // FastAPI 스키마에 맞게 수정
-        category_id: "DEV_1000_S_1_1_1", // 필요시 수정
+        ten_id: TENANT_ID,
+        stg_id: STAGE_ID,
+        category_id: "DEV_1000_S_1_1_1",
         name: scenario.name,
-        job: scenario.job, // job 정보 추가
+        job: scenario.job,
+        description: scenario.description || '', // description 추가
         nodes: data.nodes,
         edges: data.edges,
-        start_node_id: data.startNodeId // FastAPI 스키마에 맞게 snake_case 사용
+        start_node_id: data.startNodeId
     };
+    // --- [수정 끝] >>>
 
     const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}/${scenario.id}`, {
         method: 'PUT',
@@ -122,6 +142,7 @@ export const saveScenarioData = async ({ scenario, data }) => {
         body: JSON.stringify(payload),
     });
     const responseData = await handleApiResponse(response);
-    // 응답 데이터에 startNodeId (camelCase) 추가
-    return { ...responseData, startNodeId: responseData.start_node_id };
+    // <<< [수정] 응답에 description 추가 ---
+    return { ...responseData, startNodeId: responseData.start_node_id, description: responseData.description || '' };
+    // --- [수정 끝] >>>
 };

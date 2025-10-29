@@ -28,7 +28,8 @@ function App() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
+      // ... (기존 인증 로직) ...
+       if (currentUser) {
         const allowedEmails = ['cutiefunny@gmail.com', 'hyh8414@gmail.com'];
         const allowedDomains = ['cyberlogitec.com', 'wisenut.co.kr'];
         const userEmail = currentUser.email;
@@ -75,7 +76,7 @@ function App() {
     setSelectedScenario(scenario);
     setView('flow');
   };
-  
+
   const handleOpenAddScenarioModal = () => {
     setEditingScenario(null);
     setIsScenarioModalOpen(true);
@@ -86,23 +87,29 @@ function App() {
     setIsScenarioModalOpen(true);
   };
 
-  const handleSaveScenario = async ({ name, job }) => {
+  // <<< [수정] description 파라미터 추가 ---
+  const handleSaveScenario = async ({ name, job, description }) => {
+  // --- [수정 끝] >>>
     try {
       if (editingScenario) {
         if (name !== editingScenario.name && scenarios.some(s => s.name === name)) {
           alert("A scenario with that name already exists.");
           return;
         }
-        await backendService.renameScenario(backend, { oldScenario: editingScenario, newName: name, job });
-        setScenarios(prev => prev.map(s => (s.id === editingScenario.id ? { ...s, name, job } : s)));
+        // <<< [수정] description 전달 ---
+        await backendService.renameScenario(backend, { oldScenario: editingScenario, newName: name, job, description });
+        setScenarios(prev => prev.map(s => (s.id === editingScenario.id ? { ...s, name, job, description } : s))); // <<< [수정] 상태 업데이트 시 description 추가
+        // --- [수정 끝] >>>
         alert('Scenario updated successfully.');
       } else {
         if (scenarios.some(s => s.name === name)) {
           alert("A scenario with that name already exists.");
           return;
         }
-        const newScenario = await backendService.createScenario(backend, { newScenarioName: name, job });
-        setScenarios(prev => [...prev, newScenario]);
+        // <<< [수정] description 전달 ---
+        const newScenario = await backendService.createScenario(backend, { newScenarioName: name, job, description });
+         // --- [수정 끝] >>>
+        setScenarios(prev => [...prev, newScenario]); // 백엔드 응답에 description이 포함되어 있다고 가정
         setSelectedScenario(newScenario);
         setView('flow');
         alert(`Scenario '${newScenario.name}' has been created.`);
@@ -130,10 +137,11 @@ function App() {
   if (loading) {
     return <div className="loading-screen">Loading...</div>;
   }
-  
+
   return (
     <AlertProvider>
       <div className="app-container">
+        {/* ... (기존 헤더 및 네비게이션) ... */}
         <header className="app-header">
           <div className="header-title-container">
             <h1>Chatbot Flow & Board</h1>
@@ -143,8 +151,8 @@ function App() {
             <button onClick={() => handleViewChange('list')} className={view === 'list' ? 'active' : ''}>
               Scenario List
             </button>
-            <button 
-              onClick={() => handleViewChange('flow')} 
+            <button
+              onClick={() => handleViewChange('flow')}
               className={view === 'flow' ? 'active' : ''}
               disabled={!selectedScenario && view !== 'flow'}
             >
@@ -178,23 +186,24 @@ function App() {
           </div>
         </header>
         <main className="app-main">
-          <div className={`view-container ${view !== 'list' ? 'hidden' : ''}`}>
-              <ScenarioList 
+          {/* ... (기존 뷰 컨테이너) ... */}
+           <div className={`view-container ${view !== 'list' ? 'hidden' : ''}`}>
+              <ScenarioList
                   backend={backend}
-                  onSelect={handleScenarioSelect} 
+                  onSelect={handleScenarioSelect}
                   onAddScenario={handleOpenAddScenarioModal}
                   onEditScenario={handleOpenEditScenarioModal}
                   scenarios={scenarios}
                   setScenarios={setScenarios}
               />
           </div>
-          
+
           <div className={`view-container ${view !== 'flow' ? 'hidden' : ''}`}>
             {selectedScenario && (
               <Flow scenario={selectedScenario} backend={backend} scenarios={scenarios} />
             )}
           </div>
-          
+
           <div className={`view-container ${view !== 'board' ? 'hidden' : ''}`}>
               <Board user={user} />
           </div>
@@ -204,7 +213,7 @@ function App() {
           </div>
         </main>
         <HelpModal isOpen={isHelpModalOpen} onClose={() => setIsHelpModalOpen(false)} />
-        <ScenarioModal 
+        <ScenarioModal
           isOpen={isScenarioModalOpen}
           onClose={() => { setIsScenarioModalOpen(false); setEditingScenario(null); }}
           onSave={handleSaveScenario}
