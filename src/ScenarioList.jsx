@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import * as backendService from './backendService';
 import useAlert from './hooks/useAlert';
 import { EditIcon, CloneIcon, DeleteIcon } from './components/Icons';
@@ -12,6 +12,22 @@ const styles = {
   title: {
     fontSize: '2rem',
     marginBottom: '20px',
+  },
+  // --- 💡 [수정] listHeader 스타일 ---
+  listHeader: {
+    display: 'flex',
+    justifyContent: 'space-between', // space-between으로 변경
+    alignItems: 'center', // 세로 정렬
+    maxWidth: '600px',
+    margin: '0 auto 10px auto', // 리스트와의 간격
+  },
+  // --- 💡 [수정 끝] ---
+  sortSelect: {
+    padding: '5px 8px',
+    borderRadius: '4px',
+    border: '1px solid #ddd',
+    fontSize: '0.9rem',
+    backgroundColor: '#fff',
   },
   list: {
     listStyle: 'none',
@@ -34,41 +50,36 @@ const styles = {
     textAlign: 'left',
     cursor: 'pointer',
     marginRight: '15px',
-    // <<< [수정] flex-direction: column 제거 ---
-    // 세로 정렬 대신 가로 정렬 기본값 사용
-    // --- [수정 끝] >>>
+    // --- 💡 [추가] 너비 및 오버플로우 설정 ---
+    minWidth: 0, // flex item이 줄어들 수 있도록
+    overflow: 'hidden',
+    // --- 💡 [추가 끝] ---
   },
-  // <<< [수정] scenarioHeader 스타일 변경 ---
   scenarioHeader: {
     display: 'flex',
     alignItems: 'baseline', // 이름과 설명을 기준선에 맞춤
     gap: '8px', // 이름과 설명 사이 간격
-    flexWrap: 'wrap', // 내용이 길면 줄바꿈 허용
+    flexWrap: 'nowrap', // 줄바꿈 방지
     marginBottom: '0', // 하단 마진 제거
+    width: '100%', // 부모 너비 채우기
+    overflow: 'hidden', // 내부 오버플로우 숨김
   },
-  // --- [수정 끝] >>>
   scenarioName: {
     fontWeight: 'bold',
-    marginRight: 'auto', // 이름은 왼쪽에 붙도록
+    flexGrow: 1, // 남는 공간 차지
+    whiteSpace: 'nowrap', // 줄바꿈 방지
+    overflow: 'hidden',
+    textOverflow: 'ellipsis', // 이름 길어지면 ...
+    minWidth: 0, // flex item이 줄어들 수 있도록
   },
-  // <<< [수정] 설명 스타일 변경 ---
-  scenarioDescription: {
-      fontSize: '0.85rem',
-      color: '#606770',
-      // marginTop 제거
-      // 여러 줄 표시 제거 (한 줄로 표시하고 말줄임표)
-      whiteSpace: 'nowrap', // 한 줄로 표시
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      flexShrink: 1, // 공간 부족 시 줄어들도록
-      // WebkitLineClamp 제거
-      // WebkitBoxOrient 제거
-      // display 제거
+  scenarioTimestamp: {
+    fontSize: '0.8rem',
+    color: '#606770',
+    marginLeft: 'auto', // 오른쪽으로 밀어내기
+    flexShrink: 0, // 크기 유지
+    whiteSpace: 'nowrap', // 줄바꿈 방지
+    paddingLeft: '10px', // 이름과 간격
   },
-  // --- [수정 끝] >>>
-  // <<< [제거] jobBadge 스타일 제거 ---
-  // jobBadge: { ... },
-  // --- [제거 끝] >>>
   buttonGroup: {
     display: 'flex',
     gap: '12px',
@@ -87,19 +98,18 @@ const styles = {
     transition: 'background-color 0.2s, color 0.2s',
     color: '#606770',
   },
+  // --- 💡 [수정] button 스타일 (marginTop 제거) ---
   button: {
-    marginTop: '20px',
-    padding: '10px 20px',
+    // marginTop: '20px', // 제거
+    padding: '3px 10px',
     fontSize: '1rem',
   }
+  // --- 💡 [수정 끝] ---
 };
-
-// <<< [제거] getJobBadgeStyle 함수 제거 ---
-// const getJobBadgeStyle = (job) => { ... };
-// --- [제거 끝] >>>
 
 function ScenarioList({ backend, onSelect, onAddScenario, onEditScenario, scenarios, setScenarios }) {
   const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState('updatedAt'); // 'updatedAt' 또는 'lastUsedAt'
   const { showAlert, showConfirm } = useAlert();
 
   useEffect(() => {
@@ -107,11 +117,15 @@ function ScenarioList({ backend, onSelect, onAddScenario, onEditScenario, scenar
       setLoading(true);
       try {
         let scenarioList = await backendService.fetchScenarios(backend);
+        
         scenarioList = scenarioList.map(scenario => ({
           ...scenario,
           job: scenario.job || 'Process',
           description: scenario.description || '',
+          updatedAt: scenario.updatedAt || null,
+          lastUsedAt: scenario.lastUsedAt || null 
         }));
+
         setScenarios(scenarioList);
       } catch (error) {
         console.error("Error fetching scenarios:", error);
@@ -124,6 +138,24 @@ function ScenarioList({ backend, onSelect, onAddScenario, onEditScenario, scenar
     fetchAndSetScenarios();
   }, [backend, setScenarios, showAlert]);
 
+  const sortedScenarios = useMemo(() => {
+    const parseDate = (timestamp) => {
+      if (!timestamp) return new Date(0); // null이나 undefined는 가장 오래된 날짜로 취급
+      return timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    };
+
+    return [...scenarios].sort((a, b) => {
+      const dateA = parseDate(a[sortBy]);
+      const dateB = parseDate(b[sortBy]);
+      
+      if (isNaN(dateA)) return 1;
+      if (isNaN(dateB)) return -1;
+
+      return dateB - dateA; // 내림차순 (최신순)
+    });
+  }, [scenarios, sortBy]);
+
+
   const handleCloneScenario = async (scenarioToClone) => {
     const newName = prompt(`Enter the new name for the cloned scenario:`, `${scenarioToClone.name}_copy`);
     if (newName && newName.trim()) {
@@ -133,10 +165,13 @@ function ScenarioList({ backend, onSelect, onAddScenario, onEditScenario, scenar
       }
       try {
         const newScenario = await backendService.cloneScenario(backend, {
-          scenarioToClone,
+          scenarioToClone: { ...scenarioToClone, description: scenarioToClone.description || '' }, // description도 전달
           newName: newName.trim(),
         });
-        setScenarios(prev => [...prev, { ...newScenario, description: newScenario.description || '' }]);
+        setScenarios(prev => [
+          ...prev, 
+          { ...newScenario, description: newScenario.description || '', lastUsedAt: null }
+        ]);
         showAlert(`Scenario '${scenarioToClone.name}' has been cloned to '${newName.trim()}'.`);
       } catch (error) {
         console.error("Error cloning scenario:", error);
@@ -165,67 +200,91 @@ function ScenarioList({ backend, onSelect, onAddScenario, onEditScenario, scenar
 
   return (
     <div style={styles.container}>
+      {/* --- 💡 [수정] 정렬 셀렉트박스와 추가 버튼을 listHeader로 이동 --- */}
+      <div style={styles.listHeader}>
+        <button onClick={onAddScenario} style={styles.button}>
+          + Add New Scenario
+        </button>
+        <select 
+          style={styles.sortSelect} 
+          value={sortBy} 
+          onChange={(e) => setSortBy(e.target.value)}
+        >
+          <option value="updatedAt">최근 수정 순</option>
+          <option value="lastUsedAt">최근 호출 순</option>
+        </select>
+      </div>
+      {/* --- 💡 [수정 끝] --- */}
+
       <ul style={styles.list}>
-        {scenarios.map(scenario => (
-          <li key={scenario.id} style={styles.listItem}>
-            <div
-                style={styles.scenarioInfo}
-                onClick={() => onSelect(scenario)}
-                onMouseOver={(e) => {
-                    const nameElement = e.currentTarget.querySelector('span[style*="fontWeight: bold"]'); // scenarioName 스타일 직접 참조 대신 구조 기반 선택
-                    if(nameElement) nameElement.style.textDecoration = 'underline';
-                 }}
-                onMouseOut={(e) => {
-                    const nameElement = e.currentTarget.querySelector('span[style*="fontWeight: bold"]');
-                    if(nameElement) nameElement.style.textDecoration = 'none';
-                 }}
-            >
-              {/* --- 👇 [수정] Job 뱃지 제거, 이름과 설명을 한 줄에 표시 --- */}
-              <div style={styles.scenarioHeader}>
-                <span style={styles.scenarioName}>{scenario.name}</span>
-                {/* Job Badge Span 제거됨 */}
-                {scenario.description && (
-                  <span style={styles.scenarioDescription}> - {scenario.description}</span> // 설명 앞에 '-' 추가
-                )}
+        {sortedScenarios.map(scenario => {
+          const lastUsedAtDate = scenario.lastUsedAt
+            ? (scenario.lastUsedAt.toDate ? scenario.lastUsedAt.toDate() : new Date(scenario.lastUsedAt))
+            : null;
+
+          return (
+            <li key={scenario.id} style={styles.listItem}>
+              <div
+                  style={styles.scenarioInfo}
+                  onClick={() => onSelect(scenario)}
+                  onMouseOver={(e) => {
+                      const nameElement = e.currentTarget.querySelector('span[style*="fontWeight: bold"]'); 
+                      if(nameElement) nameElement.style.textDecoration = 'underline';
+                   }}
+                  onMouseOut={(e) => {
+                      const nameElement = e.currentTarget.querySelector('span[style*="fontWeight: bold"]');
+                      if(nameElement) nameElement.style.textDecoration = 'none';
+                   }}
+              >
+                <div style={styles.scenarioHeader}>
+                  <span style={styles.scenarioName} title={scenario.name}>{scenario.name}</span>
+                  
+                  {lastUsedAtDate && !isNaN(lastUsedAtDate) && (
+                    <span style={styles.scenarioTimestamp}>
+                      (Used: {lastUsedAtDate.toLocaleString()})
+                    </span>
+                  )}
+                </div>
               </div>
-              {/* description <p> 태그 제거됨 */}
-              {/* --- 👆 [수정 끝] --- */}
-            </div>
-            <div style={styles.buttonGroup}>
-                <button
-                    onClick={(e) => { e.stopPropagation(); onEditScenario(scenario); }}
-                    style={styles.actionButton}
-                    title="Edit"
-                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#e9ecef'; e.currentTarget.style.color = '#343a40'; }}
-                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#606770'; }}
-                >
-                    <EditIcon />
-                </button>
-                <button
-                    onClick={(e) => { e.stopPropagation(); handleCloneScenario(scenario); }}
-                    style={{...styles.actionButton}}
-                    title="Clone"
-                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#e9ecef'; e.currentTarget.style.color = '#3498db'; }}
-                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#606770'; }}
-                >
-                    <CloneIcon />
-                </button>
-                <button
-                    onClick={(e) => { e.stopPropagation(); handleDeleteScenario(scenario.id); }}
-                    style={styles.actionButton}
-                    title="Delete"
-                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#e9ecef'; e.currentTarget.style.color = '#e74c3c'; }}
-                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#606770'; }}
-                >
-                    <DeleteIcon />
-                </button>
-            </div>
-          </li>
-        ))}
+              <div style={styles.buttonGroup}>
+                  <button
+                      onClick={(e) => { e.stopPropagation(); onEditScenario(scenario); }}
+                      style={styles.actionButton}
+                      title="Edit"
+                      onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#e9ecef'; e.currentTarget.style.color = '#343a40'; }}
+                      onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#606770'; }}
+                  >
+                      <EditIcon />
+                  </button>
+                  <button
+                      onClick={(e) => { e.stopPropagation(); handleCloneScenario(scenario); }}
+                      style={{...styles.actionButton}}
+                      title="Clone"
+                      onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#e9ecef'; e.currentTarget.style.color = '#3498db'; }}
+                      onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#606770'; }}
+                  >
+                      <CloneIcon />
+                  </button>
+                  <button
+                      onClick={(e) => { e.stopPropagation(); handleDeleteScenario(scenario.id); }}
+                      style={styles.actionButton}
+                      title="Delete"
+                      onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#e9ecef'; e.currentTarget.style.color = '#e74c3c'; }}
+                      onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#606770'; }}
+                  >
+                      <DeleteIcon />
+                  </button>
+              </div>
+            </li>
+          );
+        })}
       </ul>
-      <button onClick={onAddScenario} style={styles.button}>
+      {/* --- 💡 [제거] 버튼을 위로 이동시킴 --- */}
+      {/* <button onClick={onAddScenario} style={styles.button}>
         + Add New Scenario
-      </button>
+      </button> 
+      */}
+      {/* --- 💡 [제거 끝] --- */}
     </div>
   );
 }

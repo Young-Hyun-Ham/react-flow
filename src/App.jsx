@@ -72,10 +72,36 @@ function App() {
     }
   };
 
-  const handleScenarioSelect = (scenario) => {
-    setSelectedScenario(scenario);
-    setView('flow');
+  // --- 💡 [수정] lastUsedAt 갱신 로직 추가 ---
+  const handleScenarioSelect = async (scenario) => {
+    try {
+      // 1. lastUsedAt 타임스탬프 갱신 요청
+      const updatedScenarioData = await backendService.updateScenarioLastUsed(backend, { scenarioId: scenario.id });
+      
+      const newLastUsedAt = updatedScenarioData.lastUsedAt || (updatedScenarioData.last_used_at ? new Date(updatedScenarioData.last_used_at) : new Date());
+
+      // 2. 로컬 scenarios 목록 상태 갱신
+      setScenarios(prevScenarios => 
+        prevScenarios.map(s => 
+          s.id === scenario.id 
+          ? { ...s, lastUsedAt: newLastUsedAt } 
+          : s
+        )
+      );
+      
+      // 3. 선택된 시나리오 상태 갱신
+      setSelectedScenario({ ...scenario, lastUsedAt: newLastUsedAt });
+      
+    } catch (error) {
+      console.error("Failed to update last used time:", error);
+      // 4. 실패하더라도 에디터는 열어줌
+      setSelectedScenario(scenario);
+    } finally {
+      // 5. 뷰 변경
+      setView('flow');
+    }
   };
+  // --- 💡 [수정 끝] ---
 
   const handleOpenAddScenarioModal = () => {
     setEditingScenario(null);
@@ -99,7 +125,7 @@ function App() {
         // <<< [수정] description 전달 ---
         await backendService.renameScenario(backend, { oldScenario: editingScenario, newName: name, job, description });
         setScenarios(prev => prev.map(s => (s.id === editingScenario.id ? { ...s, name, job, description } : s))); // <<< [수정] 상태 업데이트 시 description 추가
-        // --- [수정 끝] >>>
+        // --- [수정 끝] ---
         alert('Scenario updated successfully.');
       } else {
         if (scenarios.some(s => s.name === name)) {
@@ -109,8 +135,12 @@ function App() {
         // <<< [수정] description 전달 ---
         const newScenario = await backendService.createScenario(backend, { newScenarioName: name, job, description });
          // --- [수정 끝] >>>
-        setScenarios(prev => [...prev, newScenario]); // 백엔드 응답에 description이 포함되어 있다고 가정
-        setSelectedScenario(newScenario);
+        
+        // --- 💡 [수정] 새 시나리오 생성 시 목록에 추가 (lastUsedAt은 null) ---
+        setScenarios(prev => [...prev, { ...newScenario, lastUsedAt: null }]); 
+        setSelectedScenario({ ...newScenario, lastUsedAt: null });
+        // --- 💡 [수정 끝] ---
+        
         setView('flow');
         alert(`Scenario '${newScenario.name}' has been created.`);
       }

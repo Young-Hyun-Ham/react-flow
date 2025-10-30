@@ -30,6 +30,10 @@ export const saveScenarioData = (backend, args) => getService(backend).saveScena
 export const cloneScenario = (backend, args) => getService(backend).cloneScenario(args); // args에 description 정보 필요시 추가 전달
 // --- [수정 끝] >>>
 
+// --- 💡 [추가] ---
+export const updateScenarioLastUsed = (backend, args) => getService(backend).updateScenarioLastUsed(args);
+// --- 💡 [추가 끝] ---
+
 
 // API 템플릿 함수들
 export const fetchApiTemplates = firebaseApi.fetchApiTemplates;

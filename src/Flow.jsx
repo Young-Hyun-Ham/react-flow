@@ -150,12 +150,12 @@ function Flow({ scenario, backend, scenarios }) {
     { type: 'branch', label: '+ Condition Branch' },
     { type: 'slotfilling', label: '+ SlotFilling' },
     { type: 'api', label: '+ API' },
-    { type: 'llm', label: '+ LLM' },
+    // { type: 'llm', label: '+ LLM' }, // --- 💡[숨김 처리] ---
     { type: 'setSlot', label: '+ Set Slot' }, // Added
     { type: 'delay', label: '+ Delay' }, // <<< [추가]
     { type: 'fixedmenu', label: '+ Fixed Menu' },
     { type: 'link', label: '+ Link' },
-    { type: 'toast', label: '+ Toast' },
+    // { type: 'toast', label: '+ Toast' }, // --- 💡[숨김 처리] ---
     { type: 'iframe', label: '+ iFrame' },
   ];
 
@@ -218,10 +218,12 @@ function Flow({ scenario, backend, scenarios }) {
             </button>
         ))}
 
+        {/* --- 💡[숨김 처리] ---
         <div className={styles.separator} />
         <button onClick={() => setIsGroupModalOpen(true)} className={styles.sidebarButton} style={{backgroundColor: '#7f8c8d', color: 'white'}}>
           + Scenario Group
         </button>
+        */}
         <div className={styles.separator} />
         <button onClick={importNodes} className={styles.sidebarButton} style={{backgroundColor: '#555', color: 'white'}}>
           Import Nodes
