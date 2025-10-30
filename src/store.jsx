@@ -22,6 +22,7 @@ const defaultColors = {
   iframe: '#2c3e50',
   scenario: '#7f8c8d',
   setSlot: '#8e44ad',
+  delay: '#f1c40f', // <<< [추가] 예시 색상 (노란색 계열)
 };
 
 const defaultTextColors = {
@@ -37,6 +38,7 @@ const defaultTextColors = {
   iframe: '#ffffff',
   scenario: '#ffffff',
   setSlot: '#ffffff',
+  delay: '#333333', // <<< [추가] 예시 텍스트 색상 (어두운 회색)
 }
 
 const useStore = create((set, get) => ({
@@ -56,7 +58,7 @@ const useStore = create((set, get) => ({
     }));
   },
 
-  // <<< [추가] 시작 노드 설정 함수 >>>
+  // <<< [수정] 시작 노드 설정 함수 >>>
   setStartNodeId: (nodeId) => {
     set((state) => {
       // 이미 시작 노드이면 null로 설정 (토글 방식)
@@ -66,7 +68,7 @@ const useStore = create((set, get) => ({
       return { startNodeId: nodeId };
     });
   },
-  // <<< [추가 끝] >>>
+  // <<< [수정 끝] >>>
 
   setSelectedRow: (row) => set({ selectedRow: row }), // <<< [추가] selectedRow 업데이트 함수
 
@@ -526,12 +528,12 @@ const useStore = create((set, get) => ({
   fetchScenario: async (backend, scenarioId) => {
     try {
       const data = await backendService.fetchScenarioData(backend, { scenarioId });
-      // <<< [추가] 시나리오 로드 시 startNodeId도 설정 (백엔드에 저장된 값이 있다면) >>>
+      // <<< [수정] 시나리오 로드 시 startNodeId도 설정 (백엔드에 저장된 값이 있다면) >>>
       set({
         nodes: data.nodes || [],
         edges: data.edges || [],
         selectedNodeId: null,
-        startNodeId: data.startNodeId || null // <<< [추가]
+        startNodeId: data.startNodeId || null // <<< [수정]
       });
     } catch (error) {
       console.error("Error fetching scenario:", error);

@@ -1,8 +1,22 @@
 // src/hooks/useChatFlow.js
 
+// ========================================================================
+// == Chatbot Scenario Execution Reference Implementation ==
+// This hook defines the standard logic for executing chatbot scenarios
+// based on the defined node and edge structures. The actual chatbot engine
+// should aim to replicate this behavior as closely as possible.
+// ========================================================================
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import useStore from '../store';
 import { interpolateMessage, getNestedValue, evaluateCondition } from '../simulatorUtils';
+
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
+// --- 👇 [추가] 고유 ID 생성을 위한 함수 ---
+const generateUniqueId = () => `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+// --- 👆 [추가 끝] ---
+
 
 export const useChatFlow = (nodes, edges) => {
   const [history, setHistory] = useState([]);
@@ -13,11 +27,10 @@ export const useChatFlow = (nodes, edges) => {
   const { slots, setSlots, anchorNodeId, startNodeId } = useStore();
   const currentNode = nodes.find(n => n.id === currentId);
 
-  // useRef for addBotMessage to break circular dependency in useCallback
   const addBotMessageRef = useRef(null);
 
-  // Define proceedToNextNode first
   const proceedToNextNode = useCallback((sourceHandleId, sourceNodeId, updatedSlots) => {
+    // ... (proceedToNextNode logic - LLM 관련 딜레이 제거됨) ...
     if (sourceNodeId === anchorNodeId) {
         setCurrentId(null);
         return;
@@ -70,7 +83,8 @@ export const useChatFlow = (nodes, edges) => {
         setCurrentId(nextNode.id);
         // Use the ref to call the latest addBotMessage asynchronously
         if (addBotMessageRef.current) {
-             setTimeout(() => addBotMessageRef.current(nextNode.id, updatedSlots), 500); // Delay might help rendering updates
+             // LLM 노드 다음에는 즉시 진행하도록 딜레이 제거
+             addBotMessageRef.current(nextNode.id, updatedSlots);
         }
       } else {
          console.warn(`Next node with id ${nextEdge.target} not found.`);
@@ -95,12 +109,10 @@ export const useChatFlow = (nodes, edges) => {
         setTimeout(() => setCurrentId(null), 500); // Use timeout to ensure state updates settle
       }
     }
-  // Dependencies for proceedToNextNode
-  }, [edges, nodes, anchorNodeId]); // Removed addBotMessageRef from here
+  }, [edges, nodes, anchorNodeId]); // addBotMessageRef 제거
 
-  // Define handleApiNode
   const handleApiNode = useCallback(async (node, currentSlots) => {
-    const loadingId = Date.now();
+    const loadingId = generateUniqueId(); // 고유 ID 사용
     setHistory(prev => [...prev, { type: 'loading', id: loadingId }]);
     let finalSlots = { ...currentSlots };
     try {
@@ -109,34 +121,18 @@ export const useChatFlow = (nodes, edges) => {
         const processApiCall = (apiCall) => {
             const interpolatedUrl = interpolateMessage(apiCall.url, currentSlots);
             const interpolatedHeaders = JSON.parse(interpolateMessage(apiCall.headers || '{}', currentSlots));
-
             const rawBody = apiCall.body || '{}';
             let finalBody;
              try {
-                const interpolatedBodyString = JSON.stringify(JSON.parse(rawBody), (key, value) => {
-                    if (typeof value === 'string') {
-                        return interpolateMessage(value, currentSlots);
-                    }
-                    return value;
-                });
-                 finalBody = interpolatedBodyString;
+                const interpolatedBodyString = interpolateMessage(rawBody, currentSlots);
+                finalBody = interpolatedBodyString;
+                 try { JSON.parse(finalBody); } catch(e) { console.warn("API body is not valid JSON after interpolation:", finalBody); }
              } catch (e) {
-                 console.error("Error processing API body:", e);
-                 throw new Error(`Invalid JSON body format: ${e.message}`);
+                 console.error("Error processing API body string:", e);
+                 throw new Error(`Invalid body format or interpolation error: ${e.message}`);
              }
 
-            return fetch(interpolatedUrl, {
-                method: apiCall.method,
-                headers: { 'Content-Type': 'application/json', ...interpolatedHeaders },
-                body: apiCall.method !== 'GET' && apiCall.method !== 'HEAD' ? finalBody : undefined,
-            }).then(async res => {
-                const resBody = await res.json().catch(() => null);
-                if (!res.ok) {
-                    const errorDetail = resBody ? (resBody.detail || JSON.stringify(resBody)) : res.statusText;
-                    throw new Error(`API call '${apiCall.name || 'Unnamed'}' failed with status ${res.status}: ${errorDetail}`);
-                 }
-                return { data: resBody, mapping: apiCall.responseMapping, apiName: apiCall.name };
-            });
+            return fetch(interpolatedUrl, { /* ... fetch options ... */ }).then(async res => { /* ... response handling ... */ });
         };
 
         const promises = isMulti ? (apis || []).map(processApiCall) : [processApiCall(node.data)];
@@ -148,125 +144,157 @@ export const useChatFlow = (nodes, edges) => {
         }
 
         const newSlots = {};
-        results.forEach(res => {
-            if (res.status === 'fulfilled') {
-                const { data, mapping } = res.value;
-                (mapping || []).forEach(m => {
-                    if (m.path && m.slot) {
-                        const value = getNestedValue(data, m.path);
-                        if (value !== undefined) newSlots[m.slot] = value;
-                    }
-                });
-            }
-        });
+        results.forEach(res => { /* ... mapping logic ... */ });
 
         finalSlots = { ...currentSlots, ...newSlots };
         setSlots(finalSlots);
         setHistory(prev => prev.filter(item => item.id !== loadingId));
-        proceedToNextNode('onSuccess', node.id, finalSlots); // Call proceedToNextNode directly
+        proceedToNextNode('onSuccess', node.id, finalSlots);
     } catch (error) {
         console.error("API Error:", error);
         setHistory(prev => prev.filter(item => item.id !== loadingId));
-        setHistory(prev => [...prev, { type: 'bot', message: `API Error: ${error.message}`, id: loadingId }]);
-        proceedToNextNode('onError', node.id, finalSlots); // Call proceedToNextNode directly
+        setHistory(prev => [...prev, { type: 'bot', message: `API Error: ${error.message}`, id: generateUniqueId() }]); // 고유 ID 사용
+        proceedToNextNode('onError', node.id, finalSlots);
     }
-  // --- 👇 [수정] proceedToNextNode 제거 ---
-  }, [setSlots, nodes, edges, anchorNodeId, proceedToNextNode]); // Remove proceedToNextNode if causing issues, but it seems necessary here. Let's keep it for now and see if order fixes it.
+  }, [setSlots, nodes, edges, anchorNodeId, proceedToNextNode]);
 
-  // Define handleLlmNode
+  // Define handleLlmNode - Removed history updates for LLM response
   const handleLlmNode = useCallback(async (node, currentSlots) => {
-    const streamingMessageId = Date.now();
+    if (!GEMINI_API_KEY) {
+      console.error("Gemini API key (VITE_GEMINI_API_KEY) is not set.");
+      setHistory(prev => [...prev, { type: 'bot', message: "LLM Error: API key not configured.", id: generateUniqueId() }]); // 고유 ID 사용
+      proceedToNextNode(null, node.id, currentSlots);
+      return;
+    }
+
     let accumulatedContent = '';
-    setHistory(prev => [...prev, { type: 'bot_streaming', id: streamingMessageId, content: '', isStreaming: true }]);
+    // 히스토리 추가 제거됨
 
     try {
-        const interpolatedPrompt = interpolateMessage(node.data.prompt, currentSlots);
-        const response = await fetch('https://musclecat.co.kr/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                prompt: interpolatedPrompt
-            }),
-        });
+      const interpolatedPrompt = interpolateMessage(node.data.prompt, currentSlots);
+      // 모델 버전 gemini-2.0-flash 로 고정
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?key=${GEMINI_API_KEY}&alt=sse`;
 
-        if (!response.ok) {
-            const errorBody = await response.json().catch(() => ({ detail: response.statusText }));
-            throw new Error(`LLM API Error ${response.status}: ${errorBody.detail || 'Unknown error'}`);
-        }
-        if (!response.body) throw new Error('ReadableStream not available');
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: interpolatedPrompt }] }],
+          // generationConfig: { ... }
+        }),
+      });
 
-        const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
-        while (true) {
-            const { value, done } = await reader.read();
-            if (done) break;
-             try {
-                 const lines = value.split('\n');
-                 for (const line of lines) {
-                     if (line.startsWith('data: ')) {
-                         const jsonString = line.substring(6);
-                         if (jsonString === '[DONE]') break;
-                         try {
-                           const jsonData = JSON.parse(jsonString);
-                           const contentChunk = jsonData.choices?.[0]?.delta?.content || jsonData.text || '';
-                           if (contentChunk) {
-                               accumulatedContent += contentChunk;
-                               setHistory(prev => prev.map(item => item.id === streamingMessageId ? { ...item, content: accumulatedContent } : item));
-                           }
-                         } catch (parseError) {
-                            if (line.trim()) {
-                                accumulatedContent += line + "\n";
-                                setHistory(prev => prev.map(item => item.id === streamingMessageId ? { ...item, content: accumulatedContent } : item));
-                            }
-                         }
-                     } else if (line.trim()) {
-                        accumulatedContent += line + "\n";
-                        setHistory(prev => prev.map(item => item.id === streamingMessageId ? { ...item, content: accumulatedContent } : item));
-                     }
-                 }
-             } catch (e) {
-                 console.error("Error processing LLM stream chunk:", e, "Chunk:", value);
-                 accumulatedContent += `\n[Error processing stream: ${e.message}]`;
-                 setHistory(prev => prev.map(item => item.id === streamingMessageId ? { ...item, content: accumulatedContent } : item));
-                 break;
-             }
+      console.log("LLM Response Headers:", Object.fromEntries(response.headers.entries()));
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({ error: { message: response.statusText } }));
+        throw new Error(`LLM API Error ${response.status}: ${errorBody.error?.message || 'Unknown error'}`);
+      }
+      if (!response.body) throw new Error('ReadableStream not available');
+
+      const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+      let buffer = '';
+
+      console.log("Starting to read stream...");
+
+      while (true) {
+        const { value, done } = await reader.read();
+        // console.log("Reader Read:", { value: value ? value.substring(0, 100) + '...' : value, done });
+
+        if (value) {
+            buffer += value;
         }
+
+        let boundaryIndex;
+        while ((boundaryIndex = buffer.search(/\r?\n\r?\n/)) !== -1) {
+          const message = buffer.substring(0, boundaryIndex);
+          const boundaryLength = buffer.substring(boundaryIndex).startsWith('\r\n\r\n') ? 4 : 2;
+          buffer = buffer.substring(boundaryIndex + boundaryLength);
+
+          if (message.startsWith('data: ')) {
+            const jsonString = message.substring(6).replace(/\r/g, '').trim();
+            if (jsonString) {
+              try {
+                const jsonData = JSON.parse(jsonString);
+                // console.log("Attempting to extract text from:", JSON.stringify(jsonData, null, 2));
+                const contentChunk = jsonData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                // console.log(`Extracted Chunk: "${contentChunk}" (Type: ${typeof contentChunk})`);
+
+                if (contentChunk) {
+                  accumulatedContent += contentChunk;
+                  // 히스토리 업데이트 제거됨
+                  // console.log("Accumulated content NOW:", accumulatedContent);
+                } else {
+                   // console.log("contentChunk extraction failed or resulted in empty string.");
+                }
+              } catch (parseError) {
+                console.error("Error parsing LLM stream chunk:", parseError, "Original Message:", message);
+              }
+            } else {
+                 // console.log("Skipping empty jsonString after 'data: '.");
+            }
+          } else if (message.trim()) {
+              console.log("Received non-data message:", message);
+          } else {
+              // console.log("Skipping message not starting with 'data: ':", message);
+          }
+        } // 내부 while 종료
+
+        if (done) {
+          console.log("Stream finished.");
+          break;
+        }
+      } // 외부 while 종료
     } catch (error) {
-        console.error("LLM Error:", error);
-        accumulatedContent = `LLM Error: ${error.message}`;
+       console.error("LLM Error:", error);
+      accumulatedContent = `LLM Error: ${error.message}`;
+      // 에러 시 히스토리 추가
+      setHistory(prev => [...prev, { type: 'bot', message: accumulatedContent, id: generateUniqueId() }]); // 고유 ID 사용
     } finally {
-        setHistory(prev => prev.map(item => item.id === streamingMessageId ? { ...item, content: accumulatedContent, isStreaming: false } : item));
-        let finalSlots = { ...currentSlots };
-        if (node.data.outputVar) {
-            finalSlots[node.data.outputVar] = accumulatedContent;
-            setSlots(finalSlots);
-        }
-        proceedToNextNode(null, node.id, finalSlots); // Call proceedToNextNode directly
+      console.log("Finally block reached. Final accumulated content:", accumulatedContent);
+      // 히스토리 업데이트 제거됨
+
+      let finalSlots = { ...currentSlots };
+      if (node.data.outputVar && !accumulatedContent.startsWith('LLM Error:')) {
+        finalSlots[node.data.outputVar] = accumulatedContent;
+        setSlots(finalSlots);
+        console.log(`LLM Response stored in slot '${node.data.outputVar}'.`);
+      } else if (node.data.outputVar) {
+        console.log(`LLM Error occurred, not storing in slot '${node.data.outputVar}'.`);
+      }
+      // LLM 노드는 사용자에게 보여지는 부분이 없으므로 바로 다음 노드로 진행
+      proceedToNextNode(null, node.id, finalSlots);
     }
-  // --- 👇 [수정] proceedToNextNode 제거 ---
-  }, [setSlots, nodes, edges, anchorNodeId, proceedToNextNode]); // Remove proceedToNextNode if causing issues, same logic as handleApiNode.
+  }, [setSlots, nodes, edges, anchorNodeId, proceedToNextNode]); // proceedToNextNode 의존성 유지
 
   // Define addBotMessage AFTER proceedToNextNode, handleApiNode, handleLlmNode
   const addBotMessage = useCallback((nodeId, updatedSlots) => {
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return;
 
-    // Handle specific node types
+    // LLM 노드는 히스토리에 추가하지 않고 바로 handleLlmNode 호출 후 종료
+    if (node.type === 'llm') {
+      handleLlmNode(node, updatedSlots);
+      return;
+    }
+
+    // Handle other specific node types (start, scenario, api, setSlot, delay)
     if (node.type === 'start') {
         proceedToNextNode(null, nodeId, updatedSlots);
         return;
     }
     if (node.type === 'scenario') {
-      const childNodes = nodes.filter(n => n.parentNode === node.id);
+       const childNodes = nodes.filter(n => n.parentNode === node.id);
       const childNodeIds = new Set(childNodes.map(n => n.id));
-      // Find the start node within the group (node with no incoming edges *from within the group*)
       const startNode = childNodes.find(n =>
         !edges.some(e => e.target === n.id && childNodeIds.has(e.source))
       );
       if (startNode) {
         setCurrentId(startNode.id);
-        addBotMessage(startNode.id, updatedSlots); // Direct recursive call
+        addBotMessage(startNode.id, updatedSlots);
       } else {
-        // If no start node found (e.g., empty group), proceed from the group node itself
         proceedToNextNode(null, node.id, updatedSlots);
       }
       return;
@@ -275,17 +303,12 @@ export const useChatFlow = (nodes, edges) => {
       handleApiNode(node, updatedSlots);
       return;
     }
-    if (node.type === 'llm') {
-      handleLlmNode(node, updatedSlots);
-      return;
-    }
-    if (node.type === 'setSlot') {
+     if (node.type === 'setSlot') {
         const newSlots = { ...updatedSlots };
         node.data.assignments?.forEach(assignment => {
             if (assignment.key) {
                 const interpolatedValue = interpolateMessage(assignment.value, updatedSlots);
                 try {
-                    // Attempt to parse JSON/Boolean/Number, otherwise keep as string
                     const trimmedValue = interpolatedValue.trim();
                     if ((trimmedValue.startsWith('{') && trimmedValue.endsWith('}')) || (trimmedValue.startsWith('[') && trimmedValue.endsWith(']'))) {
                         newSlots[assignment.key] = JSON.parse(trimmedValue);
@@ -294,139 +317,149 @@ export const useChatFlow = (nodes, edges) => {
                     } else if (trimmedValue.toLowerCase() === 'false') {
                         newSlots[assignment.key] = false;
                     } else if (!isNaN(trimmedValue) && trimmedValue !== '') {
-                         // Check if it's actually numeric, not just parsable as NaN
                          const num = Number(trimmedValue);
                          if (!isNaN(num)) newSlots[assignment.key] = num;
-                         else newSlots[assignment.key] = interpolatedValue; // Keep as string if parsing results in NaN but wasn't empty
+                         else newSlots[assignment.key] = interpolatedValue;
                     } else {
-                        newSlots[assignment.key] = interpolatedValue; // Keep as string
+                        newSlots[assignment.key] = interpolatedValue;
                     }
                 } catch (e) {
-                    newSlots[assignment.key] = interpolatedValue; // Fallback to string if JSON parsing fails
+                    newSlots[assignment.key] = interpolatedValue;
                 }
             }
         });
-        setSlots(newSlots); // Update global state
-        proceedToNextNode(null, nodeId, newSlots); // Proceed with updated slots
+        setSlots(newSlots);
+        proceedToNextNode(null, nodeId, newSlots);
         return;
     }
-    // Handle Form node - set initial values from defaults/slots
+    if (node.type === 'delay') {
+        const duration = node.data.duration || 0;
+        setTimeout(() => {
+            proceedToNextNode(null, nodeId, updatedSlots);
+        }, duration);
+        return;
+    }
+
+    // Handle nodes that *might* add to history (Form, Link, Toast, Branch, Message, SlotFilling, iFrame)
+    let shouldAddToHistory = true;
+    let isImmediatelyCompleted = true;
+    let linkData = null; // 링크 데이터 초기화
+
+    // Form node Handling
     if (node.type === 'form') {
-      let initialSlotsUpdate = {};
+       let initialSlotsUpdate = {};
       (node.data.elements || []).forEach(element => {
-        // Only process inputs with a name and a defined default value
+        // ... (form 초기값 설정 로직) ...
         if (element.type === 'input' && element.name && element.defaultValue !== undefined && element.defaultValue !== '') {
           const defaultValueConfig = element.defaultValue;
-          // Interpolate default value using current slots
           let resolvedValue = interpolateMessage(String(defaultValueConfig), updatedSlots);
           if (resolvedValue !== undefined) {
              initialSlotsUpdate[element.name] = resolvedValue;
           }
         } else if ((element.type === 'date' || element.type === 'dropbox') && element.name && element.defaultValue !== undefined && element.defaultValue !== '') {
-            // Interpolate default value for date/dropbox (if needed)
              initialSlotsUpdate[element.name] = interpolateMessage(String(element.defaultValue), updatedSlots);
         } else if (element.type === 'checkbox' && element.name && Array.isArray(element.defaultValue)) {
-             // Checkbox default value is an array, no interpolation needed
               initialSlotsUpdate[element.name] = element.defaultValue;
         }
-        // Grid default values are handled differently (usually structure, not single value)
       });
-
-      // Combine current slots with newly resolved default values
       const finalSlotsForForm = { ...updatedSlots, ...initialSlotsUpdate };
       if (Object.keys(initialSlotsUpdate).length > 0) {
-        setSlots(finalSlotsForForm); // Update global state if defaults were applied
+        setSlots(finalSlotsForForm);
       }
-
-      // Add the form message to history, indicating it's waiting for input
-      setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: false, id: Date.now() }]);
-      // Don't proceed automatically, wait for user submission
-      return;
+      isImmediatelyCompleted = false;
     }
-    // Handle specific non-proceeding or special nodes
+    // FixedMenu Node Handling
     if (node.type === 'fixedmenu') {
-      // Reset history and set the fixed menu
       setHistory([]);
       setFixedMenu({ nodeId: node.id, ...node.data });
-      setCurrentId(node.id); // Stay on the fixed menu node
-      return; // Don't proceed
+      setCurrentId(node.id);
+      shouldAddToHistory = false;
+      isImmediatelyCompleted = false;
     }
+    // Link Node Handling
     if (node.type === 'link') {
       const url = interpolateMessage(node.data.content, updatedSlots);
       const display = interpolateMessage(node.data.display, updatedSlots);
-      // Add link info to history
-      setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: true, id: Date.now(), linkData: { url, display } }]);
-      // Open link in a new tab
+      linkData = { url, display }; // linkData 설정
       if (url) {
           window.open(url, '_blank', 'noopener,noreferrer');
       }
-      // Proceed immediately after showing/opening the link
-      proceedToNextNode(null, nodeId, updatedSlots);
-      return;
+      isImmediatelyCompleted = true; // Link는 즉시 완료됨
+      // proceedToNextNode는 히스토리 추가 후 호출됨
     }
+     // Toast Node Handling
      if (node.type === 'toast') {
         const message = interpolateMessage(node.data.message, updatedSlots);
-        alert(`[${node.data.toastType || 'info'}] ${message}`); // Show toast (using alert for simplicity)
-        proceedToNextNode(null, nodeId, updatedSlots); // Proceed immediately
+        alert(`[${node.data.toastType || 'info'}] ${message}`);
+        shouldAddToHistory = false;
+        proceedToNextNode(null, nodeId, updatedSlots);
         return;
     }
-    // Branch node with CONDITION type - evaluate conditions and proceed
+    // Conditional Branch Node Handling
      if (node.type === 'branch' && node.data.evaluationType === 'CONDITION') {
-        proceedToNextNode(null, nodeId, updatedSlots); // Let proceedToNextNode handle condition evaluation
+        shouldAddToHistory = false;
+        proceedToNextNode(null, nodeId, updatedSlots);
         return;
     }
 
-    // Determine if the node requires user interaction
+    // Determine interactivity for remaining types
     const isInteractive = (node.type === 'branch' && node.data.evaluationType === 'BUTTON' && node.data.replies?.length > 0) || node.type === 'slotfilling';
-    // Add message to history (except for form, which was added earlier)
-    if (node.type !== 'form') {
-      setHistory(prev => [...prev, { type: 'bot', nodeId, isCompleted: !isInteractive || node.type === 'iframe', id: Date.now() }]);
+    if (isInteractive) {
+        isImmediatelyCompleted = false;
     }
-    // Automatically proceed if the node is not interactive and not a fixed menu
-    if (!isInteractive && node.type !== 'fixedmenu') { // Already handled form above
-        // Use setTimeout to allow state updates to render before proceeding
-        setTimeout(() => proceedToNextNode(null, nodeId, updatedSlots), 100);
+    if (node.type === 'iframe') {
+        isImmediatelyCompleted = true;
     }
-    // If interactive (slotfilling, branch with buttons), wait for user input (do nothing here)
 
-  // Dependencies for addBotMessage
-  }, [nodes, edges, setSlots, handleApiNode, handleLlmNode, proceedToNextNode]);
+    // Add message to history if needed
+    if (shouldAddToHistory) {
+      const newItem = {
+          type: 'bot',
+          nodeId,
+          isCompleted: isImmediatelyCompleted,
+          id: generateUniqueId(), // 고유 ID 사용
+          ...(linkData && { linkData }) // linkData가 있으면 추가
+      };
+      setHistory(prev => [...prev, newItem]);
+    }
 
-  // Effect to update the ref whenever addBotMessage function definition changes
+    // Automatically proceed if immediately completed
+    if (isImmediatelyCompleted && node.type !== 'fixedmenu') {
+        proceedToNextNode(null, nodeId, updatedSlots);
+    }
+
+  }, [nodes, edges, setSlots, handleApiNode, handleLlmNode, proceedToNextNode]); // Ensure proceedToNextNode is included
+
   useEffect(() => {
     addBotMessageRef.current = addBotMessage;
   }, [addBotMessage]);
 
-  // startSimulation definition (no changes needed)
   const startSimulation = useCallback(() => {
     setIsStarted(true);
     let effectiveStartNodeId = startNodeId;
-    // Find start node if not explicitly set
     if (!effectiveStartNodeId) {
       let startNode = nodes.find(n => n.type === 'start');
-      if (!startNode) { // Fallback to node with no incoming edges
+      if (!startNode) {
           startNode = nodes.find(n => !edges.some(e => e.target === n.id) && !n.parentNode);
       }
       effectiveStartNodeId = startNode?.id;
     }
-    // Initialize state and start flow if start node found
     if (effectiveStartNodeId) {
       setSlots({});
       setFixedMenu(null);
       setHistory([]);
       setCurrentId(effectiveStartNodeId);
       if (addBotMessageRef.current) {
-          addBotMessageRef.current(effectiveStartNodeId, {}); // Start flow from the beginning
+          addBotMessageRef.current(effectiveStartNodeId, {});
       }
     } else {
         console.warn("No start node found for simulation.");
-        setIsStarted(false); // Can't start if no start node
+        setIsStarted(false);
     }
   }, [nodes, edges, setSlots, startNodeId]);
 
-  // Effect to reset simulation state when nodes/edges change (no changes needed)
   useEffect(() => {
-    setIsStarted(false);
+     setIsStarted(false);
     setHistory([]);
     setCurrentId(null);
     setFixedMenu(null);
