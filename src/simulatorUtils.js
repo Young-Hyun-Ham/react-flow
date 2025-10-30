@@ -1,5 +1,13 @@
 // src/simulatorUtils.js
 
+// ========================================================================
+// == Chatbot Scenario Utility Functions Reference ==
+// This file contains utility functions used by the scenario simulator
+// (useChatFlow.js). Functions like interpolateMessage and evaluateCondition
+// represent the standard way these operations should be performed.
+// The actual chatbot engine should use equivalent logic.
+// ========================================================================
+
 // --- 👇 [수정] interpolateMessage 함수가 {{slot}} 구문을 사용하도록 변경 ---
 /**
  * 메시지 문자열 내의 {{slotName}} 구문을 실제 슬롯 값으로 치환하는 함수.

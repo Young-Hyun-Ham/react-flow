@@ -12,6 +12,7 @@ import BranchNodeController from './components/controllers/BranchNodeController'
 import LinkNodeController from './components/controllers/LinkNodeController';
 import FixedMenuNodeController from './components/controllers/FixedMenuNodeController';
 import SetSlotNodeController from './components/controllers/SetSlotNodeController'; // Added
+import DelayNodeController from './components/controllers/DelayNodeController'; // <<< [추가]
 
 const nodeControllerMap = {
   message: MessageNodeController,
@@ -25,6 +26,7 @@ const nodeControllerMap = {
   toast: ToastNodeController,
   iframe: IframeNodeController,
   setSlot: SetSlotNodeController, // Added
+  delay: DelayNodeController, // <<< [추가]
 };
 
 function NodeController() {

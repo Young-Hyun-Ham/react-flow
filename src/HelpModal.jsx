@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import styles from './HelpModal.module.css';
 
+// --- 👇 [수정] Delay Node 추가 및 Slot 구문 설명 수정 ---
 const HelpManual = () => (
 <>
  <h2>1. Getting Started</h2>
@@ -20,9 +21,11 @@ const HelpManual = () => (
  <h2>2. Scenario Management</h2>
  <p>The first screen you see after login is the <strong>Scenario List</strong>.</p>
  <ul>
- <li><strong>Add New Scenario</strong>: Click the <code>+ Add New Scenario</code> button and enter a scenario name to create a new conversation flow.</li>
+ <li><strong>Add New Scenario</strong>: Click the <code>+ Add New Scenario</code> button and enter a scenario name and select a job type to create a new conversation flow.</li>
  <li><strong>Select Scenario</strong>: Click on a scenario name in the list to navigate to that scenario's editing screen.</li>
- <li><strong>Edit/Delete Scenario</strong>: Use the <code>Edit</code> button next to each scenario item to change the name, or the <code>Delete</code> button to permanently remove the scenario.</li>
+ {/* --- 👇 [수정] Clone 기능 추가 --- */}
+ <li><strong>Edit/Clone/Delete Scenario</strong>: Use the <code>Edit</code> icon to change the name or job type, the <code>Clone</code> icon to duplicate the scenario with a new name, or the <code>Delete</code> icon to permanently remove the scenario.</li>
+ {/* --- 👆 [수정 끝] --- */}
  </ul>
 
   <h2>3. Board Usage</h2>
@@ -55,39 +58,45 @@ const HelpManual = () => (
   </tr>
   <tr>
   <td><strong>Form</strong></td>
-  <td>A form for receiving structured data input from users. (e.g., name, date, checkboxes, etc.). Dropbox options can be dynamically populated from a slot.</td>
+  <td>A form for receiving structured data input from users (e.g., text, date, checkboxes, dropdown, grid). Options/data can be dynamically populated from slots. Selecting a row in a slot-bound grid stores the row data in the <code>selectedRow</code> slot.</td>
   </tr>
   <tr>
   <td><strong>Condition Branch</strong></td>
-  <td>Divides the conversation flow into multiple branches based on user responses or slot values (including boolean <code>true</code>/<code>false</code>).</td>
+  <td>Divides the conversation flow into multiple branches based on user responses (buttons) or slot values (conditions, including boolean <code>true</code>/<code>false</code> and comparing slots).</td>
   </tr>
   <tr>
   <td><strong>SlotFilling</strong></td>
-  <td>Used to receive user input and store it in specific variables (Slots).</td>
+  <td>Used to receive user input (text or button click) and store it in specific variables (Slots).</td>
   </tr>
   <tr>
   <td><strong>API</strong></td>
-  <td>Calls an external API. You can use slot values in the request and save parts of the JSON response back into slots. It also allows branching the flow based on API call success or failure and supports sending multiple API requests in parallel.</td>
+  <td>Calls an external API. You can use slot values in the request (URL, headers, body) and save parts of the JSON response back into slots. It allows branching based on success/failure and supports multiple parallel API requests.</td>
   </tr>
   <tr>
   <td><strong>LLM</strong></td>
-  <td>Connects to a large language model to generate text based on a dynamic prompt. The flow can be branched based on keywords in the generated response.</td>
+  <td>Connects to a large language model to generate text based on a dynamic prompt using slot values. The flow can be branched based on keywords in the generated response, and the full response can be saved to a slot.</td>
   </tr>
   <tr>
   <td><strong>Set Slot</strong></td>
-  <td>Directly sets or updates the value of one or more slots. This is useful for initializing variables, marking progress, or manually changing a slot's value without user input.</td>
+  <td>Directly sets or updates the value of one or more slots using static values or values from other slots. Supports string, number, boolean, and JSON object/array types.</td>
   </tr>
+  {/* --- 👇 [추가] Delay Node --- */}
+  <tr>
+    <td><strong>Delay</strong></td>
+    <td>Pauses the conversation flow for a specified duration (in milliseconds) before proceeding to the next node. Does not display any message to the user during the delay.</td>
+  </tr>
+  {/* --- 👆 [추가 끝] --- */}
   <tr>
   <td><strong>Link</strong></td>
-  <td>Delivers external website links to users.</td>
+  <td>Delivers external website links to users, optionally opening them in a new tab.</td>
   </tr>
    <tr>
   <td><strong>Toast</strong></td>
-  <td>Displays a small, non-intrusive pop-up message (like a toast notification) to the user in the simulator. It does not interrupt the conversation flow.</td>
+  <td>Displays a small, non-intrusive pop-up message (info, success, error) to the user in the simulator. It does not interrupt the conversation flow.</td>
   </tr>
   <tr>
   <td><strong>iFrame</strong></td>
-  <td>Embeds an external webpage directly within the chatbot interface using an iframe.</td>
+  <td>Embeds an external webpage directly within the chatbot interface using an iframe, with configurable dimensions.</td>
   </tr>
  </tbody>
  </table>
@@ -96,118 +105,86 @@ const HelpManual = () => (
  <h3>6.1. Node Editing</h3>
  <ol>
  <li>Click on the node you want to edit on the canvas.</li>
- <li>Modify the node's text, buttons, form elements, etc. in the <strong>Controller Panel</strong> that appears on the right.</li>
+ <li>Modify the node's text, buttons, form elements, API details, etc. in the <strong>Controller Panel</strong> that appears on the right.</li>
  <li>When editing is complete, click the <code>Save Changes</code> button at the bottom of the controller panel to apply changes to the node.</li>
  </ol>
 
  <h3>6.2. Using Slots (Variables)</h3>
- <p>Slots are variables used to store and reuse information within a scenario. You can store user input from a <strong>SlotFilling</strong> node, data from an <strong>API</strong> node's response, or set them directly with the <strong>Set Slot</strong> node.</p>
- <p>
-  To use a stored slot value, use brace notation. There are two types:
-  <ul>
-    <li><code>{'{slotName}'}</code>: Used in most nodes like <strong>Message</strong>, <strong>LLM</strong>, and <strong>Link</strong>.</li>
-    <li><code>{'{{slotName}}'}</code>: Used <strong>only within the API node</strong> (URL, Headers, Body fields) to prevent conflicts with JSON syntax.</li>
-  </ul>
- </p>
- <p><strong>Example:</strong> If you stored a user's name in a slot called <code>userName</code>, you can use it in a Message node like this: <code>Hello, {'{userName}'}! Welcome.</code> The Slot Display shows the current values of all slots.</p>
- 
- <h4>6.2.1. Dynamic Dropbox Options (Slot Binding)</h4>
- <p>In a <strong>Form</strong> node, you can dynamically populate the options of a <strong>Dropbox</strong> element from a slot that contains an array.</p>
+ <p>Slots are variables used to store and reuse information within a scenario. You can store user input, data from API responses, LLM outputs, selected grid rows, or set them directly.</p>
+ {/* --- 👇 [수정] Slot 구문 설명 통일 --- */}
+ <p>To use a stored slot value within node content (like messages, prompts, URLs, API bodies, etc.), use the <strong>single brace notation</strong>: <code>{'{slotName}'}</code>.</p>
+ <p><strong>Example:</strong> If you stored a user's name in a slot called <code>userName</code>, you can use it in a Message node like this: <code>Hello, {'{userName}'}! Welcome.</code> The Slot Display panel (top-left of the canvas) shows the current values of all slots during simulation.</p>
+ {/* --- 👆 [수정 끝] --- */}
+
+ <h4>6.2.1. Dynamic Options/Data (Slot Binding)</h4>
+ <p>In a <strong>Form</strong> node, you can dynamically populate the options of a <strong>Dropbox</strong> or the data in a <strong>Grid</strong> element from a slot containing an array.</p>
  <ul>
-    <li><strong>Data Format</strong>: The slot must contain an array. The array can be a simple array of strings (e.g., <code>["Apple", "Banana"]</code>) or an array of objects with <code>label</code> and <code>value</code> keys (e.g., <code>[{'{'}label: 'Choice A', value: 'a{'}'}, {'{'}label: 'Choice B', value: 'b{'}'}]</code>).</li>
+    <li><strong>Data Format</strong>: The slot must contain an array. For Dropbox, it can be strings or objects with <code>label</code>/<code>value</code>. For Grid, it should typically be an array of objects.</li>
     <li><strong>Setup</strong>:
         <ol>
-            <li>Select the Dropbox element in the Form Node controller.</li>
-            <li>In the 'Options Slot' input field, enter the name of the slot that holds the array (e.g., <code>fruit_list</code>).</li>
-            <li>When the simulator runs, the Dropbox will be filled with options from that slot. The manually entered 'Options (Fallback)' will be used if the specified slot is empty or not an array.</li>
+            <li>Select the Dropbox or Grid element in the Form Node controller.</li>
+            <li>In the 'Options Slot' (Dropbox) or 'Data Slot' (Grid) field, enter the name of the slot holding the array (e.g., <code>user_list</code>).</li>
+            <li>(Grid specific) Optionally specify 'Display Labels' (comma-separated keys) to show specific columns, and check 'Hide Columns with Null Values'.</li>
+            <li>Fallback options/data entered manually will be used if the slot is empty or invalid.</li>
         </ol>
     </li>
+    <li><strong>Grid Row Selection</strong>: When a user clicks a row in a Grid populated via 'Data Slot', the entire data object for that row is automatically stored in a special slot named <code>selectedRow</code>. You can then use this slot (e.g., <code>{'{selectedRow.userId}'}</code>) in subsequent nodes.</li>
  </ul>
 
  <h3>6.3. Using the API Node</h3>
  <p>The API node allows for dynamic interaction with external servers.</p>
  <ul>
- <li><strong>Individual API Test</strong>: Click the <strong>Play (▶)</strong> button on the top-right corner of the API node to test that specific API call immediately. It will use the current slot values for the request and show you the result in a pop-up modal.</li>
- <li><strong>Multi API Request</strong>: You can send multiple API requests in parallel within a single API node.
-    <ul>
-        <li>Toggle the 'Enable Multi API' checkbox in the controller.</li>
-        <li>Click '+ Add API Call' to add multiple requests. Each request can be configured with its own name, method, URL, and other settings.</li>
-        <li>The node will proceed to the 'On Success' branch only after all API calls have completed successfully. If any one of them fails, it will proceed to the 'On Error' branch.</li>
-    </ul>
- </li>
- <li><strong>Dynamic Requests</strong>: Use slots to make dynamic API calls. In the URL, Headers, or Body fields, you can insert values from previous user inputs or API responses using <strong>double brace notation</strong> (e.g., <code>https://api.example.com/users/{'{{userId}}'}</code>).</li>
- <li><strong>Response Mapping</strong>: After a successful API call, you can extract values from the JSON response and save them into new or existing slots. In the "Response Mapping" section of the controller:
-  <ul>
-  <li><strong>JSON Path</strong>: Specify the path to the desired value in the JSON response. You can access nested objects with a dot (e.g., <code>data.user.name</code>) and array elements with brackets (e.g., <code>data.items[0].product</code>).</li>
-  <li><strong>Slot Name</strong>: Enter the name of the slot where you want to store the extracted value (e.g., <code>userName</code>).</li>
-  </ul>
- </li>
- <li><strong>Success/Failure Branching</strong>: The API node has two source handles on its right side:
-  <ul>
-  <li><code>On Success</code>: Drag a connection from this handle to the node that should follow a successful API call.</li>
-  <li><code>On Error</code>: Drag a connection from this handle to the node that should follow a failed API call (e.g., network error, server error).</li>
-  </ul>
- </li>
+ <li><strong>Individual API Test</strong>: In single API mode, click the <strong>Play (▶)</strong> icon on the node header to test that specific API call immediately using current slot values. In multi-API mode, use the 'Test' button in the controller for the selected API call.</li>
+ <li><strong>Multi API Request</strong>: Check 'Enable Multi API' in the controller to send multiple requests in parallel. Add and configure each call. The node proceeds to 'On Success' only if *all* calls succeed, otherwise to 'On Error'.</li>
+ {/* --- 👇 [수정] Slot 구문 설명 수정 --- */}
+ <li><strong>Dynamic Requests</strong>: Use slots (e.g., <code>{'{userId}'}</code>) in the URL, Headers (JSON string values), or Body (JSON string values) fields to make dynamic API calls.</li>
+ {/* --- 👆 [수정 끝] --- */}
+ <li><strong>Response Mapping</strong>: Extract values from the JSON response using JSON Path (e.g., <code>data.user.name</code>, <code>data.items[0].product</code>) and save them into slots.</li>
+ <li><strong>Success/Failure Branching</strong>: Connect the <code>On Success</code> handle (green) for successful calls and the <code>On Error</code> handle (red) for failed calls to different subsequent nodes.</li>
  </ul>
 
  <h3>6.4. Using the LLM Node</h3>
- <p>The LLM node sends a prompt to a large language model and displays the response in a streaming format. You can create dynamic prompts by combining text with slot values.</p>
+ <p>The LLM node sends a dynamic prompt (using slots like <code>{'{topic}'}</code>) to a large language model and displays the response.</p>
  <ul>
-    <li><strong>Output Variable</strong>: You can store the entire generated text from the LLM into a slot. Specify the slot name in the 'Output Variable' field in the controller.</li>
-    <li><strong>Conditional Branching</strong>: You can branch the conversation flow based on the content of the LLM's response.
-        <ul>
-            <li>In the controller, click '+ Add Condition' to add a new branch.</li>
-            <li>Enter a specific 'Keyword' for each condition.</li>
-            <li>If the keyword is found within the LLM's generated text, the conversation will proceed through the corresponding handle on the node.</li>
-            <li>If none of the keywords are found, the conversation will proceed through the 'Default' handle.</li>
-        </ul>
-    </li>
+    <li><strong>Output Variable</strong>: Store the full LLM response text into a specified slot.</li>
+    <li><strong>Conditional Branching</strong>: Add conditions based on 'Keywords'. If a keyword is found in the response, the flow follows that specific handle. Otherwise, it follows the 'Default' handle.</li>
  </ul>
- <p><strong>Example:</strong></p>
- <ol>
-  <li>Create a <strong>SlotFilling</strong> node with the content "Which city would you like to know the weather for?" and set the slot name to <code>city</code>.</li>
-  <li>Connect this node to an <strong>LLM</strong> node.</li>
-  <li>In the LLM node's controller, set the prompt to: <code>Tell me about the weather in {'{city}'}. Mention if it is 'sunny', 'rainy', or 'cloudy'.</code> Set the 'Output Variable' to <code>weather_report</code>.</li>
-  <li>Add two conditions: one with the keyword "sunny" and another with "rainy".</li>
-  <li>Connect the "sunny" handle to a message node saying "Great! It's a sunny day.", the "rainy" handle to a node saying "Don't forget your umbrella!", and the "Default" handle to a node saying "Here is the weather forecast."</li>
- </ol>
- 
+
  <h3>6.5. Node Connection</h3>
  <ul>
- <li>Click on the connection points (Handles) on the right or left edges of nodes and drag to other nodes' connection points to connect conversation flows.</li>
- <li><strong>Condition Branch/API/LLM nodes</strong>: Each button (Branch), outcome (Success/Error), or condition has its own separate connection point.</li>
+ <li>Drag from the handles (circles) on the edges of nodes to connect them.</li>
+ <li><strong>Branch/API/LLM nodes</strong>: These have multiple source handles corresponding to different outcomes (button clicks, conditions, success/error, keywords). Hover over a handle to see its purpose.</li>
  </ul>
 
  <h3>6.6. Node and Connection Deletion/Duplication</h3>
  <ul>
- <li><strong>Delete Node</strong>: Click the <code>x</code> button in the top right of the node.</li>
- <li><strong>Delete Connection</strong>: Click only the connection you want to delete on the canvas to select it, then press <code>Backspace</code> or <code>Delete</code> on your keyboard.</li>
- <li><strong>Duplicate Node</strong>: Click the <code>+ Duplicate Node</code> button that appears at the bottom of the left 'Add Node' panel when you select the node you want to duplicate.</li>
+ <li><strong>Delete Node</strong>: Click the <code>x</code> icon in the top right of the node.</li>
+ <li><strong>Delete Connection</strong>: Click the connection line itself to select it, then press <code>Backspace</code> or <code>Delete</code>.</li>
+ <li><strong>Duplicate Node</strong>: Select the node you want to copy, then click the <code>+ Duplicate Node</code> button at the bottom of the left panel.</li>
  </ul>
 
  <h3>6.7. Node and Scenario Group Management</h3>
-  <p>You can reuse parts of scenarios or entire scenarios to build complex flows efficiently.</p>
+  <p>Reuse parts of scenarios or entire scenarios efficiently.</p>
   <ul>
-    <li><strong>Export/Import Nodes</strong>:
-      <ol>
-        <li>Select one or more nodes (hold <code>Shift</code> to multi-select).</li>
-        <li>Click <code>Export Nodes</code> to copy them to the clipboard.</li>
-        <li>In another scenario, click <code>Import Nodes</code> to paste them.</li>
-      </ol>
-    </li>
-    <li><strong>Scenario as Group</strong>:
-      <ol>
-        <li>Click the <code>+ Scenario Group</code> button in the left panel.</li>
-        <li>Select a scenario from the modal to import it as a collapsible group.</li>
-        <li>The group node automatically resizes to fit its content. You can connect nodes from outside the group to its input handle, and connect its output handle to other nodes to integrate it into your main flow.</li>
-      </ol>
-    </li>
+    <li><strong>Export/Import Nodes</strong>: Select nodes (Shift+click for multiple), click <code>Export Nodes</code> (copies to clipboard), then go to another scenario (or the same one) and click <code>Import Nodes</code> to paste.</li>
+    <li><strong>Scenario as Group</strong>: Click <code>+ Scenario Group</code>, choose a scenario from the list. It will be imported as a single, collapsible group node representing that entire scenario's flow. Connect its input/output handles like a regular node.</li>
   </ul>
 
- <h3>6.8. Save and Test</h3>
+ {/* --- 👇 [추가] Start Node 설명 --- */}
+ <h3>6.8. Setting the Start Node</h3>
  <ul>
- <li><strong>Save</strong>: Click the <code><img src="/images/save.png" alt="save" style={{ width: '24px', height: '24px' }}/></code> icon in the top right of the screen to save the current scenario you're working on to the server.</li>
- <li><strong>Test</strong>: Click the <code><img src="/images/chat_simulator.png" alt="chatbot" style={{ width: '24px', height: '24px' }}/></code> icon to open the simulator and test whether the scenario works as intended.</li>
+  <li>Click the **Play (▶)** icon in the header of any node to designate it as the starting point for the simulation.</li>
+  <li>The designated Start Node will have a **green border and shadow**.</li>
+  <li>Clicking the Play icon again on the same node will remove its Start Node designation.</li>
+  <li>If no Start Node is explicitly set, the simulation will attempt to begin from a node that has no incoming connections.</li>
+  <li>The currently set Start Node ID is saved along with the scenario data.</li>
+ </ul>
+ {/* --- 👆 [추가 끝] --- */}
+
+ <h3>6.9. Save and Test</h3>
+ <ul>
+ <li><strong>Save</strong>: Click the Save icon (💾) in the top right to save the current scenario structure (including the Start Node ID) to the selected backend (Firebase/FastAPI).</li>
+ <li><strong>Test</strong>: Click the Chatbot icon (🤖) to open/close the simulator panel. Click the 'Start' button within the simulator header to begin testing from the designated Start Node (or the inferred starting node).</li>
  </ul>
 </>
 );
@@ -231,9 +208,11 @@ const HelpManual_ko = () => (
  <h2>2. 시나리오 관리</h2>
  <p>로그인 후 가장 먼저 시나리오 목록 화면이 나타납니다.</p>
  <ul>
- <li><strong>새 시나리오 추가</strong>: <code>+ 새 시나리오 추가</code> 버튼을 클릭하고 시나리오 이름을 입력하여 새로운 대화 흐름을 생성합니다.</li>
+ <li><strong>새 시나리오 추가</strong>: <code>+ 새 시나리오 추가</code> 버튼을 클릭하고 시나리오 이름과 Job 타입을 선택하여 새로운 대화 흐름을 생성합니다.</li>
  <li><strong>시나리오 선택</strong>: 목록에서 시나리오 이름을 클릭하면 해당 시나리오의 편집 화면으로 이동합니다.</li>
- <li><strong>시나리오 수정/삭제</strong>: 각 항목 옆의 <code>수정</code> 버튼으로 이름을 변경하거나, <code>삭제</code> 버튼으로 시나리오를 영구적으로 제거합니다.</li>
+ {/* --- 👇 [수정] Clone 기능 추가 --- */}
+ <li><strong>시나리오 수정/복제/삭제</strong>: 각 항목 옆의 <code>수정</code> 아이콘으로 이름이나 Job 타입을 변경하고, <code>복제</code> 아이콘으로 시나리오를 새 이름으로 복제하며, <code>삭제</code> 아이콘으로 시나리오를 영구적으로 제거합니다.</li>
+ {/* --- 👆 [수정 끝] --- */}
  </ul>
 
  <h2>3. 게시판 사용법</h2>
@@ -266,39 +245,45 @@ const HelpManual_ko = () => (
   </tr>
   <tr>
   <td><strong>폼</strong></td>
-  <td>사용자로부터 정형화된 데이터 입력을 받기 위한 양식입니다. (예: 이름, 날짜, 체크박스 등). Dropbox의 선택지를 슬롯을 통해 동적으로 구성할 수 있습니다.</td>
+  <td>사용자로부터 텍스트, 날짜, 체크박스, 드롭다운, 그리드 등 정형화된 데이터 입력을 받기 위한 양식입니다. 선택지/데이터를 슬롯을 통해 동적으로 구성할 수 있습니다. 슬롯에 바인딩된 그리드의 행을 선택하면 해당 행 데이터가 <code>selectedRow</code> 슬롯에 저장됩니다.</td>
   </tr>
   <tr>
   <td><strong>조건<br />분기</strong></td>
-  <td>사용자의 답변 또는 슬롯 값(boolean 타입 <code>true</code>/<code>false</code> 포함)에 따라 대화 흐름을 여러 갈래로 나눕니다.</td>
+  <td>사용자의 답변(버튼 클릭) 또는 슬롯 값(조건 비교, boolean <code>true</code>/<code>false</code> 포함, 슬롯 간 비교)에 따라 대화 흐름을 여러 갈래로 나눕니다.</td>
   </tr>
   <tr>
   <td><strong>슬롯<br />채우기</strong></td>
-  <td>사용자 입력을 받아 특정 변수(Slot)에 저장하는 데 사용됩니다.</td>
+  <td>사용자 입력(텍스트 또는 버튼 클릭)을 받아 특정 변수(Slot)에 저장하는 데 사용됩니다.</td>
   </tr>
   <tr>
   <td><strong>API</strong></td>
-  <td>외부 API를 호출합니다. 요청 시 슬롯 값을 사용할 수 있으며, JSON 응답의 일부를 다시 슬롯에 저장할 수 있습니다. API 호출 성공/실패 분기 및 다중 API 병렬 요청을 지원합니다.</td>
+  <td>외부 API를 호출합니다. 요청(URL, 헤더, 본문) 시 슬롯 값을 사용할 수 있으며, JSON 응답의 일부를 다시 슬롯에 저장할 수 있습니다. 성공/실패 분기 및 다중 API 병렬 요청을 지원합니다.</td>
   </tr>
   <tr>
   <td><strong>LLM</strong></td>
-  <td>거대 언어 모델과 연동하여 동적인 프롬프트를 기반으로 텍스트를 생성합니다. 생성된 응답 내용의 키워드에 따라 흐름을 분기할 수 있습니다.</td>
+  <td>거대 언어 모델과 연동하여 슬롯 값을 사용한 동적 프롬프트를 기반으로 텍스트를 생성합니다. 생성된 응답 내용의 키워드에 따라 흐름을 분기할 수 있으며, 전체 응답을 슬롯에 저장할 수 있습니다.</td>
   </tr>
   <tr>
   <td><strong>슬롯<br/>설정</strong></td>
-  <td>하나 이상의 슬롯 값을 직접 설정하거나 업데이트합니다. 변수 초기화, 진행 상태 기록, 사용자 입력 없이 값을 수동으로 변경할 때 유용합니다.</td>
+  <td>하나 이상의 슬롯 값을 고정 값 또는 다른 슬롯 값으로 직접 설정하거나 업데이트합니다. 문자열, 숫자, boolean, JSON 객체/배열 타입을 지원합니다.</td>
   </tr>
+  {/* --- 👇 [추가] Delay Node --- */}
+  <tr>
+    <td><strong>딜레이</strong></td>
+    <td>다음 노드로 진행하기 전에 지정된 시간(밀리초 단위) 동안 대화 흐름을 일시 중지합니다. 지연 시간 동안 사용자에게는 아무 메시지도 표시되지 않습니다.</td>
+  </tr>
+  {/* --- 👆 [추가 끝] --- */}
   <tr>
   <td><strong>링크</strong></td>
-  <td>외부 웹사이트 링크를 사용자에게 전달합니다.</td>
+  <td>외부 웹사이트 링크를 사용자에게 전달하며, 선택적으로 새 탭에서 열 수 있습니다.</td>
   </tr>
   <tr>
   <td><strong>토스트</strong></td>
-  <td>시뮬레이터 내에서 사용자에게 방해되지 않는 작은 팝업 메시지(토스트 알림)를 표시합니다. 대화 흐름을 중단시키지 않습니다.</td>
+  <td>시뮬레이터 내에서 사용자에게 방해되지 않는 작은 팝업 메시지(정보, 성공, 오류)를 표시합니다. 대화 흐름을 중단시키지 않습니다.</td>
   </tr>
    <tr>
   <td><strong>iFrame</strong></td>
-  <td>iframe을 사용하여 외부 웹페이지를 챗봇 인터페이스 내에 직접 삽입합니다.</td>
+  <td>iframe을 사용하여 외부 웹페이지를 챗봇 인터페이스 내에 직접 삽입하며, 크기를 조절할 수 있습니다.</td>
   </tr>
  </tbody>
  </table>
@@ -307,121 +292,91 @@ const HelpManual_ko = () => (
  <h3>6.1. 노드 편집</h3>
  <ol>
  <li>캔버스에서 편집하고 싶은 노드를 클릭합니다.</li>
- <li>우측에 나타나는 <strong>컨트롤러 패널</strong>에서 노드의 텍스트, 버튼, 양식 요소 등을 수정합니다.</li>
+ <li>우측에 나타나는 <strong>컨트롤러 패널</strong>에서 노드의 텍스트, 버튼, 양식 요소, API 정보 등을 수정합니다.</li>
  <li>편집이 끝나면 컨트롤러 패널 하단의 <code>Save Changes</code> 버튼을 클릭하여 변경 사항을 노드에 적용합니다.</li>
  </ol>
 
  <h3>6.2. 슬롯(변수) 사용하기</h3>
- <p>슬롯은 시나리오 내에서 정보를 저장하고 재사용하기 위한 변수입니다. <strong>슬롯 채우기</strong> 노드를 통해 받은 사용자 입력, <strong>API</strong> 노드의 응답 데이터, 또는 <strong>슬롯 설정</strong> 노드를 통해 직접 값을 할당할 수 있습니다.</p>
- <p>
-  저장된 슬롯 값은 중괄호 표기법을 사용하여 불러올 수 있습니다. 두 가지 종류가 있습니다:
-  <ul>
-    <li><code>{'{슬롯이름}'}</code>: <strong>메시지</strong>, <strong>LLM</strong>, <strong>링크</strong> 등 대부분의 노드에서 사용합니다.</li>
-    <li><code>{'{{슬롯이름}}'}</code>: JSON 문법과의 충돌을 피하기 위해 <strong>API 노드(URL, Headers, Body 필드) 내에서만</strong> 사용합니다.</li>
-  </ul>
- </p>
- <p><strong>예시:</strong> <code>userName</code>이라는 슬롯에 사용자 이름을 저장했다면, 메시지 노드에서 <code>안녕하세요, {'{userName}'}님!</code> 과 같이 사용할 수 있습니다. 시뮬레이터 좌측 상단의 슬롯 표시 창은 현재 모든 슬롯의 값을 보여줍니다.</p>
- 
- <h4>6.2.1. 동적 Dropbox 옵션 (슬롯 바인딩)</h4>
- <p><strong>Form</strong> 노드에서, 배열을 담고 있는 슬롯을 이용하여 <strong>Dropbox</strong> 요소의 선택지를 동적으로 채울 수 있습니다.</p>
+ <p>슬롯은 시나리오 내에서 정보를 저장하고 재사용하기 위한 변수입니다. 사용자 입력, API 응답, LLM 출력, 선택된 그리드 행 데이터 등을 저장하거나 직접 설정할 수 있습니다.</p>
+ {/* --- 👇 [수정] Slot 구문 설명 통일 --- */}
+ <p>노드 내용(메시지, 프롬프트, URL, API 본문 등) 안에서 저장된 슬롯 값을 사용하려면 <strong>단일 중괄호 표기법</strong>: <code>{'{슬롯이름}'}</code>을 사용합니다.</p>
+ <p><strong>예시:</strong> <code>userName</code>이라는 슬롯에 사용자 이름을 저장했다면, 메시지 노드에서 <code>안녕하세요, {'{userName}'}님!</code> 과 같이 사용할 수 있습니다. 캔버스 좌측 상단의 슬롯 표시 패널은 시뮬레이션 중 현재 모든 슬롯의 값을 보여줍니다.</p>
+ {/* --- 👆 [수정 끝] --- */}
+
+ <h4>6.2.1. 동적 옵션/데이터 (슬롯 바인딩)</h4>
+ <p><strong>Form</strong> 노드에서, 배열을 담고 있는 슬롯을 이용하여 <strong>Dropbox</strong> 요소의 선택지나 <strong>Grid</strong> 요소의 데이터를 동적으로 채울 수 있습니다.</p>
  <ul>
-    <li><strong>데이터 형식</strong>: 슬롯은 반드시 배열 형태여야 합니다. 단순 문자열 배열(예: <code>["사과", "바나나"]</code>)이거나, <code>label</code>과 <code>value</code> 키를 가진 객체 배열(예: <code>[{'{'}label: '선택 A', value: 'a{'}'}, {'{'}label: '선택 B', value: 'b{'}'}]</code>) 형식 모두 지원합니다.</li>
+    <li><strong>데이터 형식</strong>: 슬롯은 반드시 배열 형태여야 합니다. Dropbox의 경우 문자열 또는 <code>label</code>/<code>value</code> 객체 배열, Grid의 경우 일반적으로 객체 배열 형태입니다.</li>
     <li><strong>설정 방법</strong>:
         <ol>
-            <li>Form 노드 컨트롤러에서 Dropbox 요소를 선택합니다.</li>
-            <li>'Options Slot' 입력 필드에 배열을 담고 있는 슬롯의 이름을 입력합니다(예: <code>fruit_list</code>).</li>
-            <li>시뮬레이터가 실행될 때, 해당 슬롯의 값으로 Dropbox의 선택지가 채워집니다. 만약 지정된 슬롯이 비어있거나 배열이 아니면, 수동으로 입력된 'Options (Fallback)'이 대신 사용됩니다.</li>
+            <li>Form 노드 컨트롤러에서 Dropbox 또는 Grid 요소를 선택합니다.</li>
+            <li>'Options Slot'(Dropbox) 또는 'Data Slot'(Grid) 필드에 배열을 담고 있는 슬롯 이름을 입력합니다(예: <code>user_list</code>).</li>
+            <li>(Grid 전용) 선택적으로 'Display Labels'(쉼표로 구분된 키 목록)을 지정하여 특정 열만 표시하고, 'Hide Columns with Null Values'를 체크할 수 있습니다.</li>
+            <li>슬롯이 비어있거나 유효하지 않으면 수동으로 입력된 대체(Fallback) 옵션/데이터가 사용됩니다.</li>
         </ol>
     </li>
+    <li><strong>Grid 행 선택</strong>: 'Data Slot'을 통해 채워진 Grid에서 사용자가 특정 행을 클릭하면, 해당 행의 전체 데이터 객체가 <code>selectedRow</code>라는 특수 슬롯에 자동으로 저장됩니다. 이후 노드에서 이 슬롯 값을 사용할 수 있습니다(예: <code>{'{selectedRow.userId}'}</code>).</li>
  </ul>
 
  <h3>6.3. API 노드 사용하기</h3>
  <p>API 노드를 사용하면 외부 서버와 동적으로 상호작용할 수 있습니다.</p>
  <ul>
- <li><strong>개별 API 테스트</strong>: API 노드 우측 상단의 <strong>재생(▶) 버튼</strong>을 클릭하면 해당 API를 즉시 테스트할 수 있습니다. 현재 슬롯 값을 사용하여 요청을 보내고, 결과를 팝업 모달로 보여줍니다.</li>
- <li><strong>다중 API 요청</strong>: 하나의 API 노드 내에서 여러 개의 API를 병렬로 요청할 수 있습니다.
-    <ul>
-        <li>컨트롤러에서 'Enable Multi API' 체크박스를 활성화합니다.</li>
-        <li>'+ Add API Call' 버튼을 눌러 여러 요청을 추가합니다. 각 요청은 고유한 이름, 메서드, URL 등의 설정을 가집니다.</li>
-        <li>노드는 모든 API 호출이 성공적으로 완료되었을 때만 'On Success' 브랜치로 진행합니다. 하나라도 실패하면 'On Error' 브랜치로 진행됩니다.</li>
-    </ul>
- </li>
- <li><strong>동적 요청</strong>: 슬롯을 사용하여 동적인 API를 호출할 수 있습니다. URL, Headers, Body 필드에 <strong>이중 중괄호 표기법</strong>(예: <code>https://api.example.com/users/{'{{userId}}'}</code>)을 사용하여 이전 사용자 입력이나 다른 API 응답 값을 삽입할 수 있습니다.</li>
- <li><strong>응답 매핑</strong>: API가 성공적으로 호출된 후, JSON 응답에서 특정 값을 추출하여 새 슬롯이나 기존 슬롯에 저장할 수 있습니다. 컨트롤러의 "Response Mapping" 섹션에서 다음을 설정하세요:
-  <ul>
-  <li><strong>JSON Path</strong>: JSON 응답에서 원하는 값의 경로를 지정합니다. 점(.)으로 하위 객체에 접근하고, 대괄호(`[]`)를 사용해 배열의 특정 요소에 접근할 수 있습니다 (예: <code>data.items[0].product</code>).</li>
-  <li><strong>Slot Name</strong>: 추출한 값을 저장할 슬롯의 이름을 입력합니다 (예: <code>userName</code>).</li>
-  </ul>
- </li>
- <li><strong>성공/실패 분기</strong>: API 노드의 오른쪽에는 두 개의 연결점(Handle)이 있습니다:
-  <ul>
-  <li><code>On Success</code>: API 호출이 성공했을 때 이어질 노드로 이 연결점에서 선을 드래그하여 연결합니다.</li>
-  <li><code>On Error</code>: API 호출이 실패했을 때(예: 네트워크 오류, 서버 에러) 이어질 노드로 이 연결점에서 선을 드래그하여 연결합니다.</li>
-  </ul>
- </li>
+ <li><strong>개별 API 테스트</strong>: 단일 API 모드에서는 노드 헤더의 **재생(▶) 아이콘**을 클릭하여 현재 슬롯 값으로 해당 API를 즉시 테스트합니다. 다중 API 모드에서는 컨트롤러에서 선택한 API 호출에 대한 'Test' 버튼을 사용합니다.</li>
+ <li><strong>다중 API 요청</strong>: 컨트롤러에서 'Enable Multi API'를 체크하면 여러 API 요청을 병렬로 보낼 수 있습니다. 각 호출을 추가하고 개별적으로 설정합니다. *모든* 호출이 성공해야 'On Success'로 진행되며, 하나라도 실패하면 'On Error'로 진행됩니다.</li>
+ {/* --- 👇 [수정] Slot 구문 설명 수정 --- */}
+ <li><strong>동적 요청</strong>: URL, Headers(JSON 문자열 값), Body(JSON 문자열 값) 필드에 슬롯(예: <code>{'{userId}'}</code>)을 사용하여 동적인 API를 호출할 수 있습니다.</li>
+ {/* --- 👆 [수정 끝] --- */}
+ <li><strong>응답 매핑</strong>: JSON Path(예: <code>data.user.name</code>, <code>data.items[0].product</code>)를 사용하여 JSON 응답에서 값을 추출하고 지정된 슬롯에 저장합니다.</li>
+ <li><strong>성공/실패 분기</strong>: 성공 시에는 <code>On Success</code> 핸들(녹색)에서, 실패 시에는 <code>On Error</code> 핸들(빨간색)에서 다음 노드로 연결합니다.</li>
  </ul>
 
  <h3>6.4. LLM 노드 사용하기</h3>
- <p>LLM 노드는 거대 언어 모델에 프롬프트를 보내고, 그 응답을 스트리밍 형태로 보여줍니다. 텍스트와 슬롯 값을 조합하여 동적인 프롬프트를 만들 수 있습니다.</p>
+ <p>LLM 노드는 슬롯 값(<code>{'{topic}'}</code> 등)을 사용하여 동적 프롬프트를 거대 언어 모델에 보내고 응답을 표시합니다.</p>
  <ul>
-    <li><strong>출력 변수 (Output Variable)</strong>: LLM이 생성한 전체 텍스트를 슬롯에 저장할 수 있습니다. 컨트롤러의 'Output Variable' 필드에 슬롯 이름을 지정하세요.</li>
-    <li><strong>조건부 분기 (Conditional Branching)</strong>: LLM 응답 내용에 따라 대화 흐름을 분기할 수 있습니다.
-        <ul>
-            <li>컨트롤러에서 '+ Add Condition' 버튼을 눌러 새 분기를 추가합니다.</li>
-            <li>각 조건마다 특정 '키워드'를 입력합니다.</li>
-            <li>LLM이 생성한 텍스트에 해당 키워드가 포함되어 있으면, 노드의 해당 핸들을 통해 대화가 진행됩니다.</li>
-            <li>만약 설정된 키워드가 모두 발견되지 않으면, 'Default' 핸들을 통해 대화가 진행됩니다.</li>
-        </ul>
-    </li>
+    <li><strong>출력 변수 (Output Variable)</strong>: LLM의 전체 응답 텍스트를 지정된 슬롯에 저장합니다.</li>
+    <li><strong>조건부 분기 (Conditional Branching)</strong>: '키워드' 기반 조건을 추가합니다. 응답에 키워드가 포함되어 있으면 해당 핸들로, 없으면 'Default' 핸들로 흐름이 분기됩니다.</li>
  </ul>
- <p><strong>예시:</strong></p>
- <ol>
-  <li><strong>슬롯 채우기</strong> 노드를 생성하고, 질문 내용에 "어느 도시의 날씨가 궁금하신가요?"를, 슬롯 이름에 <code>city</code>를 입력합니다.</li>
-  <li>이 노드를 <strong>LLM</strong> 노드와 연결합니다.</li>
-  <li>LLM 노드 컨트롤러에서 프롬프트를 <code>{'{city}'}의 날씨를 알려주세요. '맑음', '비', '흐림' 중 하나로 언급해주세요.</code>로 설정하고, 'Output Variable'을 <code>weather_report</code>로 지정합니다.</li>
-  <li>"맑음"과 "비"를 키워드로 하는 두 개의 조건을 추가합니다.</li>
-  <li>"맑음" 핸들은 "좋아요! 화창한 날씨입니다." 라는 메시지 노드로, "비" 핸들은 "우산을 잊지 마세요!" 라는 노드로, "Default" 핸들은 "일기 예보를 알려드릴게요." 라는 노드로 각각 연결합니다.</li>
- </ol>
 
  <h3>6.5. 노드 연결</h3>
  <ul>
- <li>노드의 좌우 가장자리에 있는 연결점을 클릭하여 다른 노드의 연결점으로 드래그하면 대화 흐름을 연결할 수 있습니다.</li>
- <li><strong>조건 분기/API/LLM 노드</strong>: 각 버튼(Branch), 결과(Success/Error), 또는 조건마다 별도의 연결점을 가집니다.</li>
+ <li>노드 가장자리의 핸들(원)을 클릭하여 다른 노드의 핸들로 드래그하여 연결합니다.</li>
+ <li><strong>조건 분기/API/LLM 노드</strong>: 버튼 클릭, 조건, 성공/실패, 키워드 등 다양한 결과에 따라 여러 개의 소스 핸들을 가집니다. 핸들 위에 마우스를 올리면 용도를 확인할 수 있습니다.</li>
  </ul>
 
  <h3>6.6. 노드 및 연결선 삭제/복제</h3>
  <ul>
- <li><strong>노드 삭제</strong>: 노드 우측 상단의 <code>x</code> 버튼을 클릭합니다.</li>
- <li><strong>연결선 삭제</strong>: 캔버스에서 삭제하고 싶은 연결선만 클릭하여 선택한 후, 키보드의 <code>Backspace</code> 또는 <code>Delete</code> 키를 누릅니다.</li>
- <li><strong>노드 복제</strong>: 복제하고 싶은 노드를 선택했을 때 좌측 '노드 추가' 패널 하단에 나타나는 <code>+ Duplicate Node</code> 버튼을 클릭합니다.</li>
- </ul>
- 
- <h3>6.7. 노드 및 시나리오 그룹 관리</h3>
- <p>시나리오의 일부 또는 전체를 재사용하여 복잡한 흐름을 효율적으로 구성할 수 있습니다.</p>
- <ul>
-  <li><strong>노드 내보내기/가져오기</strong>:
-   <ol>
-    <li><code>Shift</code> 키를 누른 채 여러 노드를 선택한 후, <code>Export Nodes</code> 버튼으로 클립보드에 복사합니다.</li>
-    <li>다른 시나리오에서 <code>Import Nodes</code> 버튼으로 붙여넣습니다.</li>
-   </ol>
-  </li>
-  <li><strong>시나리오 그룹으로 가져오기</strong>:
-   <ol>
-    <li>왼쪽 패널에서 <code>+ Scenario Group</code> 버튼을 클릭합니다.</li>
-    <li>모달 창에서 원하는 시나리오를 선택하면, 해당 시나리오의 전체 내용이 하나의 접을 수 있는 그룹 노드로 캔버스에 추가됩니다.</li>
-    <li>그룹 노드는 내용에 맞게 크기가 자동으로 조절되며, 외부 노드와 연결하여 주 흐름에 통합할 수 있습니다.</li>
-   </ol>
-  </li>
+ <li><strong>노드 삭제</strong>: 노드 우측 상단의 <code>x</code> 아이콘을 클릭합니다.</li>
+ <li><strong>연결선 삭제</strong>: 연결선 자체를 클릭하여 선택한 후 <code>Backspace</code> 또는 <code>Delete</code> 키를 누릅니다.</li>
+ <li><strong>노드 복제</strong>: 복제할 노드를 선택한 후, 좌측 패널 하단의 <code>+ Duplicate Node</code> 버튼을 클릭합니다.</li>
  </ul>
 
- <h3>6.8. 저장 및 테스트</h3>
+ <h3>6.7. 노드 및 시나리오 그룹 관리</h3>
+ <p>시나리오의 일부 또는 전체를 효율적으로 재사용합니다.</p>
  <ul>
- <li><strong>저장</strong>: 화면 우측 상단의 <code><img src="/images/save.png" alt="save" style={{ width: '24px', height: '24px' }}/></code> 아이콘을 클릭하여 현재 작업 중인 시나리오를 서버에 저장합니다.</li>
- <li><strong>테스트</strong>: <code><img src="/images/chat_simulator.png" alt="chatbot" style={{ width: '24px', height: '24px' }}/></code> 아이콘을 클릭하여 시뮬레이터를 열고, 시나리오가 의도한 대로 작동하는지 테스트합니다.</li>
+  <li><strong>노드 내보내기/가져오기</strong>: 노드들을 선택(Shift+클릭)하고 <code>Export Nodes</code>로 복사한 뒤, 다른 (또는 같은) 시나리오에서 <code>Import Nodes</code>로 붙여넣습니다.</li>
+  <li><strong>시나리오 그룹으로 가져오기</strong>: <code>+ Scenario Group</code> 버튼을 누르고 목록에서 시나리오를 선택하면, 해당 시나리오 전체가 하나의 접을 수 있는 그룹 노드로 캔버스에 추가됩니다. 일반 노드처럼 입/출력 핸들을 연결하여 사용합니다.</li>
+ </ul>
+
+ {/* --- 👇 [추가] Start Node 설명 --- */}
+ <h3>6.8. 시작 노드 설정</h3>
+ <ul>
+  <li>시뮬레이션을 시작할 노드의 헤더에 있는 **재생(▶) 아이콘**을 클릭하여 시작 노드로 지정합니다.</li>
+  <li>지정된 시작 노드는 **녹색 테두리와 그림자**로 표시됩니다.</li>
+  <li>같은 노드의 재생 아이콘을 다시 클릭하면 시작 노드 지정이 해제됩니다.</li>
+  <li>시작 노드를 명시적으로 지정하지 않으면, 들어오는 연결이 없는 노드에서 시뮬레이션이 시작됩니다.</li>
+  <li>현재 설정된 시작 노드 ID는 시나리오 데이터와 함께 저장됩니다.</li>
+ </ul>
+ {/* --- 👆 [추가 끝] --- */}
+
+ <h3>6.9. 저장 및 테스트</h3>
+ <ul>
+ <li><strong>저장</strong>: 화면 우측 상단의 저장 아이콘(💾)을 클릭하여 현재 시나리오 구조(시작 노드 ID 포함)를 선택된 백엔드(Firebase/FastAPI)에 저장합니다.</li>
+ <li><strong>테스트</strong>: 챗봇 아이콘(🤖)을 클릭하여 시뮬레이터 패널을 열고 닫습니다. 시뮬레이터 헤더의 'Start' 버튼을 클릭하여 지정된 시작 노드(또는 추론된 시작 노드)부터 테스트를 시작합니다.</li>
  </ul>
 </>
 );
 
+// --- 👇 [수정] 베트남어 번역 (Delay Node 추가, Slot 구문 수정, Start Node 설명 추가 등) ---
 const HelpManual_vi = () => (
 <>
  <h2>1. Bắt đầu</h2>
@@ -441,9 +396,9 @@ const HelpManual_vi = () => (
  <h2>2. Quản lý kịch bản</h2>
  <p>Màn hình đầu tiên bạn thấy sau khi đăng nhập là <strong>Danh sách kịch bản</strong>.</p>
  <ul>
- <li><strong>Thêm kịch bản mới</strong>: Nhấp vào nút <code>+ Thêm kịch bản mới</code> và nhập tên kịch bản để tạo một luồng hội thoại mới.</li>
+ <li><strong>Thêm kịch bản mới</strong>: Nhấp vào nút <code>+ Thêm kịch bản mới</code>, nhập tên kịch bản và chọn loại công việc (job type) để tạo một luồng hội thoại mới.</li>
  <li><strong>Chọn kịch bản</strong>: Nhấp vào tên kịch bản trong danh sách để điều hướng đến màn hình chỉnh sửa của kịch bản đó.</li>
- <li><strong>Chỉnh sửa/Xóa kịch bản</strong>: Sử dụng nút <code>Chỉnh sửa</code> bên cạnh mỗi mục kịch bản để thay đổi tên, hoặc nút <code>Xóa</code> để xóa vĩnh viễn kịch bản.</li>
+ <li><strong>Chỉnh sửa/Sao chép/Xóa kịch bản</strong>: Sử dụng biểu tượng <code>Chỉnh sửa</code> để thay đổi tên hoặc loại công việc, biểu tượng <code>Sao chép</code> để nhân bản kịch bản với tên mới, hoặc biểu tượng <code>Xóa</code> để xóa vĩnh viễn kịch bản.</li>
  </ul>
 
   <h2>3. Cách sử dụng Bảng tin</h2>
@@ -471,44 +426,48 @@ const HelpManual_vi = () => (
  </thead>
  <tbody>
   <tr>
-  <td><strong>Tin nhắn</strong></td>
+  <td><strong>Tin nhắn (Message)</strong></td>
   <td>Tin nhắn văn bản cơ bản nhất mà chatbot gửi cho người dùng. Bạn có thể thêm các nút trả lời nhanh (Quick Replies).</td>
   </tr>
   <tr>
-  <td><strong>Biểu mẫu</strong></td>
-  <td>Một biểu mẫu để nhận dữ liệu có cấu trúc từ người dùng (ví dụ: tên, ngày tháng, hộp kiểm, v.v.). Các tùy chọn Dropbox có thể được điền động từ một slot.</td>
+  <td><strong>Biểu mẫu (Form)</strong></td>
+  <td>Một biểu mẫu để nhận dữ liệu có cấu trúc từ người dùng (ví dụ: văn bản, ngày tháng, hộp kiểm, danh sách thả xuống, lưới). Tùy chọn/dữ liệu có thể được điền động từ các slot. Việc chọn một hàng trong lưới được liên kết với slot sẽ lưu trữ dữ liệu hàng đó vào slot <code>selectedRow</code>.</td>
   </tr>
   <tr>
-  <td><strong>Nhánh điều kiện</strong></td>
-  <td>Chia luồng hội thoại thành nhiều nhánh dựa trên phản hồi của người dùng hoặc giá trị của slot (bao gồm cả giá trị boolean <code>true</code>/<code>false</code>).</td>
+  <td><strong>Nhánh điều kiện (Condition Branch)</strong></td>
+  <td>Chia luồng hội thoại thành nhiều nhánh dựa trên phản hồi của người dùng (nút bấm) hoặc giá trị của slot (điều kiện, bao gồm boolean <code>true</code>/<code>false</code> và so sánh giữa các slot).</td>
   </tr>
   <tr>
-  <td><strong>Điền vào chỗ trống (SlotFilling)</strong></td>
-  <td>Được sử dụng để nhận thông tin đầu vào của người dùng và lưu trữ nó trong các biến cụ thể (Slots).</td>
+  <td><strong>Điền slot (SlotFilling)</strong></td>
+  <td>Được sử dụng để nhận thông tin đầu vào của người dùng (văn bản hoặc nhấp nút) và lưu trữ nó trong các biến cụ thể (Slots).</td>
   </tr>
   <tr>
   <td><strong>API</strong></td>
-  <td>Gọi một API bên ngoài. Bạn có thể sử dụng các giá trị của slot trong yêu cầu và lưu các phần của phản hồi JSON trở lại vào các slot. Nó cũng cho phép phân nhánh luồng dựa trên việc gọi API thành công hay thất bại và hỗ trợ gửi nhiều yêu cầu API song song.</td>
+  <td>Gọi một API bên ngoài. Bạn có thể sử dụng các giá trị của slot trong yêu cầu (URL, headers, body) và lưu các phần của phản hồi JSON trở lại vào các slot. Cho phép phân nhánh dựa trên thành công/thất bại và hỗ trợ nhiều yêu cầu API song song.</td>
   </tr>
   <tr>
   <td><strong>LLM</strong></td>
-  <td>Kết nối với một mô hình ngôn ngữ lớn để tạo văn bản dựa trên một lời nhắc động. Luồng có thể được phân nhánh dựa trên các từ khóa trong phản hồi được tạo ra.</td>
+  <td>Kết nối với một mô hình ngôn ngữ lớn để tạo văn bản dựa trên một lời nhắc động sử dụng giá trị slot. Luồng có thể được phân nhánh dựa trên các từ khóa trong phản hồi được tạo ra và phản hồi đầy đủ có thể được lưu vào một slot.</td>
   </tr>
   <tr>
-  <td><strong>Đặt Slot</strong></td>
-  <td>Trực tiếp đặt hoặc cập nhật giá trị của một hoặc nhiều slot. Hữu ích để khởi tạo biến, đánh dấu tiến trình hoặc thay đổi giá trị của một slot theo cách thủ công mà không cần người dùng nhập.</td>
+  <td><strong>Đặt Slot (Set Slot)</strong></td>
+  <td>Trực tiếp đặt hoặc cập nhật giá trị của một hoặc nhiều slot bằng cách sử dụng các giá trị tĩnh hoặc giá trị từ các slot khác. Hỗ trợ các kiểu dữ liệu chuỗi, số, boolean và đối tượng/mảng JSON.</td>
   </tr>
   <tr>
-  <td><strong>Liên kết</strong></td>
-  <td>Cung cấp các liên kết trang web bên ngoài cho người dùng.</td>
+    <td><strong>Độ trễ (Delay)</strong></td>
+    <td>Tạm dừng luồng hội thoại trong một khoảng thời gian xác định (tính bằng mili giây) trước khi chuyển sang node tiếp theo. Không hiển thị bất kỳ tin nhắn nào cho người dùng trong thời gian trì hoãn.</td>
+  </tr>
+  <tr>
+  <td><strong>Liên kết (Link)</strong></td>
+  <td>Cung cấp các liên kết trang web bên ngoài cho người dùng, tùy chọn mở chúng trong một tab mới.</td>
   </tr>
    <tr>
   <td><strong>Thông báo nhanh (Toast)</strong></td>
-  <td>Hiển thị một thông báo bật lên nhỏ, không phô trương (giống như thông báo nhanh) cho người dùng trong trình mô phỏng. Nó không làm gián đoạn luồng hội thoại.</td>
+  <td>Hiển thị một thông báo bật lên nhỏ, không phô trương (thông tin, thành công, lỗi) cho người dùng trong trình mô phỏng. Nó không làm gián đoạn luồng hội thoại.</td>
   </tr>
   <tr>
   <td><strong>iFrame</strong></td>
-  <td>Nhúng một trang web bên ngoài trực tiếp vào giao diện chatbot bằng iframe.</td>
+  <td>Nhúng một trang web bên ngoài trực tiếp vào giao diện chatbot bằng iframe, với kích thước có thể định cấu hình.</td>
   </tr>
  </tbody>
  </table>
@@ -517,121 +476,84 @@ const HelpManual_vi = () => (
  <h3>6.1. Chỉnh sửa Node</h3>
  <ol>
  <li>Nhấp vào node bạn muốn chỉnh sửa trên canvas.</li>
- <li>Sửa đổi văn bản, nút, các yếu tố biểu mẫu, v.v. của node trong <strong>Bảng điều khiển</strong> xuất hiện ở bên phải.</li>
- <li>Khi chỉnh sửa xong, nhấp vào nút <code>Lưu thay đổi</code> ở cuối bảng điều khiển để áp dụng các thay đổi cho node.</li>
+ <li>Sửa đổi văn bản, nút, các yếu tố biểu mẫu, chi tiết API, v.v. của node trong <strong>Bảng điều khiển</strong> xuất hiện ở bên phải.</li>
+ <li>Khi chỉnh sửa xong, nhấp vào nút <code>Lưu thay đổi (Save Changes)</code> ở cuối bảng điều khiển để áp dụng các thay đổi cho node.</li>
  </ol>
 
  <h3>6.2. Sử dụng Slots (Biến)</h3>
- <p>Slots là các biến được sử dụng để lưu trữ và tái sử dụng thông tin trong một kịch bản. Bạn có thể lưu trữ thông tin đầu vào của người dùng từ node <strong>Điền vào chỗ trống</strong>, dữ liệu từ phản hồi của node <strong>API</strong>, hoặc đặt chúng trực tiếp bằng node <strong>Đặt Slot</strong>.</p>
- <p>
-  Để sử dụng giá trị của một slot đã lưu, hãy sử dụng ký hiệu dấu ngoặc nhọn. Có hai loại:
-  <ul>
-    <li><code>{'{tên_slot}'}</code>: Được sử dụng trong hầu hết các node như <strong>Tin nhắn</strong>, <strong>LLM</strong>, và <strong>Liên kết</strong>.</li>
-    <li><code>{'{{tên_slot}}'}</code>: Chỉ được sử dụng <strong>bên trong node API</strong> (các trường URL, Headers, Body) để ngăn ngừa xung đột với cú pháp JSON.</li>
-  </ul>
- </p>
- <p><strong>Ví dụ:</strong> Nếu bạn đã lưu tên người dùng trong một slot có tên là <code>userName</code>, bạn có thể sử dụng nó trong một node Tin nhắn như sau: <code>Xin chào, {'{userName}'}! Chào mừng.</code> Màn hình hiển thị Slot hiển thị các giá trị hiện tại của tất cả các slot.</p>
+ <p>Slots là các biến được sử dụng để lưu trữ và tái sử dụng thông tin trong một kịch bản. Bạn có thể lưu trữ đầu vào của người dùng, dữ liệu từ phản hồi API, đầu ra LLM, hàng lưới đã chọn hoặc đặt chúng trực tiếp.</p>
+ <p>Để sử dụng giá trị slot đã lưu trong nội dung node (như tin nhắn, lời nhắc, URL, body API, v.v.), hãy sử dụng <strong>ký hiệu dấu ngoặc nhọn đơn</strong>: <code>{'{tên_slot}'}</code>.</p>
+ <p><strong>Ví dụ:</strong> Nếu bạn đã lưu tên người dùng trong một slot có tên là <code>userName</code>, bạn có thể sử dụng nó trong một node Tin nhắn như sau: <code>Xin chào, {'{userName}'}! Chào mừng.</code> Bảng hiển thị Slot (phía trên bên trái của canvas) hiển thị các giá trị hiện tại của tất cả các slot trong quá trình mô phỏng.</p>
 
- <h4>6.2.1. Tùy chọn Dropbox động (Liên kết Slot)</h4>
- <p>Trong một node <strong>Biểu mẫu</strong>, bạn có thể tự động điền các tùy chọn của một phần tử <strong>Dropbox</strong> từ một slot chứa một mảng.</p>
+ <h4>6.2.1. Tùy chọn/Dữ liệu động (Liên kết Slot)</h4>
+ <p>Trong một node <strong>Biểu mẫu (Form)</strong>, bạn có thể tự động điền các tùy chọn của một phần tử <strong>Dropbox</strong> hoặc dữ liệu trong một phần tử <strong>Lưới (Grid)</strong> từ một slot chứa một mảng.</p>
  <ul>
-    <li><strong>Định dạng dữ liệu</strong>: Slot phải chứa một mảng. Mảng có thể là một mảng chuỗi đơn giản (ví dụ: <code>["Táo", "Chuối"]</code>) hoặc một mảng các đối tượng có khóa <code>label</code> và <code>value</code> (ví dụ: <code>[{"{"}label: 'Lựa chọn A', value: 'a{"}"}, {"{"}label: 'Lựa chọn B', value: 'b{"}"}]</code>).</li>
+    <li><strong>Định dạng dữ liệu</strong>: Slot phải chứa một mảng. Đối với Dropbox, đó có thể là chuỗi hoặc đối tượng có <code>label</code>/<code>value</code>. Đối với Lưới, thường là một mảng các đối tượng.</li>
     <li><strong>Cài đặt</strong>:
         <ol>
-            <li>Chọn phần tử Dropbox trong bộ điều khiển Node Biểu mẫu.</li>
-            <li>Trong trường nhập 'Options Slot', nhập tên của slot chứa mảng (ví dụ: <code>fruit_list</code>).</li>
-            <li>Khi trình mô phỏng chạy, Dropbox sẽ được điền với các tùy chọn từ slot đó. Các 'Tùy chọn (Dự phòng)' được nhập thủ công sẽ được sử dụng nếu slot được chỉ định trống hoặc không phải là một mảng.</li>
+            <li>Chọn phần tử Dropbox hoặc Lưới trong bộ điều khiển Node Biểu mẫu.</li>
+            <li>Trong trường 'Options Slot' (Dropbox) hoặc 'Data Slot' (Lưới), nhập tên của slot chứa mảng (ví dụ: <code>user_list</code>).</li>
+            <li>(Chỉ Lưới) Tùy chọn chỉ định 'Display Labels' (các khóa được phân tách bằng dấu phẩy) để hiển thị các cột cụ thể và chọn 'Hide Columns with Null Values'.</li>
+            <li>Các tùy chọn/dữ liệu dự phòng được nhập thủ công sẽ được sử dụng nếu slot trống hoặc không hợp lệ.</li>
         </ol>
     </li>
+    <li><strong>Lựa chọn hàng lưới</strong>: Khi người dùng nhấp vào một hàng trong Lưới được điền thông qua 'Data Slot', toàn bộ đối tượng dữ liệu cho hàng đó sẽ tự động được lưu trữ trong một slot đặc biệt có tên là <code>selectedRow</code>. Sau đó, bạn có thể sử dụng slot này (ví dụ: <code>{'{selectedRow.userId}'}</code>) trong các node tiếp theo.</li>
  </ul>
- 
+
  <h3>6.3. Sử dụng Node API</h3>
  <p>Node API cho phép tương tác động với các máy chủ bên ngoài.</p>
  <ul>
- <li><strong>Kiểm tra API riêng lẻ</strong>: Nhấp vào nút <strong>Phát (▶)</strong> ở góc trên cùng bên phải của node API để kiểm tra lệnh gọi API cụ thể đó ngay lập tức. Nó sẽ sử dụng các giá trị slot hiện tại cho yêu cầu và hiển thị cho bạn kết quả trong một cửa sổ bật lên.</li>
- <li><strong>Yêu cầu API đa nhiệm</strong>: Bạn có thể gửi nhiều yêu cầu API song song trong một node API duy nhất.
-    <ul>
-        <li>Chuyển đổi hộp kiểm 'Enable Multi API' trong bộ điều khiển.</li>
-        <li>Nhấp vào '+ Add API Call' để thêm nhiều yêu cầu. Mỗi yêu cầu có thể được cấu hình với tên, phương thức, URL và các cài đặt khác.</li>
-        <li>Node sẽ chỉ tiếp tục đến nhánh 'On Success' sau khi tất cả các lệnh gọi API đã hoàn thành thành công. Nếu bất kỳ một trong số chúng không thành công, nó sẽ tiếp tục đến nhánh 'On Error'.</li>
-    </ul>
- </li>
- <li><strong>Yêu cầu động</strong>: Sử dụng các slot để thực hiện các lệnh gọi API động. Trong các trường URL, Headers hoặc Body, bạn có thể chèn các giá trị từ các thông tin đầu vào trước đó của người dùng hoặc các phản hồi API bằng cách sử dụng <strong>ký hiệu dấu ngoặc nhọn kép</strong> (ví dụ: <code>https://api.example.com/users/{'{{userId}}'}</code>).</li>
- <li><strong>Ánh xạ phản hồi</strong>: Sau khi gọi API thành công, bạn có thể trích xuất các giá trị từ phản hồi JSON và lưu chúng vào các slot mới hoặc hiện có. Trong phần "Ánh xạ phản hồi" của bộ điều khiển:
-  <ul>
-  <li><strong>Đường dẫn JSON</strong>: Chỉ định đường dẫn đến giá trị mong muốn trong phản hồi JSON (ví dụ: <code>data.user.name</code>).</li>
-  <li><strong>Tên Slot</strong>: Nhập tên của slot nơi bạn muốn lưu trữ giá trị được trích xuất (ví dụ: <code>userName</code>).</li>
-  </ul>
- </li>
- <li><strong>Phân nhánh thành công/thất bại</strong>: Node API có hai tay cầm nguồn ở phía bên phải của nó:
-  <ul>
-  <li><code>Khi thành công</code>: Kéo một kết nối từ tay cầm này đến node sẽ theo sau một lệnh gọi API thành công.</li>
-  <li><code>Khi có lỗi</code>: Kéo một kết nối từ tay cầm này đến node sẽ theo sau một lệnh gọi API không thành công (ví dụ: lỗi mạng, lỗi máy chủ).</li>
-  </ul>
- </li>
+ <li><strong>Kiểm tra API riêng lẻ</strong>: Ở chế độ API đơn, nhấp vào biểu tượng <strong>Phát (▶)</strong> trên tiêu đề node để kiểm tra lệnh gọi API cụ thể đó ngay lập tức bằng cách sử dụng các giá trị slot hiện tại. Ở chế độ đa API, sử dụng nút 'Test' trong bộ điều khiển cho lệnh gọi API đã chọn.</li>
+ <li><strong>Yêu cầu API đa nhiệm</strong>: Chọn 'Enable Multi API' trong bộ điều khiển để gửi nhiều yêu cầu song song. Thêm và cấu hình từng lệnh gọi. Node chỉ tiếp tục đến 'On Success' nếu *tất cả* các lệnh gọi thành công, nếu không sẽ đến 'On Error'.</li>
+ <li><strong>Yêu cầu động</strong>: Sử dụng các slot (ví dụ: <code>{'{userId}'}</code>) trong các trường URL, Headers (giá trị chuỗi JSON) hoặc Body (giá trị chuỗi JSON) để thực hiện các lệnh gọi API động.</li>
+ <li><strong>Ánh xạ phản hồi (Response Mapping)</strong>: Trích xuất các giá trị từ phản hồi JSON bằng cách sử dụng Đường dẫn JSON (ví dụ: <code>data.user.name</code>, <code>data.items[0].product</code>) và lưu chúng vào các slot.</li>
+ <li><strong>Phân nhánh thành công/thất bại</strong>: Kết nối tay cầm <code>On Success</code> (màu xanh lá) cho các lệnh gọi thành công và tay cầm <code>On Error</code> (màu đỏ) cho các lệnh gọi không thành công đến các node tiếp theo khác nhau.</li>
  </ul>
 
  <h3>6.4. Sử dụng Node LLM</h3>
- <p>Node LLM gửi một lời nhắc đến một mô hình ngôn ngữ lớn và hiển thị phản hồi ở định dạng phát trực tuyến. Bạn có thể tạo các lời nhắc động bằng cách kết hợp văn bản với các giá trị của slot.</p>
+ <p>Node LLM gửi một lời nhắc động (sử dụng các slot như <code>{'{topic}'}</code>) đến một mô hình ngôn ngữ lớn và hiển thị phản hồi.</p>
  <ul>
-    <li><strong>Biến đầu ra</strong>: Bạn có thể lưu trữ toàn bộ văn bản được tạo từ LLM vào một slot. Chỉ định tên slot trong trường 'Biến đầu ra' trong bộ điều khiển.</li>
-    <li><strong>Phân nhánh có điều kiện</strong>: Bạn có thể phân nhánh luồng hội thoại dựa trên nội dung phản hồi của LLM.
-        <ul>
-            <li>Trong bộ điều khiển, nhấp vào '+ Thêm điều kiện' để thêm một nhánh mới.</li>
-            <li>Nhập một 'Từ khóa' cụ thể cho mỗi điều kiện.</li>
-            <li>Nếu từ khóa được tìm thấy trong văn bản do LLM tạo ra, cuộc hội thoại sẽ tiếp tục thông qua tay cầm tương ứng trên node.</li>
-            <li>Nếu không tìm thấy từ khóa nào, cuộc hội thoại sẽ tiếp tục thông qua tay cầm 'Mặc định'.</li>
-        </ul>
-    </li>
+    <li><strong>Biến đầu ra (Output Variable)</strong>: Lưu trữ toàn bộ văn bản phản hồi LLM vào một slot được chỉ định.</li>
+    <li><strong>Phân nhánh có điều kiện (Conditional Branching)</strong>: Thêm các điều kiện dựa trên 'Từ khóa'. Nếu một từ khóa được tìm thấy trong phản hồi, luồng sẽ theo tay cầm cụ thể đó. Nếu không, nó sẽ theo tay cầm 'Mặc định (Default)'.</li>
  </ul>
- <p><strong>Ví dụ:</strong></p>
- <ol>
-  <li>Tạo một node <strong>Điền vào chỗ trống</strong> với nội dung "Bạn muốn biết thời tiết của thành phố nào?" và đặt tên slot là <code>city</code>.</li>
-  <li>Kết nối node này với một node <strong>LLM</strong>.</li>
-  <li>Trong bộ điều khiển của node LLM, đặt lời nhắc thành: <code>Hãy cho tôi biết về thời tiết ở {'{city}'}. Hãy đề cập xem trời có 'nắng', 'mưa' hay 'nhiều mây' không.</code> Đặt 'Biến đầu ra' thành <code>weather_report</code>.</li>
-  <li>Thêm hai điều kiện: một với từ khóa "nắng" và một với từ khóa "mưa".</li>
-  <li>Kết nối tay cầm "nắng" với một node tin nhắn có nội dung "Tuyệt vời! Hôm nay là một ngày nắng đẹp.", tay cầm "mưa" với một node có nội dung "Đừng quên mang theo ô của bạn!" và tay cầm "Mặc định" với một node có nội dung "Đây là dự báo thời tiết."</li>
- </ol>
- 
+
  <h3>6.5. Kết nối Node</h3>
  <ul>
- <li>Nhấp vào các điểm kết nối (Handles) ở cạnh phải hoặc trái của các node và kéo đến các điểm kết nối của các node khác để kết nối các luồng hội thoại.</li>
- <li><strong>Node Nhánh điều kiện/API/LLM</strong>: Mỗi nút (Nhánh), kết quả (Thành công/Lỗi) hoặc điều kiện đều có điểm kết nối riêng.</li>
+ <li>Kéo từ các tay cầm (hình tròn) trên các cạnh của node để kết nối chúng.</li>
+ <li><strong>Node Nhánh/API/LLM</strong>: Các node này có nhiều tay cầm nguồn tương ứng với các kết quả khác nhau (nhấp nút, điều kiện, thành công/lỗi, từ khóa). Di chuột qua một tay cầm để xem mục đích của nó.</li>
  </ul>
 
  <h3>6.6. Xóa/Nhân bản Node và Kết nối</h3>
  <ul>
- <li><strong>Xóa Node</strong>: Nhấp vào nút <code>x</code> ở trên cùng bên phải của node.</li>
- <li><strong>Xóa kết nối</strong>: Chỉ nhấp vào kết nối bạn muốn xóa trên canvas để chọn nó, sau đó nhấn <code>Backspace</code> hoặc <code>Delete</code> trên bàn phím của bạn.</li>
- <li><strong>Nhân bản Node</strong>: Nhấp vào nút <code>+ Nhân bản Node</code> xuất hiện ở cuối bảng 'Thêm Node' bên trái khi bạn chọn node bạn muốn nhân bản.</li>
+ <li><strong>Xóa Node</strong>: Nhấp vào biểu tượng <code>x</code> ở trên cùng bên phải của node.</li>
+ <li><strong>Xóa kết nối</strong>: Nhấp vào chính đường kết nối để chọn nó, sau đó nhấn <code>Backspace</code> hoặc <code>Delete</code>.</li>
+ <li><strong>Nhân bản Node</strong>: Chọn node bạn muốn sao chép, sau đó nhấp vào nút <code>+ Nhân bản Node (+ Duplicate Node)</code> ở cuối bảng bên trái.</li>
  </ul>
 
  <h3>6.7. Quản lý Node và Nhóm kịch bản</h3>
- <p>Bạn có thể tái sử dụng các phần của kịch bản hoặc toàn bộ kịch bản để xây dựng các luồng phức tạp một cách hiệu quả.</p>
+  <p>Tái sử dụng các phần của kịch bản hoặc toàn bộ kịch bản một cách hiệu quả.</p>
+  <ul>
+    <li><strong>Xuất/Nhập Node</strong>: Chọn các node (giữ Shift + nhấp để chọn nhiều), nhấp vào <code>Xuất Node (Export Nodes)</code> (sao chép vào khay nhớ tạm), sau đó chuyển đến kịch bản khác (hoặc cùng kịch bản) và nhấp vào <code>Nhập Node (Import Nodes)</code> để dán.</li>
+    <li><strong>Kịch bản dưới dạng Nhóm</strong>: Nhấp vào <code>+ Nhóm kịch bản (+ Scenario Group)</code>, chọn một kịch bản từ danh sách. Nó sẽ được nhập dưới dạng một node nhóm có thể thu gọn duy nhất đại diện cho toàn bộ luồng của kịch bản đó. Kết nối các tay cầm đầu vào/đầu ra của nó giống như một node thông thường.</li>
+  </ul>
+
+ <h3>6.8. Thiết lập Node Bắt đầu</h3>
  <ul>
-  <li><strong>Xuất/Nhập Node</strong>:
-   <ol>
-    <li>Chọn một hoặc nhiều node (giữ <code>Shift</code> để chọn nhiều).</li>
-    <li>Nhấp vào <code>Xuất Node</code> để sao chép chúng vào khay nhớ tạm.</li>
-    <li>Trong một kịch bản khác, nhấp vào <code>Nhập Node</code> để dán chúng.</li>
-   </ol>
-  </li>
-  <li><strong>Kịch bản dưới dạng Nhóm</strong>:
-   <ol>
-    <li>Nhấp vào nút <code>+ Nhóm kịch bản</code> trong bảng điều khiển bên trái.</li>
-    <li>Chọn một kịch bản từ cửa sổ bật lên để nhập nó dưới dạng một nhóm có thể thu gọn.</li>
-    <li>Node nhóm tự động thay đổi kích thước để phù hợp với nội dung của nó. Bạn có thể kết nối các node từ bên ngoài nhóm với tay cầm đầu vào của nó và kết nối tay cầm đầu ra của nó với các node khác để tích hợp nó vào luồng chính của bạn.</li>
-   </ol>
-  </li>
+  <li>Nhấp vào biểu tượng **Phát (▶)** trong tiêu đề của bất kỳ node nào để chỉ định nó là điểm bắt đầu cho mô phỏng.</li>
+  <li>Node Bắt đầu được chỉ định sẽ có **viền và bóng màu xanh lá cây**.</li>
+  <li>Nhấp lại vào biểu tượng Phát trên cùng một node sẽ xóa chỉ định Node Bắt đầu của nó.</li>
+  <li>Nếu không có Node Bắt đầu nào được đặt rõ ràng, mô phỏng sẽ cố gắng bắt đầu từ một node không có kết nối đến.</li>
+  <li>ID Node Bắt đầu hiện được đặt sẽ được lưu cùng với dữ liệu kịch bản.</li>
  </ul>
 
- <h3>6.8. Lưu và Kiểm tra</h3>
+ <h3>6.9. Lưu và Kiểm tra</h3>
  <ul>
- <li><strong>Lưu</strong>: Nhấp vào biểu tượng <code><img src="/images/save.png" alt="save" style={{ width: '24px', height: '24px' }}/></code> ở trên cùng bên phải màn hình để lưu kịch bản hiện tại bạn đang làm việc vào máy chủ.</li>
- <li><strong>Kiểm tra</strong>: Nhấp vào biểu tượng <code><img src="/images/chat_simulator.png" alt="chatbot" style={{ width: '24px', height: '24px' }}/></code> để mở trình mô phỏng và kiểm tra xem kịch bản có hoạt động như dự kiến không.</li>
+ <li><strong>Lưu</strong>: Nhấp vào biểu tượng Lưu (💾) ở trên cùng bên phải để lưu cấu trúc kịch bản hiện tại (bao gồm cả ID Node Bắt đầu) vào backend đã chọn (Firebase/FastAPI).</li>
+ <li><strong>Kiểm tra</strong>: Nhấp vào biểu tượng Chatbot (🤖) để mở/đóng bảng điều khiển trình mô phỏng. Nhấp vào nút 'Start' trong tiêu đề trình mô phỏng để bắt đầu kiểm tra từ Node Bắt đầu được chỉ định (hoặc node bắt đầu được suy ra).</li>
  </ul>
 </>
 );
+// --- 👆 [수정 끝] ---
 
 
 function HelpModal({ isOpen, onClose }) {

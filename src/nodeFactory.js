@@ -72,6 +72,10 @@ export const createNodeData = (type) => {
         return { ...baseData, label: 'Imported Scenario', scenarioId: null };
     case 'setSlot':
         return { ...baseData, assignments: [{ key: 'newSlot', value: 'someValue' }] };
+    // <<< [추가] 딜레이 노드 기본 데이터 >>>
+    case 'delay':
+        return { ...baseData, duration: 1000 }; // 기본 1초 (1000ms)
+    // <<< [추가 끝] >>>
     default:
       return baseData;
   }
