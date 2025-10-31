@@ -18,7 +18,7 @@ import DelayNode from './nodes/DelayNode'; // <<< [추가]
 import ScenarioGroupModal from './ScenarioGroupModal';
 import ChatbotSimulator from './ChatbotSimulator';
 import NodeController from './NodeController';
-import useStore from './store';
+import useStore, { ALL_NODE_TYPES } from './store'; // 💡 [수정] ALL_NODE_TYPES 임포트
 import SlotDisplay from './SlotDisplay';
 import styles from './Flow.module.css';
 import { SettingsIcon } from './components/Icons';
@@ -39,13 +39,31 @@ const nodeTypes = {
   delay: DelayNode, // <<< [추가]
 };
 
+// 💡 [추가] 노드 레이블 매핑
+const nodeLabels = {
+  message: '+ Message',
+  form: '+ Form',
+  branch: '+ Condition Branch',
+  slotfilling: '+ SlotFilling',
+  api: '+ API',
+  llm: '+ LLM',
+  setSlot: '+ Set Slot',
+  delay: '+ Delay',
+  fixedmenu: '+ Fixed Menu',
+  link: '+ Link',
+  toast: '+ Toast',
+  iframe: '+ iFrame',
+  scenario: '+ Scenario Group', // Scenario Group 버튼용
+};
+
 function Flow({ scenario, backend, scenarios }) {
   const {
     nodes, edges, onNodesChange, onEdgesChange, onConnect,
     fetchScenario, saveScenario, addNode, selectedNodeId,
     setSelectedNodeId, duplicateNode, deleteSelectedEdges,
     nodeColors, setNodeColor, nodeTextColors, setNodeTextColor,
-    exportSelectedNodes, importNodes, addScenarioAsGroup
+    exportSelectedNodes, importNodes, addScenarioAsGroup,
+    visibleNodeTypes // 💡 [추가] visibleNodeTypes 가져오기
   } = useStore();
 
   const { getNodes, project } = useReactFlow();
@@ -147,25 +165,19 @@ function Flow({ scenario, backend, scenarios }) {
   const handleExportNodes = () => {
     const allNodes = getNodes();
     const selectedNodes = allNodes.filter(n => n.selected);
-    exportSelectedNodes(selectedNodes); // 선택된 노드 목록을 store 함수로 전달
+    exportSelectedNodes(selectedNodes);
   };
 
-  const nodeButtons = [
-    { type: 'message', label: '+ Message' },
-    { type: 'form', label: '+ Form' },
-    { type: 'branch', label: '+ Condition Branch' },
-    { type: 'slotfilling', label: '+ SlotFilling' },
-    { type: 'api', label: '+ API' },
-    // { type: 'llm', label: '+ LLM' }, // --- 💡[숨김 처리] ---
-    { type: 'setSlot', label: '+ Set Slot' }, // Added
-    { type: 'delay', label: '+ Delay' }, // <<< [추가]
-    { type: 'fixedmenu', label: '+ Fixed Menu' },
-    { type: 'link', label: '+ Link' },
-    // { type: 'toast', label: '+ Toast' }, // --- 💡[숨김 처리] ---
-    { type: 'iframe', label: '+ iFrame' },
-  ];
+  // 💡 [수정] 스토어의 visibleNodeTypes를 기반으로 버튼 필터링
+  const visibleNodeButtons = ALL_NODE_TYPES
+    .filter(type => visibleNodeTypes.includes(type) && type !== 'fixedmenu' && type !== 'scenario')
+    .map(type => ({ type, label: nodeLabels[type] || `+ ${type}` }));
 
-  const visibleNodeButtons = nodeButtons.filter(button => button.type !== 'fixedmenu');
+  // 💡 [수정] 컬러 세팅은 모든 노드(fixedmenu 제외)에 대해 표시
+  const colorSettingButtons = ALL_NODE_TYPES
+    .filter(type => type !== 'fixedmenu' && type !== 'scenario')
+    .map(type => ({ type, label: nodeLabels[type] || `+ ${type}` }));
+
 
   return (
     <div className={styles.flowContainer}>
@@ -188,7 +200,8 @@ function Flow({ scenario, backend, scenarios }) {
 
         {isColorSettingsVisible && (
             <div className={styles.colorSettingsPanel}>
-                {visibleNodeButtons.map(({ type, label }) => (
+                {/* 💡 [수정] colorSettingButtons 사용 */}
+                {colorSettingButtons.map(({ type, label }) => (
                     <div key={type} className={styles.colorSettingItem}>
                         <span>{label.replace('+ ', '')}</span>
                         <div className={styles.colorInputs}>
@@ -208,6 +221,7 @@ function Flow({ scenario, backend, scenarios }) {
             </div>
         )}
 
+        {/* 💡 [수정] visibleNodeButtons 사용 */}
         {visibleNodeButtons.map(({ type, label }) => (
             <button
                 key={type}
@@ -224,12 +238,15 @@ function Flow({ scenario, backend, scenarios }) {
             </button>
         ))}
 
-        {/* --- 💡[주석 해제] --- */}
-        <div className={styles.separator} />
-        <button onClick={() => setIsGroupModalOpen(true)} className={styles.sidebarButton} style={{backgroundColor: '#7f8c8d', color: 'white'}}>
-          + Scenario Group
-        </button>
-        {/* --- 💡[주석 해제 끝] --- */}
+        {/* 💡 [수정] 'scenario' 타입이 visibleNodeTypes에 있을 때만 Scenario Group 버튼 표시 */}
+        {visibleNodeTypes.includes('scenario') && (
+          <>
+            <div className={styles.separator} />
+            <button onClick={() => setIsGroupModalOpen(true)} className={styles.sidebarButton} style={{backgroundColor: nodeColors.scenario, color: nodeTextColors.scenario}}>
+              + Scenario Group
+            </button>
+          </>
+        )}
         
         <div className={styles.separator} />
         <button onClick={importNodes} className={styles.sidebarButton} style={{backgroundColor: '#555', color: 'white'}}>

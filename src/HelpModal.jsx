@@ -124,7 +124,9 @@ const HelpManual = () => (
         <ol>
             <li>Select the Dropbox or Grid element in the Form Node controller.</li>
             <li>In the 'Options Slot' (Dropbox) or 'Data Slot' (Grid) field, enter the name of the slot holding the array (e.g., <code>user_list</code>).</li>
-            <li>(Grid specific) Optionally specify 'Display Labels' (comma-separated keys) to show specific columns, and check 'Hide Columns with Null Values'.</li>
+            {/* --- 💡 [수정] Grid 'Display Labels' 설명 변경 --- */}
+            <li>(Grid specific) Optionally specify 'Display Labels' using <code>key(Label)</code> syntax (e.g., <code>name(My Name),email</code>). If <code>(Label)</code> is omitted, the key is used as the label. You can also check 'Hide Columns with Null Values'.</li>
+            {/* --- 💡 [수정 끝] --- */}
             <li>Fallback options/data entered manually will be used if the slot is empty or invalid.</li>
         </ol>
     </li>
@@ -311,7 +313,9 @@ const HelpManual_ko = () => (
         <ol>
             <li>Form 노드 컨트롤러에서 Dropbox 또는 Grid 요소를 선택합니다.</li>
             <li>'Options Slot'(Dropbox) 또는 'Data Slot'(Grid) 필드에 배열을 담고 있는 슬롯 이름을 입력합니다(예: <code>user_list</code>).</li>
-            <li>(Grid 전용) 선택적으로 'Display Labels'(쉼표로 구분된 키 목록)을 지정하여 특정 열만 표시하고, 'Hide Columns with Null Values'를 체크할 수 있습니다.</li>
+            {/* --- 💡 [수정] Grid 'Display Labels' 설명 변경 --- */}
+            <li>(Grid 전용) 선택적으로 <code>key(Label)</code> 형식(예: <code>name(내 이름),email</code>)을 사용하여 'Display Labels'를 지정할 수 있습니다. <code>(Label)</code>을 생략하면 키 값이 레이블로 사용됩니다. 'Hide Columns with Null Values'도 체크할 수 있습니다.</li>
+            {/* --- 💡 [수정 끝] --- */}
             <li>슬롯이 비어있거나 유효하지 않으면 수동으로 입력된 대체(Fallback) 옵션/데이터가 사용됩니다.</li>
         </ol>
     </li>
@@ -493,7 +497,9 @@ const HelpManual_vi = () => (
         <ol>
             <li>Chọn phần tử Dropbox hoặc Lưới trong bộ điều khiển Node Biểu mẫu.</li>
             <li>Trong trường 'Options Slot' (Dropbox) hoặc 'Data Slot' (Lưới), nhập tên của slot chứa mảng (ví dụ: <code>user_list</code>).</li>
-            <li>(Chỉ Lưới) Tùy chọn chỉ định 'Display Labels' (các khóa được phân tách bằng dấu phẩy) để hiển thị các cột cụ thể và chọn 'Hide Columns with Null Values'.</li>
+            {/* --- 💡 [수정] Grid 'Display Labels' 설명 변경 --- */}
+            <li>(Chỉ Lưới) Tùy chọn chỉ định 'Display Labels' bằng cú pháp <code>key(Label)</code> (ví dụ: <code>name(Tên tôi),email</code>). Nếu <code>(Label)</code> bị bỏ qua, khóa sẽ được sử dụng làm nhãn. Bạn cũng có thể chọn 'Hide Columns with Null Values'.</li>
+            {/* --- 💡 [수정 끝] --- */}
             <li>Các tùy chọn/dữ liệu dự phòng được nhập thủ công sẽ được sử dụng nếu slot trống hoặc không hợp lệ.</li>
         </ol>
     </li>
