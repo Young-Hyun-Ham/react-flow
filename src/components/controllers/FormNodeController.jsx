@@ -5,6 +5,43 @@ import * as backendService from '../../backendService';
 import FormTemplateModal from '../../FormTemplateModal';
 import useAlert from '../../hooks/useAlert';
 
+// --- 💡 [추가] displayKeys를 문자열로 변환하는 헬퍼 ---
+const formatDisplayKeys = (keys) => {
+  if (!Array.isArray(keys)) return keys || ''; // 이전 버전(문자열) 호환
+  return keys.map(k => {
+    if (typeof k === 'string') return k; // 이전 버전(문자열 배열) 호환
+    if (k.label && k.label !== k.key) {
+      return `${k.key}(${k.label})`;
+    }
+    return k.key;
+  }).join(',');
+};
+
+// --- 💡 [추가] 문자열을 displayKeys 객체 배열로 파싱하는 헬퍼 ---
+const parseDisplayKeys = (value) => {
+  if (!value) return [];
+  const regex = /([^,(]+)(?:\(([^)]+)\))?/g; // 'key'와 선택적 '(label)' 매칭
+  let match;
+  const keys = [];
+  
+  // 쉼표를 기준으로 먼저 나누고 각 항목을 정규식으로 처리
+  value.split(',').forEach(part => {
+    part = part.trim();
+    if (part) {
+      const match = part.match(/([^()]+)(?:\(([^)]+)\))?/);
+      if (match) {
+        const key = match[1] ? match[1].trim() : '';
+        const label = match[2] ? match[2].trim() : key; // 괄호 안 레이블이 없으면 key를 label로 사용
+        if (key) {
+          keys.push({ key, label });
+        }
+      }
+    }
+  });
+  
+  return keys;
+};
+
 
 // ElementEditor 컴포넌트
 function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange }) {
@@ -31,6 +68,16 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
     const newOptions = element.options.filter((_, i) => i !== optIndex);
     onUpdate(index, { ...element, options: newOptions });
   };
+
+  // --- 💡 [수정] displayKeys 임시 문자열 상태 추가 ---
+  const [displayKeysString, setDisplayKeysString] = useState(() => formatDisplayKeys(element.displayKeys));
+  
+  // element.displayKeys가 외부(템플릿 로드 등)에서 변경될 때 input 값 동기화
+  useEffect(() => {
+    setDisplayKeysString(formatDisplayKeys(element.displayKeys));
+  }, [element.displayKeys]);
+  // --- 💡 [수정 끝] ---
+
 
   return (
     <div className={styles.elementEditor}>
@@ -123,25 +170,27 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
           </div>
           {element.optionsSlot && (
             <>
+                {/* --- 💡 [수정] Display Labels 입력 필드 로직 변경 --- */}
                 <div className={styles.formGroup}>
                     <label>Display Labels (comma-separated)</label>
                     <input
                         type="text"
-                        placeholder="e.g., name,email,phone"
-                        value={Array.isArray(element.displayKeys) ? element.displayKeys.join(',') : element.displayKeys}
+                        placeholder="e.g., name(My Name),email"
+                        value={displayKeysString}
                         onChange={(e) => {
-                            const value = e.target.value;
-                            handleInputChange('displayKeys', value);
+                            // onChange에서는 임시 문자열 상태만 업데이트
+                            setDisplayKeysString(e.target.value);
                         }}
                         onBlur={(e) => {
-                            const value = e.target.value;
-                            handleInputChange('displayKeys', value.split(',').map(k => k.trim()).filter(Boolean));
+                            // onBlur 시점에 파싱하여 실제 데이터 업데이트
+                            handleInputChange('displayKeys', parseDisplayKeys(e.target.value));
                         }}
                     />
                     <p className={styles.instructionText} style={{marginTop: '4px', fontSize: '0.75rem'}}>
-                        Specify which keys to display as labels. If empty, all keys will be shown.
+                        Use <code>key(Label)</code> syntax. If <code>(Label)</code> is omitted, the key will be used as the label.
                     </p>
                 </div>
+                {/* --- 💡 [수정 끝] --- */}
                 <div className={styles.formGroup}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                         <input
@@ -304,9 +353,10 @@ function FormNodeController({ localNode, setLocalNode }) {
             data: {
                 ...prev.data,
                 title: template.title,
-                elements: template.elements,
+                elements: template.elements, // 템플릿 로드 시 displayKeys가 객체 배열로 올바르게 로드됨
             },
         }));
+        setSelectedElementId(null); // 템플릿 로드 후 선택 초기화
         setIsTemplateModalOpen(false);
     };
 
@@ -399,6 +449,9 @@ function FormNodeController({ localNode, setLocalNode }) {
                   onClick={(e) => {
                     e.stopPropagation();
                     localDeleteElement(index);
+                    if (el.id === selectedElementId) { // 💡 [추가] 삭제 시 선택 해제
+                      setSelectedElementId(null);
+                    }
                   }}
                 >
                   ×
@@ -413,10 +466,14 @@ function FormNodeController({ localNode, setLocalNode }) {
       <div className={styles.separator} />
       {selectedElement && (
           <ElementEditor
+              key={selectedElement.id} // 💡 [추가] key를 추가하여 element 선택 변경 시 Editor 강제 리마운트
               element={selectedElement}
               index={selectedElementIndex}
               onUpdate={localUpdateElement}
-              onDelete={localDeleteElement}
+              onDelete={(index) => {
+                localDeleteElement(index);
+                setSelectedElementId(null); // 💡 [추가] 삭제 시 선택 해제
+              }}
               onGridCellChange={localUpdateGridCell}
           />
       )}

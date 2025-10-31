@@ -4,6 +4,18 @@ import useStore from '../store';
 // <<< [수정] StartNodeIcon 추가 >>>
 import { AnchorIcon, StartNodeIcon } from '../components/Icons';
 
+// --- 💡 [추가] displayKeys를 문자열로 변환하는 헬퍼 ---
+const formatDisplayKeys = (keys) => {
+  if (!Array.isArray(keys)) return keys || ''; // 이전 버전(문자열) 호환
+  return keys.map(k => {
+    if (typeof k === 'string') return k; // 이전 버전(문자열 배열) 호환
+    if (k.label && k.label !== k.key) {
+      return `${k.key}(${k.label})`;
+    }
+    return k.key;
+  }).join(',');
+};
+
 function FormNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);
   const anchorNodeId = useStore((state) => state.anchorNodeId);
@@ -46,10 +58,10 @@ function FormNode({ id, data }) {
             {element.optionsSlot && (
               <div className={styles.slotBindingInfo}>Bound to: {`{${element.optionsSlot}}`}</div>
             )}
-            {/* --- 💡 수정된 부분 시작 --- */}
+            {/* --- 💡 수정된 부분 시작 (formatDisplayKeys 헬퍼 사용) --- */}
             {element.optionsSlot && element.displayKeys && element.displayKeys.length > 0 && (
                 <div className={styles.slotBindingInfo} style={{ fontStyle: 'normal', color: '#555', fontSize: '0.7rem' }}>
-                    Displaying: {element.displayKeys.join(', ')}
+                    Displaying: {formatDisplayKeys(element.displayKeys)}
                 </div>
             )}
             {/* --- 💡 수정된 부분 끝 --- */}

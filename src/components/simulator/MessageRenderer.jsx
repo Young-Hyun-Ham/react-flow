@@ -69,29 +69,40 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                         if (hasSlotData) {
                             const isDynamicObjectArray = typeof gridDataFromSlot[0] === 'object' && gridDataFromSlot[0] !== null && !Array.isArray(gridDataFromSlot[0]);
                             if (isDynamicObjectArray) {
-                                const displayKeys = el.displayKeys && el.displayKeys.length > 0 ? el.displayKeys : Object.keys(gridDataFromSlot[0] || {});
-                                const filteredKeys = el.hideNullColumns
-                                    ? displayKeys.filter(key => gridDataFromSlot.some(obj => obj[key] !== null && obj[key] !== undefined && obj[key] !== ""))
-                                    : displayKeys;
+                                // --- 💡 [수정] displayKeys 파싱 로직 변경 ---
+                                // 1. displayKeys가 정의되었는지 확인
+                                const hasDisplayKeys = el.displayKeys && el.displayKeys.length > 0;
+                                
+                                // 2. keyObject 배열 생성 (데이터 호환성 보장)
+                                const keyObjects = (hasDisplayKeys ? el.displayKeys : Object.keys(gridDataFromSlot[0] || {}))
+                                    .map(k => {
+                                        if (typeof k === 'string') return { key: k, label: k }; // 이전 포맷(string 배열) 호환
+                                        if (k && typeof k === 'object' && k.key) return k; // 새 포맷({key, label} 객체)
+                                        return null;
+                                    }).filter(Boolean); // null 값 제거
+
+                                // 3. 'hideNullColumns' 적용
+                                const filteredKeyObjects = el.hideNullColumns
+                                    ? keyObjects.filter(kObj => gridDataFromSlot.some(obj => obj[kObj.key] !== null && obj[kObj.key] !== undefined && obj[kObj.key] !== ""))
+                                    : keyObjects;
+                                // --- 💡 [수정 끝] ---
 
                                 return (
                                     <div key={el.id} style={{ overflowX: 'auto' }}>
                                         <table className={styles.formGridTable}>
                                             <thead>
                                                 <tr>
-                                                    {/* --- 👇 [수정] interpolateMessage 사용 --- */}
-                                                    {filteredKeys.map(key => <th key={key}>{interpolateMessage(key, slots)}</th>)}
-                                                    {/* --- 👆 [수정 끝] --- */}
+                                                    {/* --- 💡 [수정] kObj.label 사용 --- */}
+                                                    {filteredKeyObjects.map(kObj => <th key={kObj.key}>{interpolateMessage(kObj.label, slots)}</th>)}
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {gridDataFromSlot.map((dataObject, index) => (
                                                     <tr key={`${el.id}-${index}`} onClick={() => !isCompleted && handleGridRowClick(dataObject)}>
-                                                        {/* --- 👇 [수정] interpolateMessage 사용 --- */}
-                                                        {filteredKeys.map(key => (
-                                                            <td key={key}>{interpolateMessage(dataObject[key] || '', slots)}</td>
+                                                        {/* --- 💡 [수정] kObj.key 사용 --- */}
+                                                        {filteredKeyObjects.map(kObj => (
+                                                            <td key={kObj.key}>{interpolateMessage(dataObject[kObj.key] || '', slots)}</td>
                                                         ))}
-                                                        {/* --- 👆 [수정 끝] --- */}
                                                     </tr>
                                                 ))}
                                             </tbody>
