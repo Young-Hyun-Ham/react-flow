@@ -50,6 +50,7 @@ function Flow({ scenario, backend, scenarios }) {
 
   const { getNodes, project } = useReactFlow();
   const reactFlowWrapper = useRef(null);
+  // <<< [수정] selectedNodesCount 계산 방식 변경 (useReactFlow 사용) >>>
   const selectedNodesCount = getNodes().filter(n => n.selected).length;
 
   const [rightPanelWidth, setRightPanelWidth] = useState(400);
@@ -144,6 +145,14 @@ function Flow({ scenario, backend, scenarios }) {
     [project, addNode]
   );
 
+  // <<< [추가] Export 버튼을 위한 핸들러 >>>
+  const handleExportNodes = () => {
+    const allNodes = getNodes();
+    const selectedNodes = allNodes.filter(n => n.selected);
+    exportSelectedNodes(selectedNodes); // 선택된 노드 목록을 store 함수로 전달
+  };
+  // <<< [추가 끝] >>>
+
   const nodeButtons = [
     { type: 'message', label: '+ Message' },
     { type: 'form', label: '+ Form' },
@@ -228,9 +237,11 @@ function Flow({ scenario, backend, scenarios }) {
         <button onClick={importNodes} className={styles.sidebarButton} style={{backgroundColor: '#555', color: 'white'}}>
           Import Nodes
         </button>
-        <button onClick={exportSelectedNodes} className={styles.sidebarButton} disabled={selectedNodesCount === 0} style={{backgroundColor: '#555', color: 'white'}}>
+        {/* <<< [수정] onClick 핸들러 변경 >>> */}
+        <button onClick={handleExportNodes} className={styles.sidebarButton} disabled={selectedNodesCount === 0} style={{backgroundColor: '#555', color: 'white'}}>
           Export Nodes ({selectedNodesCount})
         </button>
+        {/* <<< [수정 끝] >>> */}
 
         {selectedNodeId && (
           <>

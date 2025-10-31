@@ -392,9 +392,9 @@ const useStore = create((set, get) => ({
     }));
   },
 
-  exportSelectedNodes: () => {
-    const { nodes, edges } = get();
-    const selectedNodes = nodes.filter(n => n.selected);
+  // <<< [수정] exportSelectedNodes 함수 수정 (폴백 로직 추가) >>>
+  exportSelectedNodes: (selectedNodes) => {
+    const { edges } = get();
     const selectedNodeIds = new Set(selectedNodes.map(n => n.id));
 
     const relevantEdges = edges.filter(e =>
@@ -402,11 +402,44 @@ const useStore = create((set, get) => ({
     );
 
     const dataToExport = { nodes: selectedNodes, edges: relevantEdges };
+    const dataString = JSON.stringify(dataToExport, null, 2);
 
-    navigator.clipboard.writeText(JSON.stringify(dataToExport, null, 2))
-      .then(() => alert(`${selectedNodes.length} nodes exported to clipboard!`))
-      .catch(err => console.error('Failed to export nodes: ', err));
+    // 1. 보안 컨텍스트(HTTPS, localhost)에서는 Clipboard API 사용
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(dataString)
+        .then(() => alert(`${selectedNodes.length} nodes exported to clipboard!`))
+        .catch(err => {
+          console.error('Failed to export nodes using Clipboard API: ', err);
+          alert(`Failed to export nodes: ${err.message}. Check browser permissions.`);
+        });
+    } else {
+      // 2. HTTP 환경이나 구형 브라우저를 위한 폴백(fallback)
+      console.warn('Clipboard API not available. Using fallback method.');
+      try {
+        const textArea = document.createElement('textarea');
+        textArea.value = dataString;
+
+        // 화면에 보이지 않게 처리
+        textArea.style.position = 'fixed';
+        textArea.style.top = '-9999px';
+        textArea.style.left = '-9999px';
+        
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        // 복사 실행
+        document.execCommand('copy');
+        
+        document.body.removeChild(textArea);
+        alert(`${selectedNodes.length} nodes exported to clipboard (using fallback).`);
+      } catch (err) {
+        console.error('Failed to export nodes using fallback: ', err);
+        alert('Failed to export nodes. Fallback method also failed.');
+      }
+    }
   },
+  // <<< [수정 끝] >>>
 
   importNodes: async () => {
     try {
