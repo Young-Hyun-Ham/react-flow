@@ -416,6 +416,31 @@ function FormNodeController({ localNode, setLocalNode }) {
         <label>Form Title</label>
         <input type="text" value={data.title || ''} onChange={(e) => handleLocalDataChange('title', e.target.value)} />
       </div>
+      
+      {/* <<< [수정] 엑셀 업로드 체크박스 >>> */}
+      <div className={styles.formGroup} style={{paddingTop: 5, paddingBottom: 5}}>
+        <label 
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px', 
+            cursor: 'pointer',
+            fontWeight: '500',
+            fontSize: '0.85rem',
+            color: '#555'
+          }}
+        >
+            <input
+                type="checkbox"
+                checked={data.enableExcelUpload || false}
+                onChange={(e) => handleLocalDataChange('enableExcelUpload', e.target.checked)}
+                style={{ width: '16px', height: '16px', margin: 0, flexShrink: 0, accentColor: '#3498db' }}
+            />
+            Enable Excel Upload Button
+        </label>
+      </div>
+      {/* <<< [수정 끝] >>> */}
+
       <div className={styles.formGroup}>
         <label>Add Element</label>
         <div className={styles.elementTabs}>

@@ -343,7 +343,8 @@
   color: #999;
 }
 
-.formInput:disabled, .branchButton:disabled, .formSubmitButton:disabled {
+/* <<< [수정] .formExcelButton:disabled 추가 >>> */
+.formInput:disabled, .branchButton:disabled, .formSubmitButton:disabled, .formExcelButton:disabled {
   background-color: #f0f2f5;
   cursor: not-allowed;
   opacity: 0.7;
@@ -384,10 +385,11 @@
   align-items: center;
 }
 
-.formDefaultButton {
+/* <<< [수정] .formDefaultButton -> .formExcelButton 로 변경 >>> */
+.formExcelButton {
   align-self: flex-end;
   padding: 8px 20px;
-  background-color: #007aff;
+  background-color: #27ae60; /* 녹색 */
   color: white;
   border: none;
   border-radius: 20px;
@@ -395,6 +397,7 @@
   cursor: pointer;
   margin-top: 10px;
 }
+/* <<< [수정 끝] >>> */
 
 .formGridTable {
   width: 100%;

@@ -6,7 +6,8 @@ import styles from '../../ChatbotSimulator.module.css';
 // --- 👇 [수정] interpolateMessageForApi 제거 ---
 import { interpolateMessage, validateInput, getNestedValue } from '../../simulatorUtils';
 
-const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, isCompleted, formData, handleFormInputChange, handleFormMultiInputChange, handleGridRowClick }) => {
+// <<< [수정] onExcelUpload prop 추가 >>>
+const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, isCompleted, formData, handleFormInputChange, handleFormMultiInputChange, handleGridRowClick, onExcelUpload }) => {
     const setSelectedRow = useStore((state) => state.setSelectedRow);
 
     if (!node) return null;
@@ -177,7 +178,13 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                 })}
                 {!hasSlotBoundGrid && (
                     <div className={styles.formButtonContainer}>
-                        <button className={styles.formDefaultButton} onClick={onFormDefault} disabled={isCompleted}>Default</button>
+                        {/* <<< [추가] 엑셀 업로드 버튼 >>> */}
+                        {node.data.enableExcelUpload && !isCompleted && (
+                            <button className={styles.formExcelButton} onClick={onExcelUpload} disabled={isCompleted}>
+                                Excel Upload
+                            </button>
+                        )}
+                        {/* <<< [수정] Default 버튼 완전 제거 >>> */}
                         <button className={styles.formSubmitButton} onClick={onFormSubmit} disabled={isCompleted}>Submit</button>
                     </div>
                 )}
@@ -203,7 +210,8 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
 };
 
 
-const MessageRenderer = ({ item, nodes, onOptionClick, handleFormSubmit, handleFormDefault, formData, handleFormInputChange, handleFormMultiInputChange, handleGridRowClick }) => {
+// <<< [수정] onExcelUpload prop 추가 >>>
+const MessageRenderer = ({ item, nodes, onOptionClick, handleFormSubmit, handleFormDefault, formData, handleFormInputChange, handleFormMultiInputChange, handleGridRowClick, onExcelUpload }) => {
     const slots = useStore((state) => state.slots);
     const historyRef = useRef(null);
 
@@ -247,7 +255,8 @@ const MessageRenderer = ({ item, nodes, onOptionClick, handleFormSubmit, handleF
                 <div className={styles.messageRow}>
                     <img src="/images/avatar.png" alt="Avatar" className={styles.avatar} />
                      {/* --- 👇 [수정] interpolateMessage 사용 (일반 메시지) --- */}
-                    {item.message ? <div className={`${styles.message} ${styles.botMessage}`}>{interpolateMessage(item.message, slots)}</div> : <BotMessage node={node} slots={slots} onOptionClick={onOptionClick} onFormSubmit={handleFormSubmit} onFormDefault={handleFormDefault} isCompleted={item.isCompleted} formData={formData} handleFormInputChange={handleFormInputChange} handleFormMultiInputChange={handleFormMultiInputChange} handleGridRowClick={handleGridRowClick} />}
+                     {/* <<< [수정] onExcelUpload prop 전달 >>> */}
+                    {item.message ? <div className={`${styles.message} ${styles.botMessage}`}>{interpolateMessage(item.message, slots)}</div> : <BotMessage node={node} slots={slots} onOptionClick={onOptionClick} onFormSubmit={handleFormSubmit} onFormDefault={handleFormDefault} isCompleted={item.isCompleted} formData={formData} handleFormInputChange={handleFormInputChange} handleFormMultiInputChange={handleFormMultiInputChange} handleGridRowClick={handleGridRowClick} onExcelUpload={onExcelUpload} />}
                     {/* --- 👆 [수정 끝] --- */}
                 </div>
             );

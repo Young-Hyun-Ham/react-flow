@@ -42,7 +42,8 @@ export const createNodeData = (type) => {
         title: 'new form',
         elements: [],
         dataSourceType: 'json',
-        dataSource: ''
+        dataSource: '',
+        enableExcelUpload: false // <<< [수정]
       };
     case 'fixedmenu':
       return { ...baseData, content: 'Fixed Menu', replies: [{ display: 'Menu 1', value: `menu_${Date.now()}` }] };

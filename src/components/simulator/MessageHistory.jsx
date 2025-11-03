@@ -1,9 +1,11 @@
+// src/components/simulator/MessageHistory.jsx
+
 import React, { useRef, useEffect } from 'react';
 import MessageRenderer from './MessageRenderer';
 import styles from '../../ChatbotSimulator.module.css';
 
-// 💡 [수정된 부분] handleGridRowClick 프롭 추가
-const MessageHistory = ({ history, nodes, onOptionClick, handleFormSubmit, handleFormDefault, formData, handleFormInputChange, handleFormMultiInputChange, handleGridRowClick }) => {
+// 💡 [수정된 부분] handleGridRowClick, onExcelUpload 프롭 추가
+const MessageHistory = ({ history, nodes, onOptionClick, handleFormSubmit, handleFormDefault, formData, handleFormInputChange, handleFormMultiInputChange, handleGridRowClick, onExcelUpload }) => {
     const historyRef = useRef(null);
 
     useEffect(() => {
@@ -26,6 +28,7 @@ const MessageHistory = ({ history, nodes, onOptionClick, handleFormSubmit, handl
                     handleFormInputChange={handleFormInputChange}
                     handleFormMultiInputChange={handleFormMultiInputChange}
                     handleGridRowClick={handleGridRowClick} // 💡 [수정된 부분]
+                    onExcelUpload={onExcelUpload} // <<< [추가]
                 />
             ))}
         </div>

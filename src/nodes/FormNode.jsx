@@ -161,6 +161,13 @@ function FormNode({ id, data }) {
             readOnly // Controller에서 수정하므로 readOnly로 변경
             placeholder="Form Title"
           />
+          {/* <<< [수정] 엑셀 업로드 표시기 >>> */}
+          {data.enableExcelUpload && (
+            <div className={styles.formFeatureIndicator}>
+              (Excel Upload Enabled)
+            </div>
+          )}
+          {/* <<< [수정 끝] >>> */}
         </div>
         <div className={styles.formPreview}>
           {data.elements && data.elements.length > 0

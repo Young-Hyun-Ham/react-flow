@@ -350,3 +350,13 @@
   margin-top: -2px;
   margin-bottom: 2px;
 }
+
+/* <<< [수정] 엑셀 기능 표시기 스타일 >>> */
+.formFeatureIndicator {
+  font-size: 0.7rem;
+  color: #27ae60; /* Green color for "enabled" */
+  text-align: center;
+  font-style: italic;
+  margin-top: 4px; /* Add some space from the title */
+}
+/* <<< [수정 끝] >>> */
