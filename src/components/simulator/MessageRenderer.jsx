@@ -1,26 +1,28 @@
 // src/components/simulator/MessageRenderer.jsx
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react'; // --- 💡 [수정] useState 제거 ---
 import useStore from '../../store';
 import styles from '../../ChatbotSimulator.module.css';
 // --- 👇 [수정] interpolateMessageForApi 제거 ---
 import { interpolateMessage, validateInput, getNestedValue } from '../../simulatorUtils';
 
-// <<< [수정] onExcelUpload prop 추가 >>>
-const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, isCompleted, formData, handleFormInputChange, handleFormMultiInputChange, handleGridRowClick, onExcelUpload }) => {
+// --- 👇 [수정] BotMessage -> BotMessagePart로 이름 변경, props 변경 (node -> part) ---
+const BotMessagePart = ({ part, slots, onOptionClick, onFormSubmit, onFormDefault, isCompleted, formData, handleFormInputChange, handleFormMultiInputChange, handleGridRowClick, onExcelUpload }) => {
     const setSelectedRow = useStore((state) => state.setSelectedRow);
 
-    if (!node) return null;
+    // --- 👇 [수정] node -> part ---
+    if (!part) return null;
+    const { type, data, nodeId, linkData } = part; // part에서 데이터 추출
 
-    if (node.type === 'iframe') {
+    if (type === 'iframe') {
         return (
             <div className={`${styles.message} ${styles.botMessage} ${styles.iframeContainer}`}>
                 <iframe
-                    // --- 👇 [수정] interpolateMessage 사용 ---
-                    src={interpolateMessage(node.data.url, slots)}
+                    // --- 👇 [수정] data, interpolateMessage 사용 ---
+                    src={interpolateMessage(data.url, slots)}
                     // --- 👆 [수정 끝] ---
-                    width={node.data.width || '100%'}
-                    height={node.data.height || '250'}
+                    width={data.width || '100%'}
+                    height={data.height || '250'}
                     style={{ border: 'none', borderRadius: '18px' }}
                     title="chatbot-iframe"
                 ></iframe>
@@ -28,17 +30,21 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
         );
     }
 
-    if (node.type === 'link') {
-        // Link 노드는 addBotMessage에서 linkData로 처리하므로 여기서는 렌더링 불필요
-        // (만약 linkData가 없다면 여기서 렌더링)
-        // const url = interpolateMessage(node.data.content, slots);
-        // const display = interpolateMessage(node.data.display, slots);
-        // return ( ... )
-        return null; // 通常は useChatFlow で処理
+    if (type === 'link') {
+        // --- 👇 [수정] linkData 사용 ---
+        if (linkData) {
+            return (
+                 <div style={{marginTop: '8px'}}>
+                   <span>Opening link: </span>
+                   <a href={linkData.url} target="_blank" rel="noopener noreferrer">{linkData.display || linkData.url}</a>
+                </div>
+            );
+        }
+        return null;
     }
 
-    if (node.type === 'form') {
-        const hasSlotBoundGrid = node.data.elements?.some(el =>
+    if (type === 'form') {
+        const hasSlotBoundGrid = data.elements?.some(el =>
             el.type === 'grid' &&
             el.optionsSlot &&
             Array.isArray(slots[el.optionsSlot]) &&
@@ -48,11 +54,12 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
         );
 
         return (
-            <div className={`${styles.message} ${styles.botMessage} ${styles.formContainer}`}>
+            // --- 👇 [수정] 폼의 경우 하위 컴포넌트로 분리하지 않고 div로 래핑 ---
+            <div className={styles.formContainer} style={{width: '100%'}}>
                 {/* --- 👇 [수정] interpolateMessage 사용 --- */}
-                <h3>{interpolateMessage(node.data.title, slots)}</h3>
+                <h3>{interpolateMessage(data.title, slots)}</h3>
                  {/* --- 👆 [수정 끝] --- */}
-                {node.data.elements?.map(el => {
+                {data.elements?.map(el => {
                     const dateProps = {};
                     if (el.type === 'date') {
                         if (el.validation?.type === 'today after') dateProps.min = new Date().toISOString().split('T')[0];
@@ -179,7 +186,7 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
                 {!hasSlotBoundGrid && (
                     <div className={styles.formButtonContainer}>
                         {/* <<< [추가] 엑셀 업로드 버튼 >>> */}
-                        {node.data.enableExcelUpload && !isCompleted && (
+                        {data.enableExcelUpload && !isCompleted && (
                             <button className={styles.formExcelButton} onClick={onExcelUpload} disabled={isCompleted}>
                                 Excel Upload
                             </button>
@@ -193,21 +200,42 @@ const BotMessage = ({ node, slots, onOptionClick, onFormSubmit, onFormDefault, i
     }
 
     // --- 👇 [수정] interpolateMessage 사용 ---
-    const message = interpolateMessage(node.data.content || node.data.label, slots);
+    const message = interpolateMessage(data.content || data.label, slots);
     // --- 👆 [수정 끝] ---
     return (
-        <div className={`${styles.message} ${styles.botMessage}`}>
+        // --- 👇 [수정] 래핑 div 변경 및 스타일 조정 ---
+        <div style={{width: '100%'}}>
             <div>{message}</div>
-            {node.type === 'branch' && node.data.evaluationType === 'BUTTON' && (
+            {type === 'branch' && data.evaluationType === 'BUTTON' && (
                 <div className={styles.branchButtonsContainer}>
                     {/* --- 👇 [수정] interpolateMessage 사용 --- */}
-                    {node.data.replies?.map(reply => <button key={reply.value} className={styles.branchButton} onClick={() => onOptionClick(reply)} disabled={isCompleted}>{interpolateMessage(reply.display, slots)}</button>)}
+                    {data.replies?.map(reply => <button key={reply.value} className={styles.branchButton} onClick={() => onOptionClick(reply)} disabled={isCompleted}>{interpolateMessage(reply.display, slots)}</button>)}
                     {/* --- 👆 [수정 끝] --- */}
                 </div>
             )}
+             {/* --- 👇 [추가] slotfilling 버튼 렌더링 --- */}
+             {type === 'slotfilling' && data.replies && data.replies.length > 0 && (
+                <div className={styles.branchButtonsContainer}>
+                    {data.replies.map(reply => <button key={reply.value} className={styles.branchButton} onClick={() => onOptionClick(reply)} disabled={isCompleted}>{interpolateMessage(reply.display, slots)}</button>)}
+                </div>
+            )}
+            {/* --- 👆 [추가 끝] --- */}
         </div>
+        // --- 👆 [수정 끝] ---
     );
 };
+
+
+// --- 👇 [삭제] CombinedBubble 컴포넌트 전체 삭제 ---
+/*
+const CombinedBubble = ({
+    parts, // item.combinedData
+    ...
+}) => {
+    ... (useState, useEffect, setTimeout 로직) ...
+};
+*/
+// --- 👆 [삭제 끝] ---
 
 
 // <<< [수정] onExcelUpload prop 추가 >>>
@@ -219,18 +247,20 @@ const MessageRenderer = ({ item, nodes, onOptionClick, handleFormSubmit, handleF
       if (historyRef.current) {
         historyRef.current.scrollTop = historyRef.current.scrollHeight;
       }
-    }, [item]);
+    }, [item]); // --- 💡 [수정] item으로 변경 (combinedData 변경 시 스크롤) ---
 
+    // --- 👇 [수정] 렌더링 로직 수정 ---
     switch (item.type) {
         case 'bot_streaming':
+            // ... (변경 없음)
             return (
                 <div className={styles.messageRow}>
                     <img src={item.isStreaming ? "/images/avatar-loading.png" : "/images/avatar.png"} alt="Avatar" className={styles.avatar} />
-                    {/* Streaming content doesn't need interpolation here as it comes directly */}
                     <div className={`${styles.message} ${styles.botMessage}`}>{item.content}</div>
                 </div>
             );
         case 'loading':
+            // ... (변경 없음)
             return (
                 <div className={styles.messageRow}>
                     <img src="/images/avatar-loading.png" alt="Avatar" className={styles.avatar} />
@@ -238,32 +268,50 @@ const MessageRenderer = ({ item, nodes, onOptionClick, handleFormSubmit, handleF
                 </div>
             );
         case 'bot':
-            const node = nodes.find(n => n.id === item.nodeId);
-            // Link data handling from useChatFlow (already interpolated)
-            if (item.linkData) {
+            // 1. API 에러 등 간단한 메시지 처리 (기존 로직)
+            if (item.message) { 
                 return (
-                     <div className={styles.messageRow}>
+                    <div className={styles.messageRow}>
                         <img src="/images/avatar.png" alt="Avatar" className={styles.avatar} />
+                        <div className={`${styles.message} ${styles.botMessage}`}>{interpolateMessage(item.message, slots)}</div>
+                    </div>
+                );
+            }
+
+            // 2. 묶인 데이터(combinedData) 처리 (CombinedBubble 제거)
+            if (item.combinedData) {
+                return (
+                    <div className={styles.messageRow}>
+                        <img src="/images/avatar.png" alt="Avatar" className={styles.avatar} />
+                        {/* 하나의 말풍선 div 안에 묶인 파트들을 순차적으로 렌더링 */}
                         <div className={`${styles.message} ${styles.botMessage}`}>
-                           <span>Opening link: </span>
-                           <a href={item.linkData.url} target="_blank" rel="noopener noreferrer">{item.linkData.display || item.linkData.url}</a>
+                            {item.combinedData.map((part, index) => (
+                                <BotMessagePart
+                                    key={part.nodeId || index}
+                                    part={part}
+                                    slots={slots}
+                                    onOptionClick={onOptionClick}
+                                    handleFormSubmit={handleFormSubmit}
+                                    handleFormDefault={handleFormDefault}
+                                    // --- 💡 [수정] 마지막 파트만 isCompleted를 따르도록 수정 ---
+                                    isCompleted={index < item.combinedData.length - 1 ? true : item.isCompleted}
+                                    formData={formData}
+                                    handleFormInputChange={handleFormInputChange}
+                                    handleFormMultiInputChange={handleFormMultiInputChange}
+                                    handleGridRowClick={handleGridRowClick} 
+                                    onExcelUpload={onExcelUpload} 
+                                />
+                            ))}
                         </div>
                     </div>
                 );
             }
-            return (
-                <div className={styles.messageRow}>
-                    <img src="/images/avatar.png" alt="Avatar" className={styles.avatar} />
-                     {/* --- 👇 [수정] interpolateMessage 사용 (일반 메시지) --- */}
-                     {/* <<< [수정] onExcelUpload prop 전달 >>> */}
-                    {item.message ? <div className={`${styles.message} ${styles.botMessage}`}>{interpolateMessage(item.message, slots)}</div> : <BotMessage node={node} slots={slots} onOptionClick={onOptionClick} onFormSubmit={handleFormSubmit} onFormDefault={handleFormDefault} isCompleted={item.isCompleted} formData={formData} handleFormInputChange={handleFormInputChange} handleFormMultiInputChange={handleFormMultiInputChange} handleGridRowClick={handleGridRowClick} onExcelUpload={onExcelUpload} />}
-                    {/* --- 👆 [수정 끝] --- */}
-                </div>
-            );
+            return null; // 렌더링할 데이터가 없는 경우
+            // --- 👆 [수정 끝] ---
         case 'user':
+            // ... (변경 없음)
             return (
                 <div className={`${styles.messageRow} ${styles.userRow}`}>
-                    {/* User messages don't need interpolation */}
                     <div className={`${styles.message} ${styles.userMessage}`}>{item.message}</div>
                 </div>
             );

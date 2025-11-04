@@ -9,7 +9,8 @@ export const createNodeData = (type) => {
     case 'start':
       return { ...baseData, description: 'Scenario starts here.' };
     case 'message':
-      return { ...baseData, content: 'New text message', replies: [] };
+      // --- 👇 [수정] chainNext 추가 ---
+      return { ...baseData, content: 'New text message', replies: [], chainNext: false };
     case 'slotfilling':
       return { ...baseData, content: 'Enter your question.', slot: 'newSlot', replies: [] };
     case 'api':
@@ -22,6 +23,7 @@ export const createNodeData = (type) => {
         body: '{}',
         responseMapping: [],
         apis: [],
+        chainNext: false // --- 👈 [추가] ---
       };
     case 'branch':
       return {
@@ -43,46 +45,51 @@ export const createNodeData = (type) => {
         elements: [],
         dataSourceType: 'json',
         dataSource: '',
-        enableExcelUpload: false // <<< [수정]
+        enableExcelUpload: false
       };
     case 'fixedmenu':
       return { ...baseData, content: 'Fixed Menu', replies: [{ display: 'Menu 1', value: `menu_${Date.now()}` }] };
     case 'link':
-      return { ...baseData, content: 'https://', display: 'Link' };
+      // --- 👇 [수정] chainNext 추가 ---
+      return { ...baseData, content: 'https://', display: 'Link', chainNext: false };
     case 'llm':
       return {
         ...baseData,
         prompt: 'Ask me anything...',
         outputVar: 'llm_output',
-        conditions: []
+        conditions: [],
+        chainNext: false // --- 👈 [추가] ---
       };
     case 'toast':
       return {
         ...baseData,
         message: 'This is a toast message.',
-        toastType: 'info'
+        toastType: 'info',
+        chainNext: false // --- 👈 [추가] ---
       };
     case 'iframe':
       return {
         ...baseData,
         url: 'https://www.example.com',
         width: '250',
-        height: '200'
+        height: '200',
+        chainNext: false // --- 👈 [추가] ---
       };
     case 'scenario':
         return { ...baseData, label: 'Imported Scenario', scenarioId: null };
     case 'setSlot':
-        return { ...baseData, assignments: [{ key: 'newSlot', value: 'someValue' }] };
-    // <<< [추가] 딜레이 노드 기본 데이터 >>>
+        // --- 👇 [수정] chainNext 추가 ---
+        return { ...baseData, assignments: [{ key: 'newSlot', value: 'someValue' }], chainNext: false };
     case 'delay':
-        return { ...baseData, duration: 1000 }; // 기본 1초 (1000ms)
-    // <<< [추가 끝] >>>
+        // --- 👇 [수정] chainNext 추가 ---
+        return { ...baseData, duration: 1000, chainNext: false };
     default:
       return baseData;
   }
 };
 
 export const createFormElement = (elementType) => {
+    // ... (변경 없음)
     const newId = `${elementType}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     let newElement;
 
