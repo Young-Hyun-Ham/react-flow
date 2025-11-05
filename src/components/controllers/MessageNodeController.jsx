@@ -1,9 +1,9 @@
 import styles from '../../NodeController.module.css';
-import { useNodeController } from '../../hooks/useNodeController'; // 💡[추가된 부분]
+import { useNodeController } from '../../hooks/useNodeController';
+import ChainNextCheckbox from './common/ChainNextCheckbox'; // 1. 임포트
 
 function MessageNodeController({ localNode, setLocalNode }) {
     const { data } = localNode;
-    // 💡[수정된 부분] Custom Hook 사용
     const { handleLocalDataChange, addReply, updateReply, deleteReply } = useNodeController(setLocalNode);
 
     return (
@@ -37,26 +37,11 @@ function MessageNodeController({ localNode, setLocalNode }) {
                     </button>
                 </div>
             </div>
-            {/* --- 👇 [추가] chainNext 체크박스 --- */}
-            <div className={styles.formGroup} style={{ paddingTop: '10px' }}>
-              <label style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '8px', 
-                cursor: 'pointer',
-                fontWeight: '500',
-                fontSize: '0.85rem'
-              }}>
-                <input
-                  type="checkbox"
-                  checked={data.chainNext || false}
-                  onChange={(e) => handleLocalDataChange('chainNext', e.target.checked)}
-                  style={{ width: '16px', height: '16px', margin: 0, flexShrink: 0 }}
-                />
-                Chain with next node (no new bubble)
-              </label>
-            </div>
-            {/* --- 👆 [추가 끝] --- */}
+            {/* 2. 기존 UI를 공통 컴포넌트로 대체 */}
+            <ChainNextCheckbox
+              checked={data.chainNext}
+              onChange={(value) => handleLocalDataChange('chainNext', value)}
+            />
         </>
     );
 }

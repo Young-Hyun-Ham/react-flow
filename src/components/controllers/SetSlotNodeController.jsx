@@ -1,30 +1,28 @@
 import styles from '../../NodeController.module.css';
+import { useNodeController } from '../../hooks/useNodeController'; // 1. 훅 임포트
+import ChainNextCheckbox from './common/ChainNextCheckbox'; // 2. 공통 컴포넌트 임포트
 
 function SetSlotNodeController({ localNode, setLocalNode }) {
     const { data } = localNode;
-    
-    const handleLocalDataChange = (key, value) => {
-        setLocalNode(prev => ({
-          ...prev,
-          data: { ...prev.data, [key]: value },
-        }));
-    };
+    // 3. 훅 사용 및 로컬 함수 제거
+    const { handleLocalDataChange } = useNodeController(setLocalNode);
 
+    // 4. 훅의 handleLocalDataChange를 사용하도록 수정
     const handleAssignmentChange = (index, part, value) => {
         const newAssignments = [...(data.assignments || [])];
         newAssignments[index] = { ...newAssignments[index], [part]: value };
-        handleLocalDataChange('assignments', newAssignments);
+        handleLocalDataChange('assignments', newAssignments); // 훅 함수 사용
     };
 
     const addAssignment = () => {
         const newAssignment = { key: '', value: '' };
         const newAssignments = [...(data.assignments || []), newAssignment];
-        handleLocalDataChange('assignments', newAssignments);
+        handleLocalDataChange('assignments', newAssignments); // 훅 함수 사용
     };
 
     const deleteAssignment = (index) => {
         const newAssignments = (data.assignments || []).filter((_, i) => i !== index);
-        handleLocalDataChange('assignments', newAssignments);
+        handleLocalDataChange('assignments', newAssignments); // 훅 함수 사용
     };
 
     return (
@@ -57,26 +55,11 @@ function SetSlotNodeController({ localNode, setLocalNode }) {
                     </button>
                 </div>
             </div>
-            {/* --- 👇 [추가] chainNext 체크박스 --- */}
-            <div className={styles.formGroup} style={{ paddingTop: '10px' }}>
-              <label style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '8px', 
-                cursor: 'pointer',
-                fontWeight: '500',
-                fontSize: '0.85rem'
-              }}>
-                <input
-                  type="checkbox"
-                  checked={data.chainNext || false}
-                  onChange={(e) => handleLocalDataChange('chainNext', e.target.checked)}
-                  style={{ width: '16px', height: '16px', margin: 0, flexShrink: 0 }}
-                />
-                Chain with next node (no new bubble)
-              </label>
-            </div>
-            {/* --- 👆 [추가 끝] --- */}
+            {/* 5. 기존 UI를 공통 컴포넌트로 대체 */}
+            <ChainNextCheckbox
+              checked={data.chainNext}
+              onChange={(value) => handleLocalDataChange('chainNext', value)}
+            />
         </>
     );
 }

@@ -4,6 +4,8 @@ import styles from '../../NodeController.module.css';
 import * as backendService from '../../backendService';
 import ApiTemplateModal from '../../ApiTemplateModal';
 import useAlert from '../../hooks/useAlert';
+import { useNodeController } from '../../hooks/useNodeController'; // 1. 훅 임포트
+import ChainNextCheckbox from './common/ChainNextCheckbox'; // 2. 공통 컴포넌트 임포트
 
 function ApiCallEditor({ apiCall, onUpdate, onDelete, onTest }) {
   // ... (ApiCallEditor 컴포넌트 내용은 변경 없음)
@@ -78,36 +80,25 @@ function ApiCallEditor({ apiCall, onUpdate, onDelete, onTest }) {
   );
 }
 
-// --- 👇 [수정] backend prop 수신 ---
 function ApiNodeController({ localNode, setLocalNode, backend }) {
-// --- 👆 [수정 끝] ---
     const { showAlert, showConfirm } = useAlert();
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
     const [apiTemplates, setApiTemplates] = useState([]);
     const [selectedApiCallId, setSelectedApiCallId] = useState(null);
+    // 3. 훅 사용 및 로컬 함수 제거
+    const { handleLocalDataChange } = useNodeController(setLocalNode);
 
     useEffect(() => {
         const fetchTemplates = async () => {
           try {
-            // --- 👇 [수정] backend 인자 전달 ---
             const templates = await backendService.fetchApiTemplates(backend);
-            // --- 👆 [수정 끝] ---
             setApiTemplates(templates);
           } catch (error) {
             console.error("Failed to fetch API templates:", error);
           }
         };
         fetchTemplates();
-    // --- 👇 [수정] backend 의존성 추가 ---
     }, [backend]);
-    // --- 👆 [수정 끝] ---
-
-    const handleLocalDataChange = (key, value) => {
-        setLocalNode(prev => ({
-          ...prev,
-          data: { ...prev.data, [key]: value },
-        }));
-    };
     
     const handleSaveTemplate = async (templateName) => {
         const { isMulti, apis, ...singleApiData } = localNode.data;
@@ -133,9 +124,7 @@ function ApiNodeController({ localNode, setLocalNode, backend }) {
         }
     
         try {
-          // --- 👇 [수정] backend 인자 전달 ---
           const savedTemplate = await backendService.saveApiTemplate(backend, templateData);
-          // --- 👆 [수정 끝] ---
           setApiTemplates(prev => [...prev, savedTemplate]);
           setIsTemplateModalOpen(false);
         } catch (error) {
@@ -171,9 +160,7 @@ function ApiNodeController({ localNode, setLocalNode, backend }) {
         const confirmed = await showConfirm("Are you sure you want to delete this template? This action cannot be undone.");
         if (confirmed) {
             try {
-                // --- 👇 [수정] backend 인자 전달 ---
                 await backendService.deleteApiTemplate(backend, templateId);
-                // --- 👆 [수정 끝] ---
                 setApiTemplates(prev => prev.filter(t => t.id !== templateId));
             } catch (error) {
                 console.error("Failed to delete API template:", error);
@@ -184,7 +171,6 @@ function ApiNodeController({ localNode, setLocalNode, backend }) {
 
     const handleTestApiCall = async (apiCall) => {
         try {
-          // 💡[수정된 부분] backendService의 testApiCall 함수 사용
           const result = await backendService.testApiCall(apiCall);
           await showAlert(`API Test Success!\n\nResponse:\n${JSON.stringify(result, null, 2)}`);
         } catch (error) {
@@ -234,18 +220,19 @@ function ApiNodeController({ localNode, setLocalNode, backend }) {
 
     const renderSingleApiControls = () => {
         const { data } = localNode;
+        // 4. 훅의 handleLocalDataChange를 사용하도록 수정
         const handleMappingChange = (index, part, value) => {
             const newMapping = [...(data.responseMapping || [])];
             newMapping[index] = { ...newMapping[index], [part]: value };
-            handleLocalDataChange('responseMapping', newMapping);
+            handleLocalDataChange('responseMapping', newMapping); // 훅 함수 사용
         };
         const addMapping = () => {
           const newMapping = [...(data.responseMapping || []), { path: '', slot: '' }];
-          handleLocalDataChange('responseMapping', newMapping);
+          handleLocalDataChange('responseMapping', newMapping); // 훅 함수 사용
         };
         const deleteMapping = (index) => {
           const newMapping = (data.responseMapping || []).filter((_, i) => i !== index);
-          handleLocalDataChange('responseMapping', newMapping);
+          handleLocalDataChange('responseMapping', newMapping); // 훅 함수 사용
         };
 
         return (
@@ -305,15 +292,15 @@ function ApiNodeController({ localNode, setLocalNode, backend }) {
             body: '{}',
             responseMapping: [],
           };
-          handleLocalDataChange('apis', [...apis, newApiCall]);
+          handleLocalDataChange('apis', [...apis, newApiCall]); // 훅 함수 사용
         };
         const handleUpdateApiCall = (updatedApiCall) => {
           const newApis = apis.map(api => api.id === updatedApiCall.id ? updatedApiCall : api);
-          handleLocalDataChange('apis', newApis);
+          handleLocalDataChange('apis', newApis); // 훅 함수 사용
         };
         const handleDeleteApiCall = (apiIdToDelete) => {
           const newApis = apis.filter(api => api.id !== apiIdToDelete);
-          handleLocalDataChange('apis', newApis);
+          handleLocalDataChange('apis', newApis); // 훅 함수 사용
           if (selectedApiCallId === apiIdToDelete) {
             setSelectedApiCallId(null);
           }
@@ -370,26 +357,11 @@ function ApiNodeController({ localNode, setLocalNode, backend }) {
                     onChange={handleApiMultiToggle}
                 />
             </div>
-            {/* --- 👇 [추가] chainNext 체크박스 --- */}
-            <div className={styles.formGroup} style={{ paddingTop: '10px' }}>
-              <label style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '8px', 
-                cursor: 'pointer',
-                fontWeight: '500',
-                fontSize: '0.85rem'
-              }}>
-                <input
-                  type="checkbox"
-                  checked={localNode.data.chainNext || false}
-                  onChange={(e) => handleLocalDataChange('chainNext', e.target.checked)}
-                  style={{ width: '16px', height: '16px', margin: 0, flexShrink: 0 }}
-                />
-                Chain with next node (no new bubble)
-              </label>
-            </div>
-            {/* --- 👆 [추가 끝] --- */}
+            {/* 5. 기존 UI를 공통 컴포넌트로 대체 */}
+            <ChainNextCheckbox
+              checked={localNode.data.chainNext}
+              onChange={(value) => handleLocalDataChange('chainNext', value)}
+            />
             <div className={styles.templateActions}>
               <button onClick={() => setIsTemplateModalOpen(true)}>Templates</button>
             </div>

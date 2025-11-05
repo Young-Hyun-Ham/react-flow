@@ -1,14 +1,11 @@
 import styles from '../../NodeController.module.css';
+import { useNodeController } from '../../hooks/useNodeController'; // 1. 훅 임포트
+import ChainNextCheckbox from './common/ChainNextCheckbox'; // 2. 공통 컴포넌트 임포트
 
 function ToastNodeController({ localNode, setLocalNode }) {
     const { data } = localNode;
-    
-    const handleLocalDataChange = (key, value) => {
-        setLocalNode(prev => ({
-          ...prev,
-          data: { ...prev.data, [key]: value },
-        }));
-    };
+    // 3. 훅 사용 및 로컬 함수 제거
+    const { handleLocalDataChange } = useNodeController(setLocalNode);
 
     return (
         <>
@@ -31,26 +28,11 @@ function ToastNodeController({ localNode, setLocalNode }) {
                     <option value="error">Error</option>
                 </select>
             </div>
-            {/* --- 👇 [추가] chainNext 체크박스 --- */}
-            <div className={styles.formGroup} style={{ paddingTop: '10px' }}>
-              <label style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '8px', 
-                cursor: 'pointer',
-                fontWeight: '500',
-                fontSize: '0.85rem'
-              }}>
-                <input
-                  type="checkbox"
-                  checked={data.chainNext || false}
-                  onChange={(e) => handleLocalDataChange('chainNext', e.target.checked)}
-                  style={{ width: '16px', height: '16px', margin: 0, flexShrink: 0 }}
-                />
-                Chain with next node (no new bubble)
-              </label>
-            </div>
-            {/* --- 👆 [추가 끝] --- */}
+            {/* 4. 기존 UI를 공통 컴포넌트로 대체 */}
+            <ChainNextCheckbox
+              checked={data.chainNext}
+              onChange={(value) => handleLocalDataChange('chainNext', value)}
+            />
         </>
     );
 }

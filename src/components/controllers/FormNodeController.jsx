@@ -4,18 +4,12 @@ import { createFormElement } from '../../nodeFactory';
 import * as backendService from '../../backendService';
 import FormTemplateModal from '../../FormTemplateModal';
 import useAlert from '../../hooks/useAlert';
-// --- 👇 [수정] 유틸리티에서 import ---
 import { formatDisplayKeys, parseDisplayKeys } from '../../utils/gridUtils';
-// --- 👆 [수정 끝] ---
-
-// --- 💡 [제거] displayKeys 헬퍼 함수 (파일 상단에 있던) ---
-// const formatDisplayKeys = (keys) => { ... };
-// const parseDisplayKeys = (value) => { ... };
-// --- 💡 [제거 끝] ---
-
+import { useNodeController } from '../../hooks/useNodeController'; // 1. 훅 임포트
 
 // ElementEditor 컴포넌트
 function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange }) {
+  // ... (ElementEditor 코드는 변경 없음)
   const handleInputChange = (field, value) => {
     onUpdate(index, { ...element, [field]: value });
   };
@@ -40,14 +34,11 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
     onUpdate(index, { ...element, options: newOptions });
   };
 
-  // --- 💡 [수정] displayKeys 임시 문자열 상태 추가 ---
   const [displayKeysString, setDisplayKeysString] = useState(() => formatDisplayKeys(element.displayKeys));
   
-  // element.displayKeys가 외부(템플릿 로드 등)에서 변경될 때 input 값 동기화
   useEffect(() => {
     setDisplayKeysString(formatDisplayKeys(element.displayKeys));
   }, [element.displayKeys]);
-  // --- 💡 [수정 끝] ---
 
 
   return (
@@ -64,7 +55,6 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
 
       {element.type === 'input' && (
         <>
-          {/* --- 💡 수정된 부분 시작 --- */}
           <div className={styles.formGroup}>
             <label>Default Value (Optional)</label>
             <input
@@ -77,7 +67,6 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
               Use <code>{'{slotName}'}</code> to reference a slot value, otherwise treated as literal text.
             </p>
           </div>
-         {/* --- 💡 수정된 부분 끝 --- */}
           <div className={styles.formGroup}>
             <label>Placeholder</label>
             <input type="text" value={element.placeholder || ''} onChange={(e) => handleInputChange('placeholder', e.target.value)} />
@@ -141,7 +130,6 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
           </div>
           {element.optionsSlot && (
             <>
-                {/* --- 💡 [수정] Display Labels 입력 필드 로직 변경 --- */}
                 <div className={styles.formGroup}>
                     <label>Display Labels (comma-separated)</label>
                     <input
@@ -149,11 +137,9 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
                         placeholder="e.g., name(My Name),email"
                         value={displayKeysString}
                         onChange={(e) => {
-                            // onChange에서는 임시 문자열 상태만 업데이트
                             setDisplayKeysString(e.target.value);
                         }}
                         onBlur={(e) => {
-                            // onBlur 시점에 파싱하여 실제 데이터 업데이트
                             handleInputChange('displayKeys', parseDisplayKeys(e.target.value));
                         }}
                     />
@@ -161,7 +147,6 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
                         Use <code>key(Label)</code> syntax. If <code>(Label)</code> is omitted, the key will be used as the label.
                     </p>
                 </div>
-                {/* --- 💡 [수정 끝] --- */}
                 <div className={styles.formGroup}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                         <input
@@ -215,42 +200,28 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
   );
 }
 
-// --- 👇 [수정] backend prop 수신 ---
 function FormNodeController({ localNode, setLocalNode, backend }) {
-// --- 👆 [수정 끝] ---
     const [selectedElementId, setSelectedElementId] = useState(null);
     const [draggedItemIndex, setDraggedItemIndex] = useState(null);
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
     const [formTemplates, setFormTemplates] = useState([]);
     const { showAlert, showConfirm } = useAlert();
-
-    // --- 💡 [제거] 임시 backend 변수 ---
-    // const backend = 'firebase'; 
-    // --- 💡 [제거 끝] ---
+    // 2. 훅 사용
+    const { handleLocalDataChange } = useNodeController(setLocalNode);
 
     useEffect(() => {
         const fetchTemplates = async () => {
           try {
-            // --- 👇 [수정] backend prop 사용 ---
             const templates = await backendService.fetchFormTemplates(backend);
-            // --- 👆 [수정 끝] ---
             setFormTemplates(templates);
           } catch (error) {
             console.error("Failed to fetch form templates:", error);
           }
         };
         fetchTemplates();
-    // --- 👇 [수정] backend 의존성 추가 ---
     }, [backend]);
-    // --- 👆 [수정 끝] ---
 
-    const handleLocalDataChange = (key, value) => {
-        setLocalNode(prev => ({
-          ...prev,
-          data: { ...prev.data, [key]: value },
-        }));
-    };
-
+    // 3. 훅의 handleLocalDataChange를 사용하도록 로컬 함수들 수정
     const localAddElement = (elementType) => {
       const newElement = createFormElement(elementType);
       setLocalNode(prev => ({
@@ -318,9 +289,7 @@ function FormNodeController({ localNode, setLocalNode, backend }) {
             elements: localNode.data.elements || [],
         };
         try {
-            // --- 👇 [수정] backend prop 사용 ---
             const savedTemplate = await backendService.saveFormTemplate(backend, templateData);
-            // --- 👆 [수정 끝] ---
             setFormTemplates(prev => [...prev, savedTemplate]);
             setIsTemplateModalOpen(false);
             await showAlert("Form template saved successfully!");
@@ -336,10 +305,10 @@ function FormNodeController({ localNode, setLocalNode, backend }) {
             data: {
                 ...prev.data,
                 title: template.title,
-                elements: template.elements, // 템플릿 로드 시 displayKeys가 객체 배열로 올바르게 로드됨
+                elements: template.elements,
             },
         }));
-        setSelectedElementId(null); // 템플릿 로드 후 선택 초기화
+        setSelectedElementId(null);
         setIsTemplateModalOpen(false);
     };
 
@@ -347,9 +316,7 @@ function FormNodeController({ localNode, setLocalNode, backend }) {
         const confirmed = await showConfirm("Are you sure you want to delete this form template?");
         if (confirmed) {
             try {
-                // --- 👇 [수정] backend prop 사용 ---
                 await backendService.deleteFormTemplate(backend, templateId);
-                // --- 👆 [수정 끝] ---
                 setFormTemplates(prev => prev.filter(t => t.id !== templateId));
             } catch (error) {
                 console.error("Failed to delete form template:", error);
@@ -402,7 +369,6 @@ function FormNodeController({ localNode, setLocalNode, backend }) {
         <input type="text" value={data.title || ''} onChange={(e) => handleLocalDataChange('title', e.target.value)} />
       </div>
       
-      {/* <<< [수정] 엑셀 업로드 체크박스 >>> */}
       <div className={styles.formGroup} style={{paddingTop: 5, paddingBottom: 5}}>
         <label 
           style={{ 
@@ -424,7 +390,6 @@ function FormNodeController({ localNode, setLocalNode, backend }) {
             Enable Excel Upload Button
         </label>
       </div>
-      {/* <<< [수정 끝] >>> */}
 
       <div className={styles.formGroup}>
         <label>Add Element</label>
@@ -459,7 +424,7 @@ function FormNodeController({ localNode, setLocalNode, backend }) {
                   onClick={(e) => {
                     e.stopPropagation();
                     localDeleteElement(index);
-                    if (el.id === selectedElementId) { // 💡 [추가] 삭제 시 선택 해제
+                    if (el.id === selectedElementId) {
                       setSelectedElementId(null);
                     }
                   }}
@@ -476,13 +441,13 @@ function FormNodeController({ localNode, setLocalNode, backend }) {
       <div className={styles.separator} />
       {selectedElement && (
           <ElementEditor
-              key={selectedElement.id} // 💡 [추가] key를 추가하여 element 선택 변경 시 Editor 강제 리마운트
+              key={selectedElement.id}
               element={selectedElement}
               index={selectedElementIndex}
               onUpdate={localUpdateElement}
               onDelete={(index) => {
                 localDeleteElement(index);
-                setSelectedElementId(null); // 💡 [추가] 삭제 시 선택 해제
+                setSelectedElementId(null);
               }}
               onGridCellChange={localUpdateGridCell}
           />
