@@ -291,8 +291,10 @@ const MessageRenderer = ({ item, nodes, onOptionClick, handleFormSubmit, handleF
                                     part={part}
                                     slots={slots}
                                     onOptionClick={onOptionClick}
-                                    handleFormSubmit={handleFormSubmit}
-                                    handleFormDefault={handleFormDefault}
+                                    // --- 👇 [수정] prop 이름 변경 (handleFormSubmit -> onFormSubmit) ---
+                                    onFormSubmit={handleFormSubmit}
+                                    // --- 👆 [수정 끝] ---
+                                    onFormDefault={handleFormDefault}
                                     // --- 💡 [수정] 마지막 파트만 isCompleted를 따르도록 수정 ---
                                     isCompleted={index < item.combinedData.length - 1 ? true : item.isCompleted}
                                     formData={formData}
