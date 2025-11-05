@@ -9,14 +9,28 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import useStore from '../store';
-import { interpolateMessage, getNestedValue, evaluateCondition } from '../simulatorUtils';
+import { interpolateMessage, getNestedValue, evaluateCondition, generateUniqueId } from '../simulatorUtils';
+import * as nodeExecutor from '../nodeExecutors'; // 💡 [추가]
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-// --- 👇 [추가] 고유 ID 생성을 위한 함수 ---
-const generateUniqueId = () => `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-// --- 👆 [추가 끝] ---
-
+// 💡 [추가] 노드 타입별 실행기(전략) 매핑
+const executorMap = {
+  start: nodeExecutor.invisible,
+  message: nodeExecutor.message,
+  form: nodeExecutor.form,
+  branch: nodeExecutor.branch, // branch 실행기가 내부적으로 BUTTON/CONDITION 분기 처리
+  slotfilling: nodeExecutor.slotfilling,
+  api: null, // 비동기: 별도 처리
+  llm: null, // 비동기: 별도 처리
+  setSlot: nodeExecutor.setSlot,
+  delay: nodeExecutor.delay,
+  fixedmenu: nodeExecutor.fixedmenu,
+  link: nodeExecutor.link,
+  toast: nodeExecutor.toast,
+  iframe: nodeExecutor.iframe,
+  scenario: nodeExecutor.scenario,
+};
 
 export const useChatFlow = (nodes, edges) => {
   const [history, setHistory] = useState([]);
@@ -84,7 +98,6 @@ export const useChatFlow = (nodes, edges) => {
         setCurrentId(nextNode.id);
         // Use the ref to call the latest addBotMessage asynchronously
         if (addBotMessageRef.current) {
-             // --- 👇 [수정] 딜레이 로직을 addBotMessage로 이동시킴 ---
              addBotMessageRef.current(nextNode.id, updatedSlots, activeChainId);
         }
       } else {
@@ -312,69 +325,13 @@ export const useChatFlow = (nodes, edges) => {
     }
   }, [setSlots, nodes, edges, anchorNodeId, proceedToNextNode]); // proceedToNextNode 의존성 유지
 
-  // --- 👇 [수정] activeChainId 인자 추가 및 딜레이/체인 로직 구현 ---
+  // --- 👇 [수정] addBotMessage 함수 전체 리팩토링 ---
   const addBotMessage = useCallback((nodeId, updatedSlots, activeChainId = null) => {
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return;
 
-    // 1. 'delay' 노드: 딜레이 후 다음 노드 진행
-    if (node.type === 'delay') {
-        const duration = node.data.duration || 0;
-        setTimeout(() => {
-            proceedToNextNode(null, nodeId, updatedSlots, activeChainId);
-        }, duration);
-        return;
-    }
-
-    // 2. '보이지 않는' 노드 (start, setSlot, branch(condition), toast)
-    //    로직 즉시 실행 후, 딜레이 없이 다음 노드 진행
-    if (
-      node.type === 'start' || 
-      node.type === 'setSlot' || 
-      (node.type === 'branch' && node.data.evaluationType === 'CONDITION') ||
-      node.type === 'toast'
-    ) {
-      let finalSlots = { ...updatedSlots };
-      if (node.type === 'setSlot') {
-          // ... (setSlot 로직) ...
-        const newSlots = { ...updatedSlots };
-        node.data.assignments?.forEach(assignment => {
-            if (assignment.key) {
-                const interpolatedValue = interpolateMessage(assignment.value, updatedSlots);
-                try {
-                    const trimmedValue = interpolatedValue.trim();
-                    if ((trimmedValue.startsWith('{') && trimmedValue.endsWith('}')) || (trimmedValue.startsWith('[') && trimmedValue.endsWith(']'))) {
-                        newSlots[assignment.key] = JSON.parse(trimmedValue);
-                    } else if (trimmedValue.toLowerCase() === 'true') {
-                        newSlots[assignment.key] = true;
-                    } else if (trimmedValue.toLowerCase() === 'false') {
-                        newSlots[assignment.key] = false;
-                    } else if (!isNaN(trimmedValue) && trimmedValue !== '') {
-                         const num = Number(trimmedValue);
-                         if (!isNaN(num)) newSlots[assignment.key] = num;
-                         else newSlots[assignment.key] = interpolatedValue;
-                    } else {
-                        newSlots[assignment.key] = interpolatedValue;
-                    }
-                } catch (e) {
-                    newSlots[assignment.key] = interpolatedValue;
-                }
-            }
-        });
-        setSlots(newSlots);
-        finalSlots = newSlots;
-      }
-      if (node.type === 'toast') {
-        const message = interpolateMessage(node.data.message, updatedSlots);
-        alert(`[${node.data.toastType || 'info'}] ${message}`);
-      }
-        proceedToNextNode(null, nodeId, finalSlots, activeChainId);
-        return;
-    }
-
-    // 3. '비동기' 노드 (api, llm, scenario)
-    //    로딩 표시 후, 비동기 함수 호출 (비동기 함수가 알아서 proceedToNextNode 호출)
-    if (node.type === 'api') {
+    // 1. 비동기 노드 (api, llm)는 별도 핸들러로 즉시 위임
+    if (node.type === 'api') {
       handleApiNode(node, updatedSlots, activeChainId);
       return;
     }
@@ -382,138 +339,35 @@ export const useChatFlow = (nodes, edges) => {
       handleLlmNode(node, updatedSlots, activeChainId);
       return;
     }
-    if (node.type === 'scenario') {
-       const childNodes = nodes.filter(n => n.parentNode === node.id);
-      const childNodeIds = new Set(childNodes.map(n => n.id));
-      const startNode = childNodes.find(n =>
-        !edges.some(e => e.target === n.id && childNodeIds.has(e.source))
-      );
-      if (startNode) {
-        setCurrentId(startNode.id);
-        addBotMessage(startNode.id, updatedSlots, activeChainId);
-      } else {
-        proceedToNextNode(null, node.id, updatedSlots, activeChainId);
-      }
-      return;
-    }
 
-    // 4. '보이는' 노드 (message, form, link, iframe, slotfilling, branch(button), fixedmenu)
-    //    체인 로직을 적용하여 history에 추가/병합
-    const nodeDataPacket = {
-        type: node.type,
-        nodeId: node.id,
-        data: node.data,
-    };
+    // 2. executorMap에서 노드 타입에 맞는 실행기(전략) 조회
+    const executor = executorMap[node.type];
 
-    if (node.type === 'link') {
-      const url = interpolateMessage(node.data.content, updatedSlots);
-      const display = interpolateMessage(node.data.display, updatedSlots);
-      nodeDataPacket.linkData = { url, display }; // linkData 설정
-      if (url) {
-          window.open(url, '_blank', 'noopener,noreferrer');
-      }
-    }
-
-    const isInteractive = (node.type === 'form') ||
-                         (node.type === 'slotfilling') ||
-                         (node.type === 'branch' && node.data.evaluationType === 'BUTTON') ||
-                         (node.type === 'fixedmenu');
-    
-    // 다음 노드와 연결(chain)할지 여부
-    const isChaining = node.data.chainNext === true && !isInteractive;
-
-    if (node.type === 'fixedmenu') {
-        setHistory([]); // 새 메시지이므로 히스토리 초기화
-        setFixedMenu({ nodeId: node.id, ...node.data });
-        setCurrentId(node.id);
-        // fixedmenu는 history에 추가하거나 proceed하지 않음
-        return; 
-    }
-
-    if (!activeChainId) {
-        // --- A. 새 체인 시작 ---
-        const newChainId = generateUniqueId();
-        const newItem = {
-            type: 'bot',
-            id: newChainId, // 새 말풍선 ID
-            combinedData: [nodeDataPacket], // 이 노드를 첫 번째 멤버로 추가
-            isCompleted: !isInteractive,
-            isChaining: isChaining // (의미 없음, 다음 노드 판단용)
+    if (executor) {
+        // 3. 실행기에 전달할 컨텍스트(Context) 객체 생성
+        const executionContext = {
+            node,
+            updatedSlots,
+            activeChainId,
+            nodes,
+            edges,
+            setSlots,
+            setHistory,
+            setFixedMenu,
+            setCurrentId,
+            proceedToNextNode: proceedToNextNode,
+            addBotMessage: (id, slots, chainId) => addBotMessageRef.current(id, slots, chainId) // 재귀 호출용
         };
-        setHistory(prev => [...prev, newItem]);
         
-        if (!isInteractive) {
-            // 500ms 딜레이 후 다음 노드로 진행
-            setTimeout(() => {
-                proceedToNextNode(null, nodeId, updatedSlots, isChaining ? newChainId : null);
-            }, 500);
-        } else {
-            // (Form 노드 초기값 설정 로직)
-            if (node.type === 'form') {
-                let initialSlotsUpdate = {};
-                (node.data.elements || []).forEach(element => {
-                    if (element.type === 'input' && element.name && element.defaultValue !== undefined && element.defaultValue !== '') {
-                        const defaultValueConfig = element.defaultValue;
-                        let resolvedValue = interpolateMessage(String(defaultValueConfig), updatedSlots);
-                        if (resolvedValue !== undefined) {
-                            initialSlotsUpdate[element.name] = resolvedValue;
-                        }
-                    } else if ((element.type === 'date' || element.type === 'dropbox') && element.name && element.defaultValue !== undefined && element.defaultValue !== '') {
-                        initialSlotsUpdate[element.name] = interpolateMessage(String(element.defaultValue), updatedSlots);
-                    } else if (element.type === 'checkbox' && element.name && Array.isArray(element.defaultValue)) {
-                        initialSlotsUpdate[element.name] = element.defaultValue;
-                    }
-                });
-                const finalSlotsForForm = { ...updatedSlots, ...initialSlotsUpdate };
-                if (Object.keys(initialSlotsUpdate).length > 0) {
-                    setSlots(finalSlotsForForm);
-                }
-            }
-        }
+        // 4. 실행기(전략) 실행
+        executor(executionContext);
     } else {
-        // --- B. 기존 체인에 덧붙이기 ---
-        setHistory(prev => prev.map(item => 
-            item.id === activeChainId 
-            ? { 
-                ...item, 
-                combinedData: [...item.combinedData, nodeDataPacket], // 현재 노드 덧붙이기
-                isCompleted: !isInteractive, // 갱신
-                isChaining: isChaining      // (의미 없음, 다음 노드 판단용)
-              } 
-            : item
-        ));
-
-        if (!isInteractive) {
-             // 500ms 딜레이 후 다음 노드로 진행
-            setTimeout(() => {
-                proceedToNextNode(null, nodeId, updatedSlots, isChaining ? activeChainId : null);
-            }, 500);
-        } else {
-             // (Form 노드 초기값 설정 로직)
-            if (node.type === 'form') {
-                let initialSlotsUpdate = {};
-                (node.data.elements || []).forEach(element => {
-                    if (element.type === 'input' && element.name && element.defaultValue !== undefined && element.defaultValue !== '') {
-                        const defaultValueConfig = element.defaultValue;
-                        let resolvedValue = interpolateMessage(String(defaultValueConfig), updatedSlots);
-                        if (resolvedValue !== undefined) {
-                            initialSlotsUpdate[element.name] = resolvedValue;
-                        }
-                    } else if ((element.type === 'date' || element.type === 'dropbox') && element.name && element.defaultValue !== undefined && element.defaultValue !== '') {
-                        initialSlotsUpdate[element.name] = interpolateMessage(String(element.defaultValue), updatedSlots);
-                    } else if (element.type === 'checkbox' && element.name && Array.isArray(element.defaultValue)) {
-                        initialSlotsUpdate[element.name] = element.defaultValue;
-                    }
-                });
-                const finalSlotsForForm = { ...updatedSlots, ...initialSlotsUpdate };
-                if (Object.keys(initialSlotsUpdate).length > 0) {
-                    setSlots(finalSlotsForForm);
-                }
-            }
-        }
+        console.warn(`No executor found for node type: ${node.type}. Proceeding to next node.`);
+        proceedToNextNode(null, nodeId, updatedSlots, activeChainId);
     }
 
-  }, [nodes, edges, setSlots, handleApiNode, handleLlmNode, proceedToNextNode]); // Ensure proceedToNextNode is included
+  }, [nodes, edges, setSlots, handleApiNode, handleLlmNode, proceedToNextNode, setFixedMenu, setCurrentId]);
+  // --- 👆 [수정 끝] ---
 
   useEffect(() => {
     addBotMessageRef.current = addBotMessage;

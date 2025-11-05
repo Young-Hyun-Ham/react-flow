@@ -1,116 +1,121 @@
 import { Handle, Position } from 'reactflow';
 import styles from './ChatNodes.module.css';
 import useStore from '../store';
-// <<< [수정] StartNodeIcon 추가 >>>
-import { AnchorIcon, StartNodeIcon } from '../components/Icons';
+// (AnchorIcon, StartNodeIcon 임포트 제거)
+import NodeWrapper from './NodeWrapper'; // 1. Wrapper 임포트
 
 function BranchNode({ id, data }) {
-  const deleteNode = useStore((state) => state.deleteNode);
-  const anchorNodeId = useStore((state) => state.anchorNodeId);
-  const setAnchorNodeId = useStore((state) => state.setAnchorNodeId);
-  const startNodeId = useStore((state) => state.startNodeId); // <<< [추가]
-  const setStartNodeId = useStore((state) => state.setStartNodeId); // <<< [추가]
+  // 2. 공통 로직 제거
   const nodeColor = useStore((state) => state.nodeColors.branch);
   const textColor = useStore((state) => state.nodeTextColors.branch);
 
   const isConditionType = data.evaluationType === 'CONDITION';
-  const isAnchored = anchorNodeId === id;
-  const isStartNode = startNodeId === id; // <<< [추가]
+  // (isAnchored, isStartNode 로직 제거)
 
-  return (
-    // <<< [수정] isStartNode 클래스 추가 >>>
-    <div className={`${styles.nodeWrapper} ${isAnchored ? styles.anchored : ''} ${isStartNode ? styles.startNode : ''}`}>
-      <Handle type="target" position={Position.Left} />
-      <div className={styles.nodeHeader} style={{ backgroundColor: nodeColor, color: textColor }}>
-        <span className={styles.headerTextContent}>Condition Branch</span>
-        <div className={styles.headerButtons}>
-            {/* <<< [추가] 시작 노드 설정 버튼 >>> */}
-            <button
-              onClick={(e) => { e.stopPropagation(); setStartNodeId(id); }}
-              className={`${styles.startNodeButton} ${isStartNode ? styles.active : ''}`}
-              title="Set as Start Node"
-            >
-              <StartNodeIcon />
-            </button>
-            {/* <<< [추가 끝] >>> */}
-            <button
-              onClick={(e) => { e.stopPropagation(); setAnchorNodeId(id); }}
-              className={`${styles.anchorButton} ${isAnchored ? styles.active : ''}`}
-              title="Set as anchor"
-            >
-              <AnchorIcon />
-            </button>
-            <button onClick={(e) => { e.stopPropagation(); deleteNode(id); }} className={styles.deleteButton} style={{ backgroundColor: nodeColor, color: textColor }}>X</button>
-        </div>
-      </div>
-      <div className={styles.nodeBody}>
-        <div className={styles.section}>
-          <span className={styles.sectionTitle}>Branch Text</span>
-          <textarea
-            className={styles.textInput}
-            value={data.content || ''}
-            readOnly
-            rows={4}
-          />
-        </div>
-        <div className={styles.section}>
-          <span className={styles.sectionTitle}>
-            Branches ({isConditionType ? 'Conditions' : 'Buttons'})
-          </span>
-          <div className={styles.branchOptionsContainer}>
-            {isConditionType ? (
-              (data.conditions?.length || 0) > 0 ? (
-                data.conditions.map((cond, index) => (
-                  <div key={cond.id || index} className={styles.branchOption}>
-                    <span className={styles.branchOptionButton}>
-                      {`{${cond.slot}} ${cond.operator} ${cond.valueType === 'slot' ? `{${cond.value}}` : `'${cond.value}'`}`}
-                    </span>
-                    <Handle
-                      type="source"
-                      position={Position.Right}
-                      id={data.replies?.[index]?.value}
-                      style={{ top: '50%', transform: 'translateY(-50%)', right: '-25px', background: '#555' }}
-                    />
-                  </div>
-                ))
-              ) : (
-                <div className={styles.formElementsPlaceholder}>No conditions added.</div>
-              )
-            ) : (
-              (data.replies?.length || 0) > 0 ? (
-                data.replies.map((reply, index) => (
-                  <div key={reply.value} className={styles.branchOption}>
-                    <span className={styles.branchOptionButton}>{reply.display}</span>
-                    <Handle
-                      type="source"
-                      position={Position.Right}
-                      id={reply.value}
-                      style={{ top: '50%', transform: 'translateY(-50%)', right: '-25px', background: '#555' }}
-                    />
-                  </div>
-                ))
-              ) : (
-                 <div className={styles.formElementsPlaceholder}>No buttons added.</div>
-              )
-            )}
-          </div>
-        </div>
-      </div>
-       {/* Default Handle for Condition Type */}
-       {isConditionType && (
-           <>
+  // 3. Wrapper에 전달할 커스텀 핸들 정의
+  const customHandles = (
+    <>
+      {isConditionType ? (
+        // Condition 타입 핸들
+        <>
+          {data.conditions?.map((cond, index) => (
+            <Handle
+              key={cond.id || index}
+              type="source"
+              position={Position.Right}
+              id={data.replies?.[index]?.value}
+              style={{ 
+                top: `${(index + 1) / ((data.conditions?.length || 0) + 2) * 100}%`, 
+                background: '#555' 
+              }}
+            />
+          ))}
+          <Handle
+             type="source"
+             position={Position.Right}
+             id="default"
+             style={{ 
+               top: `${((data.conditions?.length || 0) + 1) / ((data.conditions?.length || 0) + 2) * 100}%`, 
+               background: '#e74c3c' 
+              }}
+           />
+           <div style={{ position: 'absolute', bottom: 10, right: -45, fontSize: '11px', color: '#e74c3c' }}>
+             Default
+           </div>
+        </>
+      ) : (
+        // Button 타입 핸들
+        <>
+          {data.replies?.map((reply, index) => (
              <Handle
+               key={reply.value}
                type="source"
                position={Position.Right}
-               id="default"
-               style={{ bottom: 15, top: 'auto', background: '#e74c3c' }}
+               id={reply.value}
+               style={{ 
+                 top: `${(index + 1) / (data.replies.length + 1) * 100}%`, 
+                 background: '#555' 
+                }}
              />
-             <div style={{ position: 'absolute', bottom: 10, right: -45, fontSize: '11px', color: '#e74c3c' }}>
-               Default
-             </div>
-           </>
-       )}
-    </div>
+           ))}
+        </>
+      )}
+    </>
+  );
+
+  return (
+    // 4. NodeWrapper로 감싸기
+    <NodeWrapper
+      id={id}
+      typeLabel="Condition Branch"
+      icon={null} // (아이콘 없음)
+      nodeColor={nodeColor}
+      textColor={textColor}
+      handles={customHandles} // 5. 커스텀 핸들 전달
+    >
+      {/* 6. 기존 nodeBody의 내용만 children으로 전달 */}
+      <div className={styles.section}>
+        <span className={styles.sectionTitle}>Branch Text</span>
+        <textarea
+          className={styles.textInput}
+          value={data.content || ''}
+          readOnly
+          rows={4}
+        />
+      </div>
+      <div className={styles.section}>
+        <span className={styles.sectionTitle}>
+          Branches ({isConditionType ? 'Conditions' : 'Buttons'})
+        </span>
+        <div className={styles.branchOptionsContainer}>
+          {isConditionType ? (
+            (data.conditions?.length || 0) > 0 ? (
+              data.conditions.map((cond, index) => (
+                <div key={cond.id || index} className={styles.branchOption}>
+                  <span className={styles.branchOptionButton}>
+                    {`{${cond.slot}} ${cond.operator} ${cond.valueType === 'slot' ? `{${cond.value}}` : `'${cond.value}'`}`}
+                  </span>
+                  {/* 핸들은 customHandles에서 이미 정의됨 */}
+                </div>
+              ))
+            ) : (
+              <div className={styles.formElementsPlaceholder}>No conditions added.</div>
+            )
+          ) : (
+            (data.replies?.length || 0) > 0 ? (
+              data.replies.map((reply, index) => (
+                <div key={reply.value} className={styles.branchOption}>
+                  <span className={styles.branchOptionButton}>{reply.display}</span>
+                  {/* 핸들은 customHandles에서 이미 정의됨 */}
+                </div>
+              ))
+            ) : (
+               <div className={styles.formElementsPlaceholder}>No buttons added.</div>
+            )
+          )}
+        </div>
+      </div>
+    </NodeWrapper>
   );
 }
 

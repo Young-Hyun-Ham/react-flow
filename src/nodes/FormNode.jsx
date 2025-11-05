@@ -1,28 +1,16 @@
-import { Handle, Position } from 'reactflow';
+// (Handle, Position 임포트 제거)
 import styles from './ChatNodes.module.css';
 import useStore from '../store';
-// <<< [수정] StartNodeIcon 추가 >>>
-import { AnchorIcon, StartNodeIcon } from '../components/Icons';
-// --- 👇 [수정] 유틸리티에서 import ---
+// (AnchorIcon, StartNodeIcon 임포트 제거)
 import { formatDisplayKeys } from '../utils/gridUtils';
-// --- 👆 [수정 끝] ---
-
-// --- 💡 [제거] displayKeys 헬퍼 함수 (파일 상단에 있던) ---
-// const formatDisplayKeys = (keys) => { ... };
-// --- 💡 [제거 끝] ---
+import NodeWrapper from './NodeWrapper'; // 1. Wrapper 임포트
 
 function FormNode({ id, data }) {
-  const deleteNode = useStore((state) => state.deleteNode);
-  const anchorNodeId = useStore((state) => state.anchorNodeId);
-  const setAnchorNodeId = useStore((state) => state.setAnchorNodeId);
-  const startNodeId = useStore((state) => state.startNodeId); // <<< [추가]
-  const setStartNodeId = useStore((state) => state.setStartNodeId); // <<< [추가]
-  const updateNodeData = useStore((state) => state.updateNodeData); // updateNodeData는 이미 있음
+  // 2. 공통 로직 제거
   const nodeColor = useStore((state) => state.nodeColors.form);
   const textColor = useStore((state) => state.nodeTextColors.form);
 
-  const isAnchored = anchorNodeId === id;
-  const isStartNode = startNodeId === id; // <<< [추가]
+  // (isAnchored, isStartNode 로직 제거)
 
   const renderElementPreview = (element) => {
     // ... (기존 renderElementPreview 함수 내용은 동일)
@@ -122,57 +110,39 @@ function FormNode({ id, data }) {
 
 
   return (
-    // <<< [수정] isStartNode 클래스 추가 >>>
-    <div className={`${styles.nodeWrapper} ${styles.formNodeWrapper} ${isAnchored ? styles.anchored : ''} ${isStartNode ? styles.startNode : ''}`}>
-      <Handle type="target" position={Position.Left} />
-      <div className={styles.nodeHeader} style={{ backgroundColor: nodeColor, color: textColor }}>
-        <span className={styles.headerTextContent}>Form</span>
-        <div className={styles.headerButtons}>
-            {/* <<< [추가] 시작 노드 설정 버튼 >>> */}
-            <button
-              onClick={(e) => { e.stopPropagation(); setStartNodeId(id); }}
-              className={`${styles.startNodeButton} ${isStartNode ? styles.active : ''}`}
-              title="Set as Start Node"
-            >
-              <StartNodeIcon />
-            </button>
-            {/* <<< [추가 끝] >>> */}
-            <button
-              onClick={(e) => { e.stopPropagation(); setAnchorNodeId(id); }}
-              className={`${styles.anchorButton} ${isAnchored ? styles.active : ''}`}
-              title="Set as anchor"
-            >
-              <AnchorIcon />
-            </button>
-            <button onClick={(e) => { e.stopPropagation(); deleteNode(id); }} className={styles.deleteButton} style={{ backgroundColor: nodeColor, color: textColor }}>X</button>
-        </div>
+    // 3. NodeWrapper로 감싸기
+    <NodeWrapper
+      id={id}
+      typeLabel="Form"
+      icon={null} // (FormNode는 아이콘이 없었음)
+      nodeColor={nodeColor}
+      textColor={textColor}
+      customClassName={styles.formNodeWrapper} // 4. 너비 조절을 위한 커스텀 클래스 전달
+    >
+      {/* 5. 기존 nodeBody의 내용만 children으로 전달 */}
+      <div className={styles.section}>
+        {/* Form Title is now readOnly, edited in Controller */}
+        <input
+          className={`${styles.textInput} ${styles.formTitleInput}`}
+          value={data.title}
+          readOnly // Controller에서 수정하므로 readOnly로 변경
+          placeholder="Form Title"
+        />
+        {/* <<< [수정] 엑셀 업로드 표시기 >>> */}
+        {data.enableExcelUpload && (
+          <div className={styles.formFeatureIndicator}>
+            (Excel Upload Enabled)
+          </div>
+        )}
+        {/* <<< [수정 끝] >>> */}
       </div>
-      <div className={styles.nodeBody}>
-        <div className={styles.section}>
-          {/* Form Title is now readOnly, edited in Controller */}
-          <input
-            className={`${styles.textInput} ${styles.formTitleInput}`}
-            value={data.title}
-            readOnly // Controller에서 수정하므로 readOnly로 변경
-            placeholder="Form Title"
-          />
-          {/* <<< [수정] 엑셀 업로드 표시기 >>> */}
-          {data.enableExcelUpload && (
-            <div className={styles.formFeatureIndicator}>
-              (Excel Upload Enabled)
-            </div>
-          )}
-          {/* <<< [수정 끝] >>> */}
-        </div>
-        <div className={styles.formPreview}>
-          {data.elements && data.elements.length > 0
-            ? data.elements.map(renderElementPreview)
-            : <div className={styles.formElementsPlaceholder}>No elements added yet.</div>
-          }
-        </div>
+      <div className={styles.formPreview}>
+        {data.elements && data.elements.length > 0
+          ? data.elements.map(renderElementPreview)
+          : <div className={styles.formElementsPlaceholder}>No elements added yet.</div>
+        }
       </div>
-      <Handle type="source" position={Position.Right} />
-    </div>
+    </NodeWrapper>
   );
 }
 

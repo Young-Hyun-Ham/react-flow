@@ -8,6 +8,12 @@
 // The actual chatbot engine should use equivalent logic.
 // ========================================================================
 
+/**
+ * 고유 ID를 생성합니다.
+ * @returns {string}
+ */
+export const generateUniqueId = () => `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
 // --- 👇 [수정] interpolateMessage 함수가 {{slot}} 구문을 사용하도록 변경 ---
 /**
  * 메시지 문자열 내의 {{slotName}} 구문을 실제 슬롯 값으로 치환하는 함수.
