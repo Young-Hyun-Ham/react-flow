@@ -296,9 +296,11 @@ function Flow({ scenario, backend, scenarios }) {
         </ReactFlow>
       </div>
 
+      {/* --- 👇 [수정] backend prop 전달 --- */}
       <div className={`${styles.controllerPanel} ${selectedNodeId ? styles.visible : ''}`}>
-        <NodeController />
+        <NodeController backend={backend} />
       </div>
+      {/* --- 👆 [수정 끝] --- */}
 
       <div className={`${styles.resizerV} ${isSimulatorVisible && !isSimulatorExpanded ? styles.visible : ''}`} onMouseDown={handleMainResize} />
 

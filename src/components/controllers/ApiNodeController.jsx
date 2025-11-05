@@ -78,7 +78,9 @@ function ApiCallEditor({ apiCall, onUpdate, onDelete, onTest }) {
   );
 }
 
-function ApiNodeController({ localNode, setLocalNode }) {
+// --- 👇 [수정] backend prop 수신 ---
+function ApiNodeController({ localNode, setLocalNode, backend }) {
+// --- 👆 [수정 끝] ---
     const { showAlert, showConfirm } = useAlert();
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
     const [apiTemplates, setApiTemplates] = useState([]);
@@ -87,14 +89,18 @@ function ApiNodeController({ localNode, setLocalNode }) {
     useEffect(() => {
         const fetchTemplates = async () => {
           try {
-            const templates = await backendService.fetchApiTemplates();
+            // --- 👇 [수정] backend 인자 전달 ---
+            const templates = await backendService.fetchApiTemplates(backend);
+            // --- 👆 [수정 끝] ---
             setApiTemplates(templates);
           } catch (error) {
             console.error("Failed to fetch API templates:", error);
           }
         };
         fetchTemplates();
-    }, []);
+    // --- 👇 [수정] backend 의존성 추가 ---
+    }, [backend]);
+    // --- 👆 [수정 끝] ---
 
     const handleLocalDataChange = (key, value) => {
         setLocalNode(prev => ({
@@ -127,7 +133,9 @@ function ApiNodeController({ localNode, setLocalNode }) {
         }
     
         try {
-          const savedTemplate = await backendService.saveApiTemplate(templateData);
+          // --- 👇 [수정] backend 인자 전달 ---
+          const savedTemplate = await backendService.saveApiTemplate(backend, templateData);
+          // --- 👆 [수정 끝] ---
           setApiTemplates(prev => [...prev, savedTemplate]);
           setIsTemplateModalOpen(false);
         } catch (error) {
@@ -163,7 +171,9 @@ function ApiNodeController({ localNode, setLocalNode }) {
         const confirmed = await showConfirm("Are you sure you want to delete this template? This action cannot be undone.");
         if (confirmed) {
             try {
-                await backendService.deleteApiTemplate(templateId);
+                // --- 👇 [수정] backend 인자 전달 ---
+                await backendService.deleteApiTemplate(backend, templateId);
+                // --- 👆 [수정 끝] ---
                 setApiTemplates(prev => prev.filter(t => t.id !== templateId));
             } catch (error) {
                 console.error("Failed to delete API template:", error);

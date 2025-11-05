@@ -4,43 +4,14 @@ import { createFormElement } from '../../nodeFactory';
 import * as backendService from '../../backendService';
 import FormTemplateModal from '../../FormTemplateModal';
 import useAlert from '../../hooks/useAlert';
+// --- 👇 [수정] 유틸리티에서 import ---
+import { formatDisplayKeys, parseDisplayKeys } from '../../utils/gridUtils';
+// --- 👆 [수정 끝] ---
 
-// --- 💡 [추가] displayKeys를 문자열로 변환하는 헬퍼 ---
-const formatDisplayKeys = (keys) => {
-  if (!Array.isArray(keys)) return keys || ''; // 이전 버전(문자열) 호환
-  return keys.map(k => {
-    if (typeof k === 'string') return k; // 이전 버전(문자열 배열) 호환
-    if (k.label && k.label !== k.key) {
-      return `${k.key}(${k.label})`;
-    }
-    return k.key;
-  }).join(',');
-};
-
-// --- 💡 [추가] 문자열을 displayKeys 객체 배열로 파싱하는 헬퍼 ---
-const parseDisplayKeys = (value) => {
-  if (!value) return [];
-  const regex = /([^,(]+)(?:\(([^)]+)\))?/g; // 'key'와 선택적 '(label)' 매칭
-  let match;
-  const keys = [];
-  
-  // 쉼표를 기준으로 먼저 나누고 각 항목을 정규식으로 처리
-  value.split(',').forEach(part => {
-    part = part.trim();
-    if (part) {
-      const match = part.match(/([^()]+)(?:\(([^)]+)\))?/);
-      if (match) {
-        const key = match[1] ? match[1].trim() : '';
-        const label = match[2] ? match[2].trim() : key; // 괄호 안 레이블이 없으면 key를 label로 사용
-        if (key) {
-          keys.push({ key, label });
-        }
-      }
-    }
-  });
-  
-  return keys;
-};
+// --- 💡 [제거] displayKeys 헬퍼 함수 (파일 상단에 있던) ---
+// const formatDisplayKeys = (keys) => { ... };
+// const parseDisplayKeys = (value) => { ... };
+// --- 💡 [제거 끝] ---
 
 
 // ElementEditor 컴포넌트
@@ -244,24 +215,34 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
   );
 }
 
-function FormNodeController({ localNode, setLocalNode }) {
+// --- 👇 [수정] backend prop 수신 ---
+function FormNodeController({ localNode, setLocalNode, backend }) {
+// --- 👆 [수정 끝] ---
     const [selectedElementId, setSelectedElementId] = useState(null);
     const [draggedItemIndex, setDraggedItemIndex] = useState(null);
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
     const [formTemplates, setFormTemplates] = useState([]);
     const { showAlert, showConfirm } = useAlert();
 
+    // --- 💡 [제거] 임시 backend 변수 ---
+    // const backend = 'firebase'; 
+    // --- 💡 [제거 끝] ---
+
     useEffect(() => {
         const fetchTemplates = async () => {
           try {
-            const templates = await backendService.fetchFormTemplates();
+            // --- 👇 [수정] backend prop 사용 ---
+            const templates = await backendService.fetchFormTemplates(backend);
+            // --- 👆 [수정 끝] ---
             setFormTemplates(templates);
           } catch (error) {
             console.error("Failed to fetch form templates:", error);
           }
         };
         fetchTemplates();
-    }, []);
+    // --- 👇 [수정] backend 의존성 추가 ---
+    }, [backend]);
+    // --- 👆 [수정 끝] ---
 
     const handleLocalDataChange = (key, value) => {
         setLocalNode(prev => ({
@@ -337,7 +318,9 @@ function FormNodeController({ localNode, setLocalNode }) {
             elements: localNode.data.elements || [],
         };
         try {
-            const savedTemplate = await backendService.saveFormTemplate(templateData);
+            // --- 👇 [수정] backend prop 사용 ---
+            const savedTemplate = await backendService.saveFormTemplate(backend, templateData);
+            // --- 👆 [수정 끝] ---
             setFormTemplates(prev => [...prev, savedTemplate]);
             setIsTemplateModalOpen(false);
             await showAlert("Form template saved successfully!");
@@ -364,7 +347,9 @@ function FormNodeController({ localNode, setLocalNode }) {
         const confirmed = await showConfirm("Are you sure you want to delete this form template?");
         if (confirmed) {
             try {
-                await backendService.deleteFormTemplate(templateId);
+                // --- 👇 [수정] backend prop 사용 ---
+                await backendService.deleteFormTemplate(backend, templateId);
+                // --- 👆 [수정 끝] ---
                 setFormTemplates(prev => prev.filter(t => t.id !== templateId));
             } catch (error) {
                 console.error("Failed to delete form template:", error);

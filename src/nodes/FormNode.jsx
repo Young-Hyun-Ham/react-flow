@@ -3,18 +3,13 @@ import styles from './ChatNodes.module.css';
 import useStore from '../store';
 // <<< [수정] StartNodeIcon 추가 >>>
 import { AnchorIcon, StartNodeIcon } from '../components/Icons';
+// --- 👇 [수정] 유틸리티에서 import ---
+import { formatDisplayKeys } from '../utils/gridUtils';
+// --- 👆 [수정 끝] ---
 
-// --- 💡 [추가] displayKeys를 문자열로 변환하는 헬퍼 ---
-const formatDisplayKeys = (keys) => {
-  if (!Array.isArray(keys)) return keys || ''; // 이전 버전(문자열) 호환
-  return keys.map(k => {
-    if (typeof k === 'string') return k; // 이전 버전(문자열 배열) 호환
-    if (k.label && k.label !== k.key) {
-      return `${k.key}(${k.label})`;
-    }
-    return k.key;
-  }).join(',');
-};
+// --- 💡 [제거] displayKeys 헬퍼 함수 (파일 상단에 있던) ---
+// const formatDisplayKeys = (keys) => { ... };
+// --- 💡 [제거 끝] ---
 
 function FormNode({ id, data }) {
   const deleteNode = useStore((state) => state.deleteNode);

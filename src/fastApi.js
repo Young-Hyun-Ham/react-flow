@@ -165,3 +165,17 @@ export const updateScenarioLastUsed = async ({ scenarioId }) => {
   return { ...data, startNodeId: data.start_node_id, description: data.description || '', updatedAt: data.updated_at || null, lastUsedAt: data.last_used_at || null };
 };
 // --- 💡 [추가 끝] ---
+
+// --- 💡 [추가] FastAPI용 템플릿 함수 (임시 구현) ---
+const notImplemented = () => {
+    console.warn("FastAPI 템플릿 기능은 아직 구현되지 않았습니다.");
+    return Promise.resolve([]); // 우선 빈 배열 반환
+};
+
+export const fetchApiTemplates = notImplemented;
+export const saveApiTemplate = notImplemented;
+export const deleteApiTemplate = notImplemented;
+export const fetchFormTemplates = notImplemented;
+export const saveFormTemplate = notImplemented;
+export const deleteFormTemplate = notImplemented;
+// --- 💡 [추가 끝] ---

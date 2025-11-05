@@ -30,20 +30,21 @@ export const saveScenarioData = (backend, args) => getService(backend).saveScena
 export const cloneScenario = (backend, args) => getService(backend).cloneScenario(args); // args에 description 정보 필요시 추가 전달
 // --- [수정 끝] >>>
 
-// --- 💡 [추가] ---
+// --- 💡 [수정] lastUsedAt 업데이트 함수 추상화 ---
 export const updateScenarioLastUsed = (backend, args) => getService(backend).updateScenarioLastUsed(args);
-// --- 💡 [추가 끝] ---
+// --- 💡 [수정 끝] ---
 
 
-// API 템플릿 함수들
-export const fetchApiTemplates = firebaseApi.fetchApiTemplates;
-export const saveApiTemplate = firebaseApi.saveApiTemplate;
-export const deleteApiTemplate = firebaseApi.deleteApiTemplate;
+// --- 💡 [수정] API 템플릿 함수들 추상화 ---
+export const fetchApiTemplates = (backend, args) => getService(backend).fetchApiTemplates(args);
+export const saveApiTemplate = (backend, args) => getService(backend).saveApiTemplate(args);
+export const deleteApiTemplate = (backend, args) => getService(backend).deleteApiTemplate(args);
 
-// Form 템플릿 관련 함수들
-export const fetchFormTemplates = firebaseApi.fetchFormTemplates;
-export const saveFormTemplate = firebaseApi.saveFormTemplate;
-export const deleteFormTemplate = firebaseApi.deleteFormTemplate;
+// --- 💡 [수정] Form 템플릿 함수들 추상화 ---
+export const fetchFormTemplates = (backend, args) => getService(backend).fetchFormTemplates(args);
+export const saveFormTemplate = (backend, args) => getService(backend).saveFormTemplate(args);
+export const deleteFormTemplate = (backend, args) => getService(backend).deleteFormTemplate(args);
+// --- 💡 [수정 끝] ---
 
 
 export const testApiCall = async (apiCall) => {

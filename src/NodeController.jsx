@@ -29,7 +29,9 @@ const nodeControllerMap = {
   delay: DelayNodeController, // <<< [추가]
 };
 
-function NodeController() {
+// --- 👇 [수정] backend prop 수신 ---
+function NodeController({ backend }) {
+// --- 👆 [수정 끝] ---
   const { selectedNodeId, nodes, updateNodeData } = useStore();
   const [localNode, setLocalNode] = useState(null);
   const [isDirty, setIsDirty] = useState(false);
@@ -70,7 +72,9 @@ function NodeController() {
 
   const renderContent = () => {
     const ControllerComponent = nodeControllerMap[localNode.type];
-    const commonProps = { localNode, setLocalNode };
+    // --- 👇 [수정] backend prop을 commonProps에 추가 ---
+    const commonProps = { localNode, setLocalNode, backend };
+    // --- 👆 [수정 끝] ---
 
     return ControllerComponent
       ? <ControllerComponent {...commonProps} />
