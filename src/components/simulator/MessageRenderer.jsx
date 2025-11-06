@@ -149,7 +149,7 @@ const BotMessagePart = ({ part, slots, onOptionClick, onFormSubmit, onFormDefaul
                                                     const cellIndex = r * columns + c;
                                                     const cellValue = el.data && el.data[cellIndex] ? el.data[cellIndex] : '';
                                                     {/* --- 👇 [수정] interpolateMessage 사용 --- */}
-                                                    return <td key={c}>{interpolateMessage(cellValue, slots)}</td>;
+                                                    return <td key={c}>{interpolateMessage(cellValue || '', slots)}</td>;
                                                     {/* --- 👆 [수정 끝] --- */}
                                                 })}
                                             </tr>
@@ -160,15 +160,20 @@ const BotMessagePart = ({ part, slots, onOptionClick, onFormSubmit, onFormDefaul
                         }
                     }
 
-                    let initialValue = '';
+                    // --- 💡 [수정] 시작: input을 제어 컴포넌트로 변경하고 onDoubleClick 핸들러 추가 ---
+
+                    // 1. input, date, dropbox, checkbox의 현재 값과 기본값을 별도로 계산
+                    let currentValue = '';
+                    let resolvedDefaultValue = ''; // input의 더블클릭에 사용
+
                     if (el.type === 'input') {
                         const defaultValueConfig = el.defaultValue || '';
-                        // --- 👇 [수정] interpolateMessage 사용 ---
-                        initialValue = interpolateMessage(defaultValueConfig, slots);
-                        // --- 👆 [수정 끝] ---
-                        initialValue = formData[el.name] ?? initialValue;
-                    } else {
-                         initialValue = formData[el.name] ?? el.defaultValue ?? '';
+                        resolvedDefaultValue = interpolateMessage(defaultValueConfig, slots); // 순수 기본값 (슬롯 보간)
+                        currentValue = formData[el.name] ?? resolvedDefaultValue; // 현재 값 (state 우선)
+                    } else if (el.type === 'date' || el.type === 'dropbox') {
+                        currentValue = formData[el.name] ?? el.defaultValue ?? '';
+                    } else if (el.type === 'checkbox') {
+                        currentValue = formData[el.name] ?? el.defaultValue ?? [];
                     }
 
                     return (
@@ -176,12 +181,73 @@ const BotMessagePart = ({ part, slots, onOptionClick, onFormSubmit, onFormDefaul
                             {/* --- 👇 [수정] interpolateMessage 사용 --- */}
                             <label className={styles.formLabel}>{interpolateMessage(el.label, slots)}</label>
                              {/* --- 👆 [수정 끝] --- */}
-                            {el.type === 'input' && <input type={el.validation?.type === 'email' ? 'email' : 'text'} className={styles.formInput} placeholder={interpolateMessage(el.placeholder, slots)} defaultValue={initialValue} onChange={(e) => handleFormInputChange(el.name, e.target.value)} disabled={isCompleted} />}
-                            {el.type === 'date' && <input type="date" className={styles.formInput} value={formData[el.name] || ''} onChange={(e) => handleFormInputChange(el.name, e.target.value)} disabled={isCompleted} {...dateProps} />}
-                            {el.type === 'checkbox' && el.options?.map(opt => <div key={opt} className={styles.checkboxOption}><input type="checkbox" id={`${el.id}-${opt}`} value={opt} checked={(formData[el.name] || []).includes(opt)} onChange={(e) => handleFormMultiInputChange(el.name, opt, e.target.checked)} disabled={isCompleted} /><label htmlFor={`${el.id}-${opt}`}>{interpolateMessage(opt, slots)}</label></div>)}
-                            {el.type === 'dropbox' && (() => { const options = Array.isArray(slots[el.optionsSlot]) ? slots[el.optionsSlot] : el.options; return (<select className={styles.formInput} value={formData[el.name] || ''} onChange={(e) => handleFormInputChange(el.name, e.target.value)} disabled={isCompleted}><option value="" disabled>Select...</option>{(options || []).map(opt => { const v = typeof opt === 'object' ? opt.value : opt; const l = typeof opt === 'object' ? opt.label : opt; return <option key={v} value={v}>{interpolateMessage(l, slots)}</option>; })}</select>); })()}
+                            
+                            {/* 2. input: 'defaultValue' -> 'value'로 변경, onDoubleClick 추가 */}
+                            {el.type === 'input' && (
+                                <input
+                                    type={el.validation?.type === 'email' ? 'email' : 'text'}
+                                    className={styles.formInput}
+                                    placeholder={interpolateMessage(el.placeholder, slots)}
+                                    value={currentValue}
+                                    onChange={(e) => handleFormInputChange(el.name, e.target.value)}
+                                    onDoubleClick={() => {
+                                        if (!isCompleted) {
+                                            handleFormInputChange(el.name, resolvedDefaultValue);
+                                        }
+                                    }}
+                                    disabled={isCompleted}
+                                />
+                            )}
+                            
+                            {/* 3. date: 'value'에 currentValue 사용 (기존: formData[el.name] || '') */}
+                            {el.type === 'date' && (
+                                <input
+                                    type="date"
+                                    className={styles.formInput}
+                                    value={currentValue}
+                                    onChange={(e) => handleFormInputChange(el.name, e.target.value)}
+                                    disabled={isCompleted}
+                                    {...dateProps}
+                                />
+                            )}
+                            
+                            {/* 4. checkbox: 'checked'에 currentValue 사용 */}
+                            {el.type === 'checkbox' && el.options?.map(opt => (
+                                <div key={opt} className={styles.checkboxOption}>
+                                    <input
+                                        type="checkbox"
+                                        id={`${el.id}-${opt}`}
+                                        value={opt}
+                                        checked={(currentValue || []).includes(opt)}
+                                        onChange={(e) => handleFormMultiInputChange(el.name, opt, e.target.checked)}
+                                        disabled={isCompleted}
+                                    />
+                                    <label htmlFor={`${el.id}-${opt}`}>{interpolateMessage(opt, slots)}</label>
+                                </div>
+                            ))}
+                            
+                            {/* 5. dropbox: 'value'에 currentValue 사용 */}
+                            {el.type === 'dropbox' && (() => { 
+                                const options = Array.isArray(slots[el.optionsSlot]) ? slots[el.optionsSlot] : el.options; 
+                                return (
+                                    <select
+                                        className={styles.formInput}
+                                        value={currentValue}
+                                        onChange={(e) => handleFormInputChange(el.name, e.target.value)}
+                                        disabled={isCompleted}
+                                    >
+                                        <option value="" disabled>Select...</option>
+                                        {(options || []).map(opt => { 
+                                            const v = typeof opt === 'object' ? opt.value : opt; 
+                                            const l = typeof opt === 'object' ? opt.label : opt; 
+                                            return <option key={v} value={v}>{interpolateMessage(l, slots)}</option>; 
+                                        })}
+                                    </select>
+                                ); 
+                            })()}
                         </div>
                     );
+                    // --- 💡 [수정] 끝 ---
                 })}
                 {!hasSlotBoundGrid && (
                     <div className={styles.formButtonContainer}>
