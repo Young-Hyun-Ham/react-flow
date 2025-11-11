@@ -9,6 +9,7 @@ import {
   writeBatch,
   addDoc,
   updateDoc,
+  serverTimestamp
 } from 'firebase/firestore';
 
 export const fetchScenarios = async () => {
@@ -19,31 +20,36 @@ export const fetchScenarios = async () => {
     return {
       id: doc.id,
       name: data.name || doc.id,
-      // <<< [추가] description 필드 로드 (없으면 빈 문자열) ---
       description: data.description || '',
-      // --- [추가 끝] >>>
-      ...data, // job 등 다른 필드도 포함
+      updatedAt: data.updatedAt || null,
+      lastUsedAt: data.lastUsedAt || null,
+      ...data,
     };
   });
 };
 
-// <<< [수정] description 파라미터 추가 ---
 export const createScenario = async ({ newScenarioName, job, description }) => {
-// --- [수정 끝] >>>
   const newScenarioRef = doc(db, 'scenarios', newScenarioName);
   const docSnap = await getDoc(newScenarioRef);
   if (docSnap.exists()) {
     throw new Error('A scenario with that name already exists.');
   }
-  // <<< [수정] description 필드 저장 ---
-  await setDoc(newScenarioRef, { name: newScenarioName, job, description, nodes: [], edges: [], startNodeId: null });
-  return { id: newScenarioName, name: newScenarioName, job, description, nodes: [], edges: [], startNodeId: null };
-  // --- [수정 끝] >>>
+  const newScenarioData = { 
+    name: newScenarioName, 
+    job, 
+    description, 
+    nodes: [], 
+    edges: [], 
+    startNodeId: null,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    lastUsedAt: null
+  };
+  await setDoc(newScenarioRef, newScenarioData);
+  return { id: newScenarioName, ...newScenarioData, createdAt: new Date(), updatedAt: new Date(), lastUsedAt: null };
 };
 
-// <<< [수정] description 파라미터 추가 ---
 export const renameScenario = async ({ oldScenario, newName, job, description }) => {
-// --- [수정 끝] >>>
     const oldDocRef = doc(db, 'scenarios', oldScenario.id);
 
     if (oldScenario.name !== newName) {
@@ -56,9 +62,7 @@ export const renameScenario = async ({ oldScenario, newName, job, description })
       const oldDocSnap = await getDoc(oldDocRef);
       if (oldDocSnap.exists()) {
         const batch = writeBatch(db);
-        // <<< [수정] 새 데이터에 description 포함 ---
-        const newData = { ...oldDocSnap.data(), name: newName, job, description };
-        // --- [수정 끝] >>>
+        const newData = { ...oldDocSnap.data(), name: newName, job, description, updatedAt: serverTimestamp() };
         batch.set(newDocRef, newData);
         batch.delete(oldDocRef);
         await batch.commit();
@@ -66,9 +70,7 @@ export const renameScenario = async ({ oldScenario, newName, job, description })
         throw new Error('Original scenario not found.');
       }
     } else {
-      // <<< [수정] 이름 변경 없을 시 job과 description 업데이트 ---
-      await updateDoc(oldDocRef, { job, description });
-      // --- [수정 끝] >>>
+      await updateDoc(oldDocRef, { job, description, updatedAt: serverTimestamp() });
     }
 };
 
@@ -92,33 +94,31 @@ export const cloneScenario = async ({ scenarioToClone, newName }) => {
   }
 
   const originalData = originalDocSnap.data();
-  // <<< [수정] 복제 시 description 포함 ---
   const newData = {
     ...originalData,
     name: newName,
-    job: scenarioToClone.job, // 원본의 job 정보 유지 (명시적으로 전달받는 것이 더 안전할 수 있음)
-    description: originalData.description || '', // 원본 description 복사
-    // startNodeId는 originalData에 포함되어 있음
+    job: scenarioToClone.job, 
+    description: originalData.description || '',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    lastUsedAt: null
   };
-  // --- [수정 끝] >>>
 
   await setDoc(newDocRef, newData);
-  return { id: newName, ...newData };
+  return { id: newName, ...newData, createdAt: new Date(), updatedAt: new Date(), lastUsedAt: null };
 };
 
 
 export const fetchScenarioData = async ({ scenarioId }) => {
-  if (!scenarioId) return { nodes: [], edges: [], startNodeId: null, description: '' }; // description 기본값 추가
+  if (!scenarioId) return { nodes: [], edges: [], startNodeId: null, description: '' };
   const scenarioDocRef = doc(db, "scenarios", scenarioId);
   const docSnap = await getDoc(scenarioDocRef);
   if (docSnap.exists()) {
     const data = docSnap.data();
-    // <<< [수정] description 로드 추가 ---
-    return { ...data, startNodeId: data.startNodeId || null, description: data.description || '' };
-    // --- [수정 끝] >>>
+    return { ...data, startNodeId: data.startNodeId || null, description: data.description || '', lastUsedAt: data.lastUsedAt || null };
   }
   console.log(`No such document for scenario: ${scenarioId}!`);
-  return { nodes: [], edges: [], startNodeId: null, description: '' }; // description 기본값 추가
+  return { nodes: [], edges: [], startNodeId: null, description: '' };
 };
 
 export const saveScenarioData = async ({ scenario, data }) => {
@@ -126,20 +126,31 @@ export const saveScenarioData = async ({ scenario, data }) => {
     throw new Error('No scenario selected to save.');
   }
   const scenarioDocRef = doc(db, "scenarios", scenario.id);
-  // <<< [수정] 저장 데이터에 description 포함 (만약 scenario 객체에 최신 description이 없다면 data에서 가져오도록 수정 필요) ---
-  // data 객체에 nodes, edges, startNodeId가 포함됨
-  // 현재 구조상 scenario 객체의 description이 최신일 것으로 가정
   const saveData = {
-    ...data, // nodes, edges, startNodeId
+    ...data,
     name: scenario.name,
     job: scenario.job,
-    description: scenario.description || '' // 시나리오 객체의 description 사용
+    description: scenario.description || '',
+    updatedAt: serverTimestamp()
   };
-  await setDoc(scenarioDocRef, saveData, { merge: true }); // merge: true로 불필요한 필드 덮어쓰기 방지
-  // --- [수정 끝] >>>
+  await setDoc(scenarioDocRef, saveData, { merge: true });
 };
 
-// ... (API/Form 템플릿 함수들은 변경 없음) ...
+export const updateScenarioLastUsed = async ({ scenarioId }) => {
+  const docRef = doc(db, 'scenarios', scenarioId);
+  await updateDoc(docRef, {
+    lastUsedAt: serverTimestamp()
+  });
+  const updatedDocSnap = await getDoc(docRef);
+  if (updatedDocSnap.exists()) {
+    const data = updatedDocSnap.data();
+    return { id: updatedDocSnap.id, ...data };
+  }
+  return null;
+};
+
+
+// ... (API/Form 템플릿 함수들) ...
 export const fetchApiTemplates = async () => {
   const templatesCollection = collection(db, 'apiTemplates');
   const querySnapshot = await getDocs(templatesCollection);
@@ -172,4 +183,20 @@ export const saveFormTemplate = async (templateData) => {
 export const deleteFormTemplate = async (templateId) => {
   const templateDocRef = doc(db, 'formTemplates', templateId);
   await deleteDoc(templateDocRef);
+};
+
+// 💡 [추가] 노드 표시 여부 설정 저장
+export const saveNodeVisibility = async (visibleNodeTypes) => {
+  const docRef = doc(db, "settings", "nodeVisibility");
+  await setDoc(docRef, { visibleNodeTypes }); // 배열을 Firestore에 저장
+};
+
+// 💡 [추가] 노드 표시 여부 설정 불러오기
+export const fetchNodeVisibility = async () => {
+  const docRef = doc(db, "settings", "nodeVisibility");
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    return docSnap.data(); // { visibleNodeTypes: [...] } 반환
+  }
+  return null; // 데이터가 없음
 };

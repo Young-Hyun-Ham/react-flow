@@ -7,10 +7,14 @@ import Login from './Login';
 import HelpModal from './HelpModal';
 import ScenarioModal from './ScenarioModal';
 import ApiDocs from './ApiDocs';
+import Admin from './Admin'; // 💡 [추가] Admin 컴포넌트 임포트
 import useStore from './store';
 import * as backendService from './backendService';
 import { AlertProvider } from './context/AlertProvider';
 import './App.css';
+
+// 💡 [추가] 관리자 이메일 목록
+const adminUsers = ['cutiefunny@gmail.com'];
 
 function App() {
   const [user, setUser] = useState(null);
@@ -25,6 +29,10 @@ function App() {
 
   const fetchNodeColors = useStore((state) => state.fetchNodeColors);
   const fetchNodeTextColors = useStore((state) => state.fetchNodeTextColors);
+  const fetchNodeVisibility = useStore((state) => state.fetchNodeVisibility); // 💡 [추가]
+
+  // 💡 [추가] 사용자가 관리자인지 확인
+  const isAdmin = user && adminUsers.includes(user.email);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -48,11 +56,13 @@ function App() {
       setLoading(false);
     });
 
+    // 💡 [수정] 모든 설정 fetch
     fetchNodeColors();
     fetchNodeTextColors();
+    fetchNodeVisibility(); // 💡 [추가]
 
     return () => unsubscribe();
-  }, [fetchNodeColors, fetchNodeTextColors]);
+  }, [fetchNodeColors, fetchNodeTextColors, fetchNodeVisibility]); // 💡 [추가]
 
   const handleLogin = async () => {
     try {
@@ -71,9 +81,28 @@ function App() {
     }
   };
 
-  const handleScenarioSelect = (scenario) => {
-    setSelectedScenario(scenario);
-    setView('flow');
+  const handleScenarioSelect = async (scenario) => {
+    try {
+      const updatedScenarioData = await backendService.updateScenarioLastUsed(backend, { scenarioId: scenario.id });
+      
+      const newLastUsedAt = updatedScenarioData.lastUsedAt || (updatedScenarioData.last_used_at ? new Date(updatedScenarioData.last_used_at) : new Date());
+
+      setScenarios(prevScenarios => 
+        prevScenarios.map(s => 
+          s.id === scenario.id 
+          ? { ...s, lastUsedAt: newLastUsedAt } 
+          : s
+        )
+      );
+      
+      setSelectedScenario({ ...scenario, lastUsedAt: newLastUsedAt });
+      
+    } catch (error) {
+      console.error("Failed to update last used time:", error);
+      setSelectedScenario(scenario);
+    } finally {
+      setView('flow');
+    }
   };
   
   const handleOpenAddScenarioModal = () => {
@@ -86,24 +115,25 @@ function App() {
     setIsScenarioModalOpen(true);
   };
 
-  const handleSaveScenario = async ({ name, job }) => {
+  const handleSaveScenario = async ({ name, job, description }) => {
     try {
       if (editingScenario) {
         if (name !== editingScenario.name && scenarios.some(s => s.name === name)) {
           alert("A scenario with that name already exists.");
           return;
         }
-        await backendService.renameScenario(backend, { oldScenario: editingScenario, newName: name, job });
-        setScenarios(prev => prev.map(s => (s.id === editingScenario.id ? { ...s, name, job } : s)));
+        await backendService.renameScenario(backend, { oldScenario: editingScenario, newName: name, job, description });
+        setScenarios(prev => prev.map(s => (s.id === editingScenario.id ? { ...s, name, job, description } : s)));
         alert('Scenario updated successfully.');
       } else {
         if (scenarios.some(s => s.name === name)) {
           alert("A scenario with that name already exists.");
           return;
         }
-        const newScenario = await backendService.createScenario(backend, { newScenarioName: name, job });
-        setScenarios(prev => [...prev, newScenario]);
-        setSelectedScenario(newScenario);
+        const newScenario = await backendService.createScenario(backend, { newScenarioName: name, job, description });
+         
+        setScenarios(prev => [...prev, { ...newScenario, lastUsedAt: null }]); 
+        setSelectedScenario({ ...newScenario, lastUsedAt: null });
         setView('flow');
         alert(`Scenario '${newScenario.name}' has been created.`);
       }
@@ -156,6 +186,12 @@ function App() {
             <button onClick={() => handleViewChange('api')} className={view === 'api' ? 'active' : ''}>
               API Docs
             </button>
+            {/* 💡 [추가] Admin 탭 (관리자 전용) */}
+            {isAdmin && (
+              <button onClick={() => handleViewChange('admin')} className={view === 'admin' ? 'active' : ''}>
+                Admin
+              </button>
+            )}
           </nav>
           <div className="user-profile">
             <div className="backend-switch">
@@ -201,6 +237,11 @@ function App() {
 
           <div className={`view-container ${view !== 'api' ? 'hidden' : ''}`}>
               <ApiDocs />
+          </div>
+          
+          {/* 💡 [추가] Admin 뷰 컨테이너 */}
+          <div className={`view-container ${view !== 'admin' ? 'hidden' : ''}`}>
+              {isAdmin ? <Admin /> : <div style={{padding: '20px'}}>Access Denied.</div>}
           </div>
         </main>
         <HelpModal isOpen={isHelpModalOpen} onClose={() => setIsHelpModalOpen(false)} />

@@ -1,9 +1,9 @@
 import styles from '../../NodeController.module.css';
-import { useNodeController } from '../../hooks/useNodeController'; // 💡[추가된 부분]
+import { useNodeController } from '../../hooks/useNodeController';
+import ChainNextCheckbox from './common/ChainNextCheckbox'; // 1. 임포트
 
 function LinkNodeController({ localNode, setLocalNode }) {
     const { data } = localNode;
-    // 💡[수정된 부분] Custom Hook 사용
     const { handleLocalDataChange } = useNodeController(setLocalNode);
 
     return (
@@ -16,6 +16,11 @@ function LinkNodeController({ localNode, setLocalNode }) {
             <label>Display Text</label>
             <input type="text" value={data.display || ''} onChange={(e) => handleLocalDataChange('display', e.target.value)} />
         </div>
+        {/* 2. 기존 UI를 공통 컴포넌트로 대체 */}
+        <ChainNextCheckbox
+          checked={data.chainNext}
+          onChange={(value) => handleLocalDataChange('chainNext', value)}
+        />
       </>
     );
 }

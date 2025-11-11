@@ -108,6 +108,14 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
   };
   // --- 💡 [추가 끝] ---
 
+  // <<< [추가] 엑셀 업로드 버튼 핸들러 (임시) >>>
+  const handleExcelUpload = () => {
+    // TODO: 실제 엑셀 업로드 및 파싱 로직 구현 필요
+    alert('Excel Upload button clicked! (Logic not implemented yet)');
+    // 예: 엑셀 파일 읽기 -> JSON 변환 -> setFormData(jsonData)
+  };
+  // <<< [추가 끝] >>>
+
   return (
     <div className={`${styles.simulator} ${isExpanded ? styles.expanded : ''}`}>
       <SimulatorHeader isVisible={isVisible} isExpanded={isExpanded} setIsExpanded={setIsExpanded} onStart={() => startSimulation()} />
@@ -140,6 +148,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
             handleFormInputChange={handleFormInputChange}
             handleFormMultiInputChange={handleFormMultiInputChange}
             handleGridRowClick={handleGridRowClick} // 💡 [추가된 부분]
+            onExcelUpload={handleExcelUpload} // <<< [추가]
         />
        )
       }

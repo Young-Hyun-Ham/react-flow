@@ -1,113 +1,85 @@
 import { Handle, Position } from 'reactflow';
 import styles from './ChatNodes.module.css';
 import useStore from '../store';
-// <<< [수정] StartNodeIcon 추가 >>>
-import { AnchorIcon, StartNodeIcon } from '../components/Icons';
+// (AnchorIcon, StartNodeIcon 임포트 제거)
+import NodeWrapper from './NodeWrapper'; // 1. Wrapper 임포트
 
 function LlmNode({ id, data }) {
-  const deleteNode = useStore((state) => state.deleteNode);
-  const anchorNodeId = useStore((state) => state.anchorNodeId);
-  const setAnchorNodeId = useStore((state) => state.setAnchorNodeId);
-  const startNodeId = useStore((state) => state.startNodeId); // <<< [추가]
-  const setStartNodeId = useStore((state) => state.setStartNodeId); // <<< [추가]
-  const updateNodeData = useStore((state) => state.updateNodeData); // updateNodeData는 이미 있음
+  // 2. 공통 로직 제거
+  // (updateNodeData는 현재 사용되지 않으므로 제거)
   const nodeColor = useStore((state) => state.nodeColors.llm);
   const textColor = useStore((state) => state.nodeTextColors.llm);
 
-  const isAnchored = anchorNodeId === id;
-  const isStartNode = startNodeId === id; // <<< [추가]
+  // (isAnchored, isStartNode 로직 제거)
 
-  const onOutputVarChange = (e) => {
-    // This function might not be directly used if editing happens only in the controller
-    // but kept for potential future direct editing on the node.
-    updateNodeData(id, { outputVar: e.target.value });
-  };
-
-  return (
-    // <<< [수정] isStartNode 클래스 추가 >>>
-    <div className={`${styles.nodeWrapper} ${isAnchored ? styles.anchored : ''} ${isStartNode ? styles.startNode : ''}`}>
-      <Handle type="target" position={Position.Left} />
-
-      <div className={styles.nodeHeader} style={{ backgroundColor: nodeColor, color: textColor }}>
-        <span className={styles.headerTextContent}>LLM</span>
-        <div className={styles.headerButtons}>
-            {/* <<< [추가] 시작 노드 설정 버튼 >>> */}
-            <button
-              onClick={(e) => { e.stopPropagation(); setStartNodeId(id); }}
-              className={`${styles.startNodeButton} ${isStartNode ? styles.active : ''}`}
-              title="Set as Start Node"
-            >
-              <StartNodeIcon />
-            </button>
-            {/* <<< [추가 끝] >>> */}
-            <button
-              onClick={(e) => { e.stopPropagation(); setAnchorNodeId(id); }}
-              className={`${styles.anchorButton} ${isAnchored ? styles.active : ''}`}
-              title="Set as anchor"
-            >
-              <AnchorIcon />
-            </button>
-            <button onClick={(e) => { e.stopPropagation(); deleteNode(id); }} className={styles.deleteButton} style={{ backgroundColor: nodeColor, color: textColor }}>X</button>
-        </div>
-      </div>
-
-      <div className={styles.nodeBody}>
-        <div className={styles.section}>
-          <span className={styles.sectionTitle}>Prompt</span>
-          <textarea
-            className={styles.textInput}
-            value={data.prompt}
-            readOnly
-            rows={3}
-          />
-        </div>
-        <div className={styles.section}>
-          <span className={styles.sectionTitle}>Output Variable</span>
-          <input
-            type="text"
-            className={styles.textInput}
-            value={data.outputVar || ''}
-            // onChange={onOutputVarChange} // Typically handled in NodeController
-            readOnly // Editable in Controller
-          />
-        </div>
-        {/* ▼▼▼▼▼ 조건 분기 표시 UI ▼▼▼▼▼ */}
-        <div className={styles.section}>
-          <span className={styles.sectionTitle}>Conditions:</span>
-          <div className={styles.branchOptionsContainer}>
-            {data.conditions?.map((cond, index) => (
-              <div key={cond.id} className={styles.branchOption}>
-                <span className={styles.branchOptionButton}>{cond.keyword}</span>
-                <Handle
-                  type="source"
-                  position={Position.Right}
-                  id={cond.id}
-                  // Adjust handle positioning based on the number of conditions
-                  style={{ top: `${(index + 1) / ( (data.conditions?.length || 0) + 2) * 100}%`, background: '#555' }}
-                />
-              </div>
-            ))}
-             {(data.conditions?.length === 0) && (
-                <div className={styles.formElementsPlaceholder}>No conditions added.</div>
-             )}
-          </div>
-        </div>
-        {/* ▲▲▲▲▲ 조건 분기 표시 UI ▲▲▲▲▲ */}
-      </div>
-
-      {/* 기본 출력 핸들 */}
+  // 3. Wrapper에 전달할 커스텀 핸들 정의
+  const customHandles = (
+    <>
+      {data.conditions?.map((cond, index) => (
+        <Handle
+          key={cond.id}
+          type="source"
+          position={Position.Right}
+          id={cond.id}
+          style={{ top: `${(index + 1) / ((data.conditions?.length || 0) + 2) * 100}%`, background: '#555' }}
+        />
+      ))}
       <Handle
         type="source"
         position={Position.Right}
         id="default"
-        // Adjust default handle position based on number of conditions
-        style={{ top: `${( (data.conditions?.length || 0) + 1) / ( (data.conditions?.length || 0) + 2) * 100}%`, background: '#e74c3c' }}
-
+        style={{ top: `${((data.conditions?.length || 0) + 1) / ((data.conditions?.length || 0) + 2) * 100}%`, background: '#e74c3c' }}
       />
-       <div style={{ position: 'absolute', bottom: 10, right: -45, fontSize: '11px', color: '#e74c3c' }}>
+      <div style={{ position: 'absolute', bottom: 10, right: -45, fontSize: '11px', color: '#e74c3c' }}>
         Default
       </div>
-    </div>
+    </>
+  );
+
+  return (
+    // 4. NodeWrapper로 감싸기
+    <NodeWrapper
+      id={id}
+      typeLabel="LLM"
+      icon={null} // (LlmNode는 아이콘이 없었음)
+      nodeColor={nodeColor}
+      textColor={textColor}
+      handles={customHandles} // 커스텀 핸들 전달
+    >
+      {/* 5. 기존 nodeBody의 내용만 children으로 전달 */}
+      <div className={styles.section}>
+        <span className={styles.sectionTitle}>Prompt</span>
+        <textarea
+          className={styles.textInput}
+          value={data.prompt}
+          readOnly
+          rows={3}
+        />
+      </div>
+      <div className={styles.section}>
+        <span className={styles.sectionTitle}>Output Variable</span>
+        <input
+          type="text"
+          className={styles.textInput}
+          value={data.outputVar || ''}
+          readOnly
+        />
+      </div>
+      <div className={styles.section}>
+        <span className={styles.sectionTitle}>Conditions:</span>
+        <div className={styles.branchOptionsContainer}>
+          {data.conditions?.map((cond, index) => (
+            <div key={cond.id} className={styles.branchOption}>
+              <span className={styles.branchOptionButton}>{cond.keyword}</span>
+              {/* 핸들은 customHandles에서 이미 정의됨 */}
+            </div>
+          ))}
+           {(data.conditions?.length === 0) && (
+              <div className={styles.formElementsPlaceholder}>No conditions added.</div>
+           )}
+        </div>
+      </div>
+    </NodeWrapper>
   );
 }
 

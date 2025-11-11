@@ -4,10 +4,12 @@ import { createFormElement } from '../../nodeFactory';
 import * as backendService from '../../backendService';
 import FormTemplateModal from '../../FormTemplateModal';
 import useAlert from '../../hooks/useAlert';
-
+import { formatDisplayKeys, parseDisplayKeys } from '../../utils/gridUtils';
+import { useNodeController } from '../../hooks/useNodeController'; // 1. 훅 임포트
 
 // ElementEditor 컴포넌트
 function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange }) {
+  // ... (ElementEditor 코드는 변경 없음)
   const handleInputChange = (field, value) => {
     onUpdate(index, { ...element, [field]: value });
   };
@@ -32,6 +34,13 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
     onUpdate(index, { ...element, options: newOptions });
   };
 
+  const [displayKeysString, setDisplayKeysString] = useState(() => formatDisplayKeys(element.displayKeys));
+  
+  useEffect(() => {
+    setDisplayKeysString(formatDisplayKeys(element.displayKeys));
+  }, [element.displayKeys]);
+
+
   return (
     <div className={styles.elementEditor}>
       <h4>Edit {element.type}</h4>
@@ -46,7 +55,6 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
 
       {element.type === 'input' && (
         <>
-          {/* --- 💡 수정된 부분 시작 --- */}
           <div className={styles.formGroup}>
             <label>Default Value (Optional)</label>
             <input
@@ -59,7 +67,6 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
               Use <code>{'{slotName}'}</code> to reference a slot value, otherwise treated as literal text.
             </p>
           </div>
-         {/* --- 💡 수정된 부분 끝 --- */}
           <div className={styles.formGroup}>
             <label>Placeholder</label>
             <input type="text" value={element.placeholder || ''} onChange={(e) => handleInputChange('placeholder', e.target.value)} />
@@ -127,19 +134,17 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
                     <label>Display Labels (comma-separated)</label>
                     <input
                         type="text"
-                        placeholder="e.g., name,email,phone"
-                        value={Array.isArray(element.displayKeys) ? element.displayKeys.join(',') : element.displayKeys}
+                        placeholder="e.g., name(My Name),email"
+                        value={displayKeysString}
                         onChange={(e) => {
-                            const value = e.target.value;
-                            handleInputChange('displayKeys', value);
+                            setDisplayKeysString(e.target.value);
                         }}
                         onBlur={(e) => {
-                            const value = e.target.value;
-                            handleInputChange('displayKeys', value.split(',').map(k => k.trim()).filter(Boolean));
+                            handleInputChange('displayKeys', parseDisplayKeys(e.target.value));
                         }}
                     />
                     <p className={styles.instructionText} style={{marginTop: '4px', fontSize: '0.75rem'}}>
-                        Specify which keys to display as labels. If empty, all keys will be shown.
+                        Use <code>key(Label)</code> syntax. If <code>(Label)</code> is omitted, the key will be used as the label.
                     </p>
                 </div>
                 <div className={styles.formGroup}>
@@ -195,32 +200,28 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
   );
 }
 
-function FormNodeController({ localNode, setLocalNode }) {
+function FormNodeController({ localNode, setLocalNode, backend }) {
     const [selectedElementId, setSelectedElementId] = useState(null);
     const [draggedItemIndex, setDraggedItemIndex] = useState(null);
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
     const [formTemplates, setFormTemplates] = useState([]);
     const { showAlert, showConfirm } = useAlert();
+    // 2. 훅 사용
+    const { handleLocalDataChange } = useNodeController(setLocalNode);
 
     useEffect(() => {
         const fetchTemplates = async () => {
           try {
-            const templates = await backendService.fetchFormTemplates();
+            const templates = await backendService.fetchFormTemplates(backend);
             setFormTemplates(templates);
           } catch (error) {
             console.error("Failed to fetch form templates:", error);
           }
         };
         fetchTemplates();
-    }, []);
+    }, [backend]);
 
-    const handleLocalDataChange = (key, value) => {
-        setLocalNode(prev => ({
-          ...prev,
-          data: { ...prev.data, [key]: value },
-        }));
-    };
-
+    // 3. 훅의 handleLocalDataChange를 사용하도록 로컬 함수들 수정
     const localAddElement = (elementType) => {
       const newElement = createFormElement(elementType);
       setLocalNode(prev => ({
@@ -288,7 +289,7 @@ function FormNodeController({ localNode, setLocalNode }) {
             elements: localNode.data.elements || [],
         };
         try {
-            const savedTemplate = await backendService.saveFormTemplate(templateData);
+            const savedTemplate = await backendService.saveFormTemplate(backend, templateData);
             setFormTemplates(prev => [...prev, savedTemplate]);
             setIsTemplateModalOpen(false);
             await showAlert("Form template saved successfully!");
@@ -307,6 +308,7 @@ function FormNodeController({ localNode, setLocalNode }) {
                 elements: template.elements,
             },
         }));
+        setSelectedElementId(null);
         setIsTemplateModalOpen(false);
     };
 
@@ -314,7 +316,7 @@ function FormNodeController({ localNode, setLocalNode }) {
         const confirmed = await showConfirm("Are you sure you want to delete this form template?");
         if (confirmed) {
             try {
-                await backendService.deleteFormTemplate(templateId);
+                await backendService.deleteFormTemplate(backend, templateId);
                 setFormTemplates(prev => prev.filter(t => t.id !== templateId));
             } catch (error) {
                 console.error("Failed to delete form template:", error);
@@ -366,6 +368,29 @@ function FormNodeController({ localNode, setLocalNode }) {
         <label>Form Title</label>
         <input type="text" value={data.title || ''} onChange={(e) => handleLocalDataChange('title', e.target.value)} />
       </div>
+      
+      <div className={styles.formGroup} style={{paddingTop: 5, paddingBottom: 5}}>
+        <label 
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px', 
+            cursor: 'pointer',
+            fontWeight: '500',
+            fontSize: '0.85rem',
+            color: '#555'
+          }}
+        >
+            <input
+                type="checkbox"
+                checked={data.enableExcelUpload || false}
+                onChange={(e) => handleLocalDataChange('enableExcelUpload', e.target.checked)}
+                style={{ width: '16px', height: '16px', margin: 0, flexShrink: 0, accentColor: '#3498db' }}
+            />
+            Enable Excel Upload Button
+        </label>
+      </div>
+
       <div className={styles.formGroup}>
         <label>Add Element</label>
         <div className={styles.elementTabs}>
@@ -399,6 +424,9 @@ function FormNodeController({ localNode, setLocalNode }) {
                   onClick={(e) => {
                     e.stopPropagation();
                     localDeleteElement(index);
+                    if (el.id === selectedElementId) {
+                      setSelectedElementId(null);
+                    }
                   }}
                 >
                   ×
@@ -413,10 +441,14 @@ function FormNodeController({ localNode, setLocalNode }) {
       <div className={styles.separator} />
       {selectedElement && (
           <ElementEditor
+              key={selectedElement.id}
               element={selectedElement}
               index={selectedElementIndex}
               onUpdate={localUpdateElement}
-              onDelete={localDeleteElement}
+              onDelete={(index) => {
+                localDeleteElement(index);
+                setSelectedElementId(null);
+              }}
               onGridCellChange={localUpdateGridCell}
           />
       )}

@@ -24,11 +24,13 @@ export const fetchScenarios = async () => {
     const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}`);
     const data = await handleApiResponse(response);
     const scenarios = data?.scenarios || (Array.isArray(data) ? data : []);
-    // <<< [수정] description 필드 추가 (기본값 빈 문자열) ---
+    // <<< [수정] description 필드 추가 및 updatedAt/lastUsedAt 필드명 정규화 ---
     return scenarios.map(scenario => ({
        ...scenario,
        job: scenario.job || 'Process',
        description: scenario.description || '', // description 추가
+       updatedAt: scenario.updated_at || null, // 'updated_at'을 'updatedAt'으로 정규화
+       lastUsedAt: scenario.last_used_at || null, // 'last_used_at'을 'lastUsedAt'으로 정규화
     }));
     // --- [수정 끝] >>>
 };
@@ -48,12 +50,13 @@ export const createScenario = async ({ newScenarioName, job, description }) => {
             nodes: [],
             edges: [],
             start_node_id: null
+            // last_used_at은 백엔드에서 null로 자동 설정 가정
         }),
         // --- [수정 끝] >>>
     });
     const data = await handleApiResponse(response);
-    // <<< [수정] 응답에 description 추가 ---
-    return { ...data, startNodeId: data.start_node_id, description: data.description || '' };
+    // <<< [수정] 응답에 description 추가 및 updatedAt/lastUsedAt 정규화 ---
+    return { ...data, startNodeId: data.start_node_id, description: data.description || '', updatedAt: data.updated_at || null, lastUsedAt: data.last_used_at || null };
     // --- [수정 끝] >>>
 };
 
@@ -62,20 +65,19 @@ export const cloneScenario = async ({ scenarioToClone, newName }) => {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     // <<< [수정] 복제 요청 시 description 포함 (백엔드 스키마에 따라 달라질 수 있음) ---
-    // 백엔드가 clone_from_id를 받아서 description까지 복사한다면 이 필드는 불필요할 수 있습니다.
-    // 만약 description을 명시적으로 보내야 한다면 scenarioToClone.description을 추가합니다.
     body: JSON.stringify({
       name: newName,
       job: scenarioToClone.job,
       clone_from_id: scenarioToClone.id,
       category_id: 'DEV_1000_S_1_1_1',
-      // description: scenarioToClone.description // 필요시 추가
+      description: scenarioToClone.description // 필요시 추가
+      // last_used_at은 백엔드에서 null로 자동 설정 가정
     }),
     // --- [수정 끝] >>>
   });
   const data = await handleApiResponse(response);
-  // <<< [수정] 응답에 description 추가 ---
-  return { ...data, startNodeId: data.start_node_id, description: data.description || '' };
+  // <<< [수정] 응답에 description 추가 및 updatedAt/lastUsedAt 정규화 ---
+  return { ...data, startNodeId: data.start_node_id, description: data.description || '', updatedAt: data.updated_at || null, lastUsedAt: data.last_used_at || null };
   // --- [수정 끝] >>>
 };
 
@@ -90,8 +92,8 @@ export const renameScenario = async ({ oldScenario, newName, job, description })
         // --- [수정 끝] >>>
     });
     const data = await handleApiResponse(response);
-     // <<< [수정] 응답에 description 추가 ---
-    return { ...data, startNodeId: data.start_node_id, description: data.description || '' };
+     // <<< [수정] 응답에 description 추가 및 updatedAt/lastUsedAt 정규화 ---
+    return { ...data, startNodeId: data.start_node_id, description: data.description || '', updatedAt: data.updated_at || null, lastUsedAt: data.last_used_at || null };
      // --- [수정 끝] >>>
 };
 
@@ -106,13 +108,15 @@ export const fetchScenarioData = async ({ scenarioId }) => {
     if (!scenarioId) return { nodes: [], edges: [], startNodeId: null, description: '' }; // description 기본값 추가
     const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}/${scenarioId}`);
     const data = await handleApiResponse(response);
-    // <<< [수정] description 로드 추가 ---
+    // <<< [수정] description 로드 추가 및 updatedAt/lastUsedAt 정규화 ---
     return {
         ...data,
         nodes: data.nodes || [],
         edges: data.edges || [],
         startNodeId: data.start_node_id || null,
-        description: data.description || '' // description 추가
+        description: data.description || '', // description 추가
+        updatedAt: data.updated_at || null,
+        lastUsedAt: data.last_used_at || null
     };
     // --- [수정 끝] >>>
 };
@@ -133,6 +137,7 @@ export const saveScenarioData = async ({ scenario, data }) => {
         nodes: data.nodes,
         edges: data.edges,
         start_node_id: data.startNodeId
+        // save는 updatedAt만 갱신 (백엔드 로직)
     };
     // --- [수정 끝] >>>
 
@@ -142,7 +147,35 @@ export const saveScenarioData = async ({ scenario, data }) => {
         body: JSON.stringify(payload),
     });
     const responseData = await handleApiResponse(response);
-    // <<< [수정] 응답에 description 추가 ---
-    return { ...responseData, startNodeId: responseData.start_node_id, description: responseData.description || '' };
+    // <<< [수정] 응답에 description 추가 및 updatedAt/lastUsedAt 정규화 ---
+    return { ...responseData, startNodeId: responseData.start_node_id, description: responseData.description || '', updatedAt: responseData.updated_at || null, lastUsedAt: responseData.last_used_at || null };
     // --- [수정 끝] >>>
 };
+
+// --- 💡 [추가] lastUsedAt 업데이트 함수 (PATCH 사용) ---
+export const updateScenarioLastUsed = async ({ scenarioId }) => {
+  const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}/${scenarioId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    // 백엔드가 last_used_at 필드를 현재 시간으로 업데이트하도록 요청
+    // (이 API 명세는 FastAPI Docs에 정의되어 있어야 함)
+    body: JSON.stringify({ last_used_at: new Date().toISOString() }), 
+  });
+  const data = await handleApiResponse(response);
+  return { ...data, startNodeId: data.start_node_id, description: data.description || '', updatedAt: data.updated_at || null, lastUsedAt: data.last_used_at || null };
+};
+// --- 💡 [추가 끝] ---
+
+// --- 💡 [추가] FastAPI용 템플릿 함수 (임시 구현) ---
+const notImplemented = () => {
+    console.warn("FastAPI 템플릿 기능은 아직 구현되지 않았습니다.");
+    return Promise.resolve([]); // 우선 빈 배열 반환
+};
+
+export const fetchApiTemplates = notImplemented;
+export const saveApiTemplate = notImplemented;
+export const deleteApiTemplate = notImplemented;
+export const fetchFormTemplates = notImplemented;
+export const saveFormTemplate = notImplemented;
+export const deleteFormTemplate = notImplemented;
+// --- 💡 [추가 끝] ---

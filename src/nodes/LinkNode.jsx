@@ -1,68 +1,44 @@
-import { Handle, Position } from 'reactflow';
+// (Handle, Position 임포트 제거)
 import styles from './ChatNodes.module.css';
 import useStore from '../store';
-// <<< [수정] StartNodeIcon 추가 >>>
-import { AnchorIcon, StartNodeIcon } from '../components/Icons';
+// (AnchorIcon, StartNodeIcon 임포트 제거)
+import NodeWrapper from './NodeWrapper'; // 1. Wrapper 임포트
 
 function LinkNode({ id, data }) {
-  const deleteNode = useStore((state) => state.deleteNode);
-  const anchorNodeId = useStore((state) => state.anchorNodeId);
-  const setAnchorNodeId = useStore((state) => state.setAnchorNodeId);
-  const startNodeId = useStore((state) => state.startNodeId); // <<< [추가]
-  const setStartNodeId = useStore((state) => state.setStartNodeId); // <<< [추가]
+  // 2. 공통 로직 제거
   const nodeColor = useStore((state) => state.nodeColors.link);
   const textColor = useStore((state) => state.nodeTextColors.link);
 
-  const isAnchored = anchorNodeId === id;
-  const isStartNode = startNodeId === id; // <<< [추가]
+  // (isAnchored, isStartNode 로직 제거)
 
   return (
-    // <<< [수정] isStartNode 클래스 추가 >>>
-    <div className={`${styles.nodeWrapper} ${isAnchored ? styles.anchored : ''} ${isStartNode ? styles.startNode : ''}`}>
-      <Handle type="target" position={Position.Left} />
-      <div className={styles.nodeHeader} style={{ backgroundColor: nodeColor, color: textColor }}>
-        <span className={styles.headerTextContent}>Link</span>
-        <div className={styles.headerButtons}>
-            {/* <<< [추가] 시작 노드 설정 버튼 >>> */}
-            <button
-              onClick={(e) => { e.stopPropagation(); setStartNodeId(id); }}
-              className={`${styles.startNodeButton} ${isStartNode ? styles.active : ''}`}
-              title="Set as Start Node"
-            >
-              <StartNodeIcon />
-            </button>
-            {/* <<< [추가 끝] >>> */}
-            <button
-              onClick={(e) => { e.stopPropagation(); setAnchorNodeId(id); }}
-              className={`${styles.anchorButton} ${isAnchored ? styles.active : ''}`}
-              title="Set as anchor"
-            >
-              <AnchorIcon />
-            </button>
-            <button onClick={(e) => { e.stopPropagation(); deleteNode(id); }} className={styles.deleteButton} style={{ backgroundColor: nodeColor, color: textColor }}>X</button>
-        </div>
+    // 3. NodeWrapper로 감싸기
+    <NodeWrapper
+      id={id}
+      typeLabel="Link"
+      icon={null} // (아이콘 없음)
+      nodeColor={nodeColor}
+      textColor={textColor}
+    >
+      {/* 4. 기존 nodeBody의 내용만 children으로 전달 */}
+      <div className={styles.section}>
+        <span className={styles.sectionTitle}>Display Text</span>
+        <input
+          className={styles.textInput}
+          value={data.display}
+          readOnly
+        />
       </div>
-      <div className={styles.nodeBody}>
-        <div className={styles.section}>
-          <span className={styles.sectionTitle}>Display Text</span>
-          <input
-            className={styles.textInput}
-            value={data.display}
-            readOnly
-          />
-        </div>
-        <div className={styles.section}>
-          <span className={styles.sectionTitle}>URL</span>
-          <textarea
-            className={styles.textInput}
-            value={data.content}
-            readOnly
-            rows={2}
-          />
-        </div>
+      <div className={styles.section}>
+        <span className={styles.sectionTitle}>URL</span>
+        <textarea
+          className={styles.textInput}
+          value={data.content}
+          readOnly
+          rows={2}
+        />
       </div>
-      <Handle type="source" position={Position.Right} />
-    </div>
+    </NodeWrapper>
   );
 }
 

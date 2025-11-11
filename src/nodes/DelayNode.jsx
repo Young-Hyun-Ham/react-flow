@@ -1,68 +1,37 @@
 // src/nodes/DelayNode.jsx
 
-import { Handle, Position } from 'reactflow';
+// (Handle, Position 임포트 제거)
 import styles from './ChatNodes.module.css';
 import useStore from '../store';
-import { AnchorIcon, DelayNodeIcon, StartNodeIcon } from '../components/Icons'; // DelayNodeIcon 추가
+import { DelayNodeIcon } from '../components/Icons'; // 1. 아이콘 임포트 유지
+import NodeWrapper from './NodeWrapper'; // 2. Wrapper 임포트
+
+// (AnchorIcon, StartNodeIcon 임포트 제거)
 
 function DelayNode({ id, data }) {
-  const deleteNode = useStore((state) => state.deleteNode);
-  const anchorNodeId = useStore((state) => state.anchorNodeId);
-  const setAnchorNodeId = useStore((state) => state.setAnchorNodeId);
-  const startNodeId = useStore((state) => state.startNodeId);
-  const setStartNodeId = useStore((state) => state.setStartNodeId);
-  const nodeColor = useStore((state) => state.nodeColors.delay) || '#f1c40f'; // 기본 색상 추가
-  const textColor = useStore((state) => state.nodeTextColors.delay) || '#333333'; // 기본 텍스트 색상 추가
+  // 3. 공통 로직 제거
+  const nodeColor = useStore((state) => state.nodeColors.delay) || '#f1c40f';
+  const textColor = useStore((state) => state.nodeTextColors.delay) || '#333333';
 
-  const isAnchored = anchorNodeId === id;
-  const isStartNode = startNodeId === id;
+  // (isAnchored, isStartNode 로직 제거)
 
   return (
-    <div className={`${styles.nodeWrapper} ${isAnchored ? styles.anchored : ''} ${isStartNode ? styles.startNode : ''}`}>
-      <Handle type="target" position={Position.Left} />
-
-      <div className={styles.nodeHeader} style={{ backgroundColor: nodeColor, color: textColor }}>
-        <div className={styles.headerLeft}>
-            <DelayNodeIcon /> {/* 아이콘 사용 */}
-            <span className={styles.headerTextContent}>Delay</span>
-        </div>
-        <div className={styles.headerButtons}>
-            <button
-              onClick={(e) => { e.stopPropagation(); setStartNodeId(id); }}
-              className={`${styles.startNodeButton} ${isStartNode ? styles.active : ''}`}
-              title="Set as Start Node"
-            >
-              <StartNodeIcon />
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); setAnchorNodeId(id); }}
-              className={`${styles.anchorButton} ${isAnchored ? styles.active : ''}`}
-              title="Set as anchor"
-            >
-              <AnchorIcon />
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); deleteNode(id); }}
-              className={styles.deleteButton}
-              style={{ color: textColor }}
-            >
-              X
-            </button>
+    // 4. NodeWrapper로 감싸기
+    <NodeWrapper
+      id={id}
+      typeLabel="Delay"
+      icon={<DelayNodeIcon />} // 5. 아이콘 전달
+      nodeColor={nodeColor}
+      textColor={textColor}
+    >
+      {/* 6. 기존 nodeBody의 내용만 children으로 전달 */}
+      <div className={styles.section}>
+        <span className={styles.sectionTitle}>Duration</span>
+        <div className={styles.previewBox} style={{ textAlign: 'center' }}>
+          {data.duration || 0} ms
         </div>
       </div>
-
-      <div className={styles.nodeBody}>
-        <div className={styles.section}>
-          <span className={styles.sectionTitle}>Duration</span>
-          <div className={styles.previewBox} style={{ textAlign: 'center' }}>
-            {/* 밀리초(ms) 단위로 표시 */}
-            {data.duration || 0} ms
-          </div>
-        </div>
-      </div>
-
-      <Handle type="source" position={Position.Right} />
-    </div>
+    </NodeWrapper>
   );
 }
 

@@ -6,51 +6,78 @@ import {
 } from 'reactflow';
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from './firebase';
-import { createNodeData, createFormElement } from './nodeFactory'; // createFormElement 추가
+import { createNodeData, createFormElement } from './nodeFactory';
 import * as backendService from './backendService';
+import * as firebaseApi from './firebaseApi'; // 💡 [추가] firebaseApi 직접 임포트
 
+// 💡 [수정] llm, toast를 포함한 모든 노드 색상 정의
 const defaultColors = {
   message: '#f39c12',
   form: '#9b59b6',
   branch: '#2ecc71',
   slotfilling: '#3498db',
   api: '#e74c3c',
+  llm: '#1abc9c',
+  setSlot: '#8e44ad',
+  delay: '#f1c40f',
   fixedmenu: '#e74c3c',
   link: '#34495e',
-  llm: '#1abc9c',
   toast: '#95a5a6',
   iframe: '#2c3e50',
   scenario: '#7f8c8d',
-  setSlot: '#8e44ad',
-  delay: '#f1c40f', // <<< [추가] 예시 색상 (노란색 계열)
 };
 
+// 💡 [수정] llm, toast를 포함한 모든 노드 텍스트 색상 정의
 const defaultTextColors = {
   message: '#ffffff',
   form: '#ffffff',
   branch: '#ffffff',
   slotfilling: '#ffffff',
   api: '#ffffff',
+  llm: '#ffffff',
+  setSlot: '#ffffff',
+  delay: '#333333',
   fixedmenu: '#ffffff',
   link: '#ffffff',
-  llm: '#ffffff',
   toast: '#ffffff',
   iframe: '#ffffff',
   scenario: '#ffffff',
-  setSlot: '#ffffff',
-  delay: '#333333', // <<< [추가] 예시 텍스트 색상 (어두운 회색)
-}
+};
+
+// 💡 [추가] Admin 페이지와 Flow 페이지에서 공유할 노드 타입 마스터 리스트
+export const ALL_NODE_TYPES = Object.keys(defaultColors);
+
+// 💡 [추가] 기본적으로 표시할 노드 타입 리스트
+const defaultVisibleNodeTypes = [
+  'message',
+  'form',
+  'branch',
+  'slotfilling',
+  'api',
+  'setSlot',
+  'delay',
+  'fixedmenu',
+  'link',
+  'iframe',
+  'scenario',
+  // 'llm', // 기본 숨김
+  // 'toast', // 기본 숨김
+];
+
 
 const useStore = create((set, get) => ({
   nodes: [],
   edges: [],
   selectedNodeId: null,
   anchorNodeId: null,
-  startNodeId: null, // <<< [추가] 시작 노드 ID 상태
+  startNodeId: null,
   nodeColors: defaultColors,
   nodeTextColors: defaultTextColors,
   slots: {},
-  selectedRow: null, // <<< [추가] 선택된 행 데이터 상태
+  selectedRow: null,
+  
+  // 💡 [추가] 노드 표시 여부 상태
+  visibleNodeTypes: defaultVisibleNodeTypes,
 
   setAnchorNodeId: (nodeId) => {
     set((state) => ({
@@ -58,51 +85,100 @@ const useStore = create((set, get) => ({
     }));
   },
 
-  // <<< [수정] 시작 노드 설정 함수 >>>
   setStartNodeId: (nodeId) => {
     set((state) => {
-      // 이미 시작 노드이면 null로 설정 (토글 방식)
       if (state.startNodeId === nodeId) {
         return { startNodeId: null };
       }
       return { startNodeId: nodeId };
     });
   },
-  // <<< [수정 끝] >>>
 
-  setSelectedRow: (row) => set({ selectedRow: row }), // <<< [추가] selectedRow 업데이트 함수
+  setSelectedRow: (row) => set({ selectedRow: row }),
 
   setSlots: (newSlots) => set({ slots: newSlots }),
 
+  // 💡 [수정] fetchNodeColors가 모든 노드 타입을 순회하도록 수정
   fetchNodeColors: async () => {
     const docRef = doc(db, "settings", "nodeColors");
     try {
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const dbColors = docSnap.data();
-        set({ nodeColors: { ...defaultColors, ...dbColors } });
+        // 모든 노드 타입에 대해 기본값 || DB값 적용
+        const mergedColors = ALL_NODE_TYPES.reduce((acc, type) => {
+          acc[type] = dbColors[type] || defaultColors[type];
+          return acc;
+        }, {});
+        set({ nodeColors: mergedColors });
       } else {
         await setDoc(docRef, defaultColors);
+        set({ nodeColors: defaultColors });
       }
     } catch (error) {
       console.error("Failed to fetch node colors from DB", error);
     }
   },
 
+  // 💡 [수정] fetchNodeTextColors가 모든 노드 타입을 순회하도록 수정
   fetchNodeTextColors: async () => {
     const docRef = doc(db, "settings", "nodeTextColors");
     try {
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const dbTextColors = docSnap.data();
-        set({ nodeTextColors: { ...defaultTextColors, ...dbTextColors } });
+        // 모든 노드 타입에 대해 기본값 || DB값 적용
+        const mergedTextColors = ALL_NODE_TYPES.reduce((acc, type) => {
+          acc[type] = dbTextColors[type] || defaultTextColors[type];
+          return acc;
+        }, {});
+        set({ nodeTextColors: mergedTextColors });
       } else {
         await setDoc(docRef, defaultTextColors);
+        set({ nodeTextColors: defaultTextColors });
       }
     } catch (error) {
       console.error("Failed to fetch node text colors from DB", error);
     }
   },
+
+  // 💡 [추가] 노드 표시 여부 fetch/save 함수
+  fetchNodeVisibility: async () => {
+    try {
+      const settings = await firebaseApi.fetchNodeVisibility();
+      if (settings && Array.isArray(settings.visibleNodeTypes)) {
+        set({ visibleNodeTypes: settings.visibleNodeTypes });
+      } else {
+        // Firestore에 데이터가 없으면 기본값으로 저장
+        await firebaseApi.saveNodeVisibility(defaultVisibleNodeTypes);
+        set({ visibleNodeTypes: defaultVisibleNodeTypes });
+      }
+    } catch (error) {
+      console.error("Failed to fetch node visibility:", error);
+      set({ visibleNodeTypes: defaultVisibleNodeTypes }); // 에러 시 기본값
+    }
+  },
+
+  setNodeVisibility: async (nodeType, isVisible) => {
+    const currentVisible = get().visibleNodeTypes;
+    const newVisibleSet = new Set(currentVisible);
+    if (isVisible) {
+      newVisibleSet.add(nodeType);
+    } else {
+      newVisibleSet.delete(nodeType);
+    }
+    const newVisibleArray = Array.from(newVisibleSet);
+    
+    set({ visibleNodeTypes: newVisibleArray });
+    
+    try {
+      await firebaseApi.saveNodeVisibility(newVisibleArray);
+    } catch (error) {
+      console.error("Failed to save node visibility:", error);
+      // TODO: 에러 롤백 처리 (선택 사항)
+    }
+  },
+  // 💡 [추가 끝]
 
   setNodeColor: async (type, color) => {
     const newColors = { ...get().nodeColors, [type]: color };
@@ -147,14 +223,13 @@ const useStore = create((set, get) => ({
       const remainingNodes = state.nodes.filter(n => !nodesToRemoveSet.has(n.id));
       const remainingEdges = state.edges.filter(e => !nodesToRemoveSet.has(e.source) && !nodesToRemoveSet.has(e.target));
 
-      // <<< [수정] 삭제되는 노드가 시작 노드이면 startNodeId 초기화 >>>
       const newStartNodeId = state.startNodeId === nodeId ? null : state.startNodeId;
 
       return {
         nodes: remainingNodes,
         edges: remainingEdges,
         selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId,
-        startNodeId: newStartNodeId, // <<< [수정]
+        startNodeId: newStartNodeId,
       };
     });
   },
@@ -188,7 +263,6 @@ const useStore = create((set, get) => ({
               newStyle.width = (maxX - minX) + PADDING * 2;
               newStyle.height = (maxY - minY) + PADDING * 2;
 
-              // Ensure child nodes are repositioned if they are outside the new bounds
               childNodes.forEach(node => {
                 node.position.x -= (minX - PADDING);
                 node.position.y -= (minY - PADDING);
@@ -392,9 +466,8 @@ const useStore = create((set, get) => ({
     }));
   },
 
-  exportSelectedNodes: () => {
-    const { nodes, edges } = get();
-    const selectedNodes = nodes.filter(n => n.selected);
+  exportSelectedNodes: (selectedNodes) => {
+    const { edges } = get();
     const selectedNodeIds = new Set(selectedNodes.map(n => n.id));
 
     const relevantEdges = edges.filter(e =>
@@ -402,10 +475,37 @@ const useStore = create((set, get) => ({
     );
 
     const dataToExport = { nodes: selectedNodes, edges: relevantEdges };
+    const dataString = JSON.stringify(dataToExport, null, 2);
 
-    navigator.clipboard.writeText(JSON.stringify(dataToExport, null, 2))
-      .then(() => alert(`${selectedNodes.length} nodes exported to clipboard!`))
-      .catch(err => console.error('Failed to export nodes: ', err));
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(dataString)
+        .then(() => alert(`${selectedNodes.length} nodes exported to clipboard!`))
+        .catch(err => {
+          console.error('Failed to export nodes using Clipboard API: ', err);
+          alert(`Failed to export nodes: ${err.message}. Check browser permissions.`);
+        });
+    } else {
+      console.warn('Clipboard API not available. Using fallback method.');
+      try {
+        const textArea = document.createElement('textarea');
+        textArea.value = dataString;
+        textArea.style.position = 'fixed';
+        textArea.style.top = '-9999px';
+        textArea.style.left = '-9999px';
+        
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        document.execCommand('copy');
+        
+        document.body.removeChild(textArea);
+        alert(`${selectedNodes.length} nodes exported to clipboard (using fallback).`);
+      } catch (err) {
+        console.error('Failed to export nodes using fallback: ', err);
+        alert('Failed to export nodes. Fallback method also failed.');
+      }
+    }
   },
 
   importNodes: async () => {
@@ -528,29 +628,27 @@ const useStore = create((set, get) => ({
   fetchScenario: async (backend, scenarioId) => {
     try {
       const data = await backendService.fetchScenarioData(backend, { scenarioId });
-      // <<< [수정] 시나리오 로드 시 startNodeId도 설정 (백엔드에 저장된 값이 있다면) >>>
       set({
         nodes: data.nodes || [],
         edges: data.edges || [],
         selectedNodeId: null,
-        startNodeId: data.startNodeId || null // <<< [수정]
+        startNodeId: data.startNodeId || null
       });
     } catch (error) {
       console.error("Error fetching scenario:", error);
       alert('Failed to load scenario details.');
-      set({ nodes: [], edges: [], selectedNodeId: null, startNodeId: null }); // <<< [수정] startNodeId 초기화 추가
+      set({ nodes: [], edges: [], selectedNodeId: null, startNodeId: null });
     }
   },
 
   saveScenario: async (backend, scenario) => {
     try {
-      const { nodes, edges, startNodeId } = get(); // <<< [수정] startNodeId 가져오기
+      const { nodes, edges, startNodeId } = get();
       await backendService.saveScenarioData(backend, {
         scenario,
-        // <<< [수정] 저장 데이터에 startNodeId 포함 >>>
         data: { nodes, edges, startNodeId },
       });
-      alert(`Scenario '${scenario.name}' has been saved successfully!`); // 시나리오 이름 포함
+      alert(`Scenario '${scenario.name}' has been saved successfully!`);
     } catch (error) {
       console.error("Error saving scenario:", error);
       alert(`Failed to save scenario: ${error.message}`);

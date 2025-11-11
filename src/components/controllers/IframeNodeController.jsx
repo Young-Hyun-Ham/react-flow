@@ -1,14 +1,11 @@
 import styles from '../../NodeController.module.css';
+import { useNodeController } from '../../hooks/useNodeController'; // 1. 훅 임포트
+import ChainNextCheckbox from './common/ChainNextCheckbox'; // 2. 공통 컴포넌트 임포트
 
 function IframeNodeController({ localNode, setLocalNode }) {
     const { data } = localNode;
-    
-    const handleLocalDataChange = (key, value) => {
-        setLocalNode(prev => ({
-          ...prev,
-          data: { ...prev.data, [key]: value },
-        }));
-    };
+    // 3. 훅 사용 및 로컬 함수 제거
+    const { handleLocalDataChange } = useNodeController(setLocalNode);
 
     return (
       <>
@@ -38,6 +35,11 @@ function IframeNodeController({ localNode, setLocalNode }) {
                 />
             </div>
         </div>
+        {/* 4. 기존 UI를 공통 컴포넌트로 대체 */}
+        <ChainNextCheckbox
+          checked={data.chainNext}
+          onChange={(value) => handleLocalDataChange('chainNext', value)}
+        />
       </>
     );
 }
