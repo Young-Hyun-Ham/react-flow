@@ -36,8 +36,9 @@ function App() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        const allowedEmails = ['cutiefunny@gmail.com', 'hyh8414@gmail.com', 'nuisance55@gmail.com'];
+      // ... (기존 인증 로직) ...
+       if (currentUser) {
+        const allowedEmails = ['cutiefunny@gmail.com', 'hyh8414@gmail.com'];
         const allowedDomains = ['cyberlogitec.com', 'wisenut.co.kr'];
         const userEmail = currentUser.email;
         const userDomain = userEmail.split('@')[1];
@@ -131,9 +132,9 @@ function App() {
           return;
         }
         const newScenario = await backendService.createScenario(backend, { newScenarioName: name, job, description });
-         
-        setScenarios(prev => [...prev, { ...newScenario, lastUsedAt: null }]); 
-        setSelectedScenario({ ...newScenario, lastUsedAt: null });
+         // --- [수정 끝] >>>
+        setScenarios(prev => [...prev, newScenario]); // 백엔드 응답에 description이 포함되어 있다고 가정
+        setSelectedScenario(newScenario);
         setView('flow');
         alert(`Scenario '${newScenario.name}' has been created.`);
       }
@@ -214,8 +215,9 @@ function App() {
           </div>
         </header>
         <main className="app-main">
-          <div className={`view-container ${view !== 'list' ? 'hidden' : ''}`}>
-              <ScenarioList 
+          {/* ... (기존 뷰 컨테이너) ... */}
+           <div className={`view-container ${view !== 'list' ? 'hidden' : ''}`}>
+              <ScenarioList
                   backend={backend}
                   onSelect={handleScenarioSelect} 
                   onAddScenario={handleOpenAddScenarioModal}
