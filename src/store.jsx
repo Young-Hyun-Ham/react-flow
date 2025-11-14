@@ -60,8 +60,8 @@ const defaultVisibleNodeTypes = [
   'link',
   'iframe',
   'scenario',
-  // 'llm', // 기본 숨김
-  // 'toast', // 기본 숨김
+  'llm', // 기본 숨김
+  'toast', // 기본 숨김
 ];
 
 
