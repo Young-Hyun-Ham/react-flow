@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import useStore from './store';
 import styles from './ChatbotSimulator.module.css';
 import { useChatFlow } from './hooks/useChatFlow';
-import { validateInput } from './simulatorUtils';
+import { validateInput, interpolateMessage } from './simulatorUtils';
 import SimulatorHeader from './components/simulator/SimulatorHeader';
 import MessageHistory from './components/simulator/MessageHistory';
 import UserInput from './components/simulator/UserInput';
@@ -89,32 +89,100 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
     setFormData(defaultData);
   };
 
-  // --- 💡 [추가된 부분] ---
-  /**
-   * 그리드 행 클릭 시 호출되는 핸들러.
-   * 1. 폼 상호작용 완료 처리
-   * 2. 'selectedRow' 슬롯에 클릭된 행의 데이터 저장
-   * 3. 다음 노드로 진행
-   */
-  const handleGridRowClick = (rowData) => {
-    completeCurrentInteraction();
-    // 기존 formData와 함께 selectedRow를 슬롯에 저장
-    const newSlots = { ...slots, ...formData, selectedRow: rowData };
-    setSlots(newSlots);
-    setFormData({});
-    // 사용자 액션으로 "Row selected" 메시지 추가
-    setHistory(prev => [...prev, { type: 'user', message: "Row selected." }]);
-    proceedToNextNode(null, currentId, newSlots);
-  };
-  // --- 💡 [추가 끝] ---
+  const handleFormElementApiCall = useCallback(async (clickedElement) => {
+    if (!currentNode || currentNode.type !== 'form') {
+        return;
+    }
+    const element = currentNode.data.elements.find(e => e.id === clickedElement.id);
 
-  // <<< [추가] 엑셀 업로드 버튼 핸들러 (임시) >>>
-  const handleExcelUpload = () => {
-    // TODO: 실제 엑셀 업로드 및 파싱 로직 구현 필요
-    alert('Excel Upload button clicked! (Logic not implemented yet)');
-    // 예: 엑셀 파일 읽기 -> JSON 변환 -> setFormData(jsonData)
+    if (!element || !element.apiConfig || !element.resultSlot) {
+      alert("Search element is not configured correctly. (Missing API URL or Result Slot)");
+      return;
+    }
+
+    const { apiConfig, resultSlot } = element;
+    const searchTerm = formData[element.name] || '';
+    const allValues = { ...slots, value: searchTerm };
+    const method = apiConfig.method || 'POST'; 
+
+    try {
+      const interpolatedUrl = interpolateMessage(apiConfig.url, allValues);
+
+      const fetchOptions = {
+        method: method,
+        headers: {},
+      };
+
+      if (method === 'POST') {
+        const interpolatedBody = interpolateMessage(apiConfig.bodyTemplate, allValues);
+        fetchOptions.headers['Content-Type'] = 'application/json';
+        fetchOptions.body = interpolatedBody;
+      }
+      
+      const response = await fetch(interpolatedUrl, fetchOptions);
+
+      if (!response.ok) {
+        throw new Error(`API call failed with status ${response.status}`);
+      }
+
+      const responseData = await response.json();
+
+      const newSlots = { ...slots, [resultSlot]: responseData };
+      setSlots(newSlots);
+      
+    } catch (error) {
+      console.error("Form element API call failed:", error);
+      alert(`Search failed: ${error.message}`);
+    }
+  }, [formData, slots, setSlots, currentNode]);
+
+  const handleGridRowClick = (rowData, gridElement) => {
+    if (!currentNode || currentNode.type !== 'form' || !gridElement) {
+      return;
+    }
+
+    // 1. 클릭된 행에서 첫 번째 컬럼 값 찾기
+    const gridKeys = (gridElement.displayKeys && gridElement.displayKeys.length > 0) 
+      ? gridElement.displayKeys.map(k => k.key) 
+      : Object.keys(rowData);
+      
+    const firstColumnKey = gridKeys[0];
+    const firstColumnValue = firstColumnKey ? rowData[firstColumnKey] : '';
+
+    // 2. 이 그리드와 연결된 'search' 엘리먼트 찾기
+    const searchElement = currentNode.data.elements.find(
+      e => e.type === 'search' && e.resultSlot === gridElement.optionsSlot
+    );
+
+    if (!searchElement || !searchElement.name) {
+      // 3. (Fallback)
+      completeCurrentInteraction();
+      const newSlots = { ...slots, ...formData, selectedRow: rowData };
+      setSlots(newSlots);
+      setFormData({});
+      setHistory(prev => [...prev, { type: 'user', message: "Row selected." }]);
+      proceedToNextNode(null, currentId, newSlots);
+      return;
+    }
+
+    // 4. (성공) formData 업데이트 (검색창 값 변경)
+    setFormData(prevData => ({
+      ...prevData,
+      [searchElement.name]: firstColumnValue
+    }));
+
+    // 5. slots 업데이트 (그리드 데이터 지우기 + selectedRow 설정)
+    const newSlots = {
+      ...slots,
+      [gridElement.optionsSlot]: [], // 그리드 숨기기
+      selectedRow: rowData        // selectedRow는 여전히 저장
+    };
+    setSlots(newSlots);
   };
-  // <<< [추가 끝] >>>
+
+  const handleExcelUpload = () => {
+    alert('Excel Upload button clicked! (Logic not implemented yet)');
+  };
 
   return (
     <div className={`${styles.simulator} ${isExpanded ? styles.expanded : ''}`}>
@@ -147,8 +215,9 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
             formData={formData}
             handleFormInputChange={handleFormInputChange}
             handleFormMultiInputChange={handleFormMultiInputChange}
-            handleGridRowClick={handleGridRowClick} // 💡 [추가된 부분]
-            onExcelUpload={handleExcelUpload} // <<< [추가]
+            handleGridRowClick={handleGridRowClick}
+            onExcelUpload={handleExcelUpload}
+            handleFormElementApiCall={handleFormElementApiCall} 
         />
        )
       }
@@ -157,7 +226,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
         currentNode={currentNode}
         isStarted={isStarted}
         onTextInputSend={handleTextInputSend}
-        onOptionClick={handleOptionClick}
+        onOptionClick={handleOptionClick} 
       />
     </div>
   );
