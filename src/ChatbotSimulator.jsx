@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import useStore from './store';
 import styles from './ChatbotSimulator.module.css';
 import { useChatFlow } from './hooks/useChatFlow';
-import { validateInput, interpolateMessage, getNestedValue } from './simulatorUtils';
+import { validateInput, interpolateMessage, getNestedValue, setNestedValue } from './simulatorUtils';
 import SimulatorHeader from './components/simulator/SimulatorHeader';
 import MessageHistory from './components/simulator/MessageHistory';
 import UserInput from './components/simulator/UserInput';
@@ -205,15 +205,22 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
     }));
 
     // 6. slots 업데이트 (그리드 데이터 지우기 + selectedRow 설정)
-    const newSlots = {
-      ...slots,
-      [gridElement.optionsSlot]: [], // 그리드 숨기기 (shallow update)
-      selectedRow: rowData        // selectedRow는 여전히 저장
-    };
+    
+    // 💡 수정: 얕은 복사본을 만들어 setNestedValue로 deep path를 빈 배열로 업데이트
+    // JSON.parse(JSON.stringify(slots))를 사용하지 않고 spread syntax를 사용하면 깊은 복사가 되지 않지만,
+    // setNestedValue가 경로를 따라가며 필요한 객체를 생성/수정하므로, newSlots = { ...slots, selectedRow: rowData } 후
+    // setNestedValue(newSlots, ...)를 호출하면 원하는 깊은 경로의 값이 업데이트됩니다.
+    const newSlots = { ...slots, selectedRow: rowData }; // selectedRow는 얕게 덮어쓰기
+    
+    if (gridElement.optionsSlot) {
+        setNestedValue(newSlots, gridElement.optionsSlot, []); // 깊은 경로를 빈 배열로 설정
+    }
+    
     setSlots(newSlots);
     
-    // 7. 히스토리에 사용자 동작 추가 (삭제됨: 사용자의 요청에 따라 연결된 search가 있을 경우 메시지를 표시하지 않고 다음 노드로 진행하지 않음)
-    // 8. 다음 노드로 진행 (Form 노드는 사용자 입력이 필요하므로 자동으로 진행되지 않음)
+    // 7. (이전: 히스토리에 사용자 동작 추가 및 다음 노드 진행)
+    // 연결된 search가 있을 경우, 다음 노드로 진행하지 않고 Form 입력을 유지합니다.
+    // Row selected 메시지를 표시하지 않습니다.
   };
 
   const handleExcelUpload = () => {
