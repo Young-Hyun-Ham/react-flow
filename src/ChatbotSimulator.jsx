@@ -212,8 +212,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
     };
     setSlots(newSlots);
     
-    // 7. 히스토리에 사용자 동작 추가
-    setHistory(prev => [...prev, { type: 'user', message: `Row selected: ${valueToFill}` }]);
+    // 7. 히스토리에 사용자 동작 추가 (삭제됨: 사용자의 요청에 따라 연결된 search가 있을 경우 메시지를 표시하지 않고 다음 노드로 진행하지 않음)
     // 8. 다음 노드로 진행 (Form 노드는 사용자 입력이 필요하므로 자동으로 진행되지 않음)
   };
 
