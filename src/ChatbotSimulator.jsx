@@ -104,7 +104,9 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
 
     const { apiConfig, resultSlot } = element;
     const searchTerm = formData[element.name] || '';
-    const allValues = { ...slots, value: searchTerm };
+    
+    // 💡 수정: slots와 formData를 모두 포함하여 폼의 다른 필드 값을 API 파라미터로 사용할 수 있게 합니다.
+    const allValues = { ...slots, ...formData, value: searchTerm }; 
     const method = apiConfig.method || 'POST'; 
 
     try {
@@ -207,9 +209,6 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
     // 6. slots 업데이트 (그리드 데이터 지우기 + selectedRow 설정)
     
     // 💡 수정: 얕은 복사본을 만들어 setNestedValue로 deep path를 빈 배열로 업데이트
-    // JSON.parse(JSON.stringify(slots))를 사용하지 않고 spread syntax를 사용하면 깊은 복사가 되지 않지만,
-    // setNestedValue가 경로를 따라가며 필요한 객체를 생성/수정하므로, newSlots = { ...slots, selectedRow: rowData } 후
-    // setNestedValue(newSlots, ...)를 호출하면 원하는 깊은 경로의 값이 업데이트됩니다.
     const newSlots = { ...slots, selectedRow: rowData }; // selectedRow는 얕게 덮어쓰기
     
     if (gridElement.optionsSlot) {
@@ -218,9 +217,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
     
     setSlots(newSlots);
     
-    // 7. (이전: 히스토리에 사용자 동작 추가 및 다음 노드 진행)
-    // 연결된 search가 있을 경우, 다음 노드로 진행하지 않고 Form 입력을 유지합니다.
-    // Row selected 메시지를 표시하지 않습니다.
+    // 7. 다음 노드로 진행하지 않음.
   };
 
   const handleExcelUpload = () => {
