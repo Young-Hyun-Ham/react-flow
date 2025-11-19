@@ -95,8 +95,24 @@ export const createFormElement = (elementType) => {
 
     switch (elementType) {
         case 'input':
-            // --- 💡 수정: defaultValueSlot 제거, defaultValue 추가 ---
             newElement = { id: newId, type: 'input', name: '', label: 'New Input', placeholder: '', validation: { type: 'text' }, defaultValue: '' };
+            break;
+        case 'search':
+            newElement = { 
+                id: newId, 
+                type: 'search', 
+                name: 'search_term', // 검색어 값이 저장될 키 (formData용)
+                label: 'New Search', 
+                placeholder: 'Enter search term...',
+                apiConfig: { // API 호출 설정
+                    url: '',
+                    method: 'POST',
+                    headers: '{}', // 💡 [추가] headers 필드 추가
+                    bodyTemplate: '{"query": "{{value}}"}' // {{value}}가 검색어로 치환됨
+                },
+                resultSlot: 'search_results', // API 결과가 저장될 슬롯 이름
+                inputFillKey: null // 💡 [추가] 그리드 행 클릭 시 검색 입력창에 채울 키
+            };
             break;
         case 'date':
             newElement = { id: newId, type: 'date', name: '', label: 'New Date', defaultValue: '' };
@@ -112,7 +128,7 @@ export const createFormElement = (elementType) => {
                 rows: rows,
                 columns: columns,
                 data: Array(rows * columns).fill(''),
-                displayKeys: [], // --- 💡 수정된 부분 ---
+                displayKeys: [],
             };
             break;
         case 'checkbox':

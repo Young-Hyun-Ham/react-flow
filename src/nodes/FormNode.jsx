@@ -13,7 +13,6 @@ function FormNode({ id, data }) {
   // (isAnchored, isStartNode 로직 제거)
 
   const renderElementPreview = (element) => {
-    // ... (기존 renderElementPreview 함수 내용은 동일)
      switch (element.type) {
       case 'input':
         return (
@@ -25,6 +24,27 @@ function FormNode({ id, data }) {
               placeholder={element.placeholder || ''}
               readOnly
             />
+          </div>
+        );
+      case 'search':
+        return (
+          <div key={element.id} className={styles.previewElement}>
+            <label className={styles.previewLabel}>{element.label || 'Search'}</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <input
+                type="text"
+                className={styles.previewInput}
+                placeholder={element.placeholder || ''}
+                readOnly
+                style={{ flexGrow: 1 }}
+              />
+              <span style={{ padding: '0 4px', fontSize: '1.2rem' }}>🔍</span>
+            </div>
+            {element.resultSlot && (
+              <div className={styles.slotBindingInfo}>
+                Result Slot: {`{${element.resultSlot}}`}
+              </div>
+            )}
           </div>
         );
       case 'date':

@@ -14,6 +14,18 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
     onUpdate(index, { ...element, [field]: value });
   };
 
+  // --- 💡 [추가] API 설정(중첩 객체)을 위한 핸들러 ---
+  const handleApiConfigChange = (field, value) => {
+    onUpdate(index, { 
+      ...element, 
+      apiConfig: { 
+        ...element.apiConfig, 
+        [field]: value 
+      } 
+    });
+  };
+  // --- 💡 [추가 끝] ---
+
   const handleValidationChange = (field, value) => {
     onUpdate(index, { ...element, validation: { ...element.validation, [field]: value } });
   };
@@ -116,6 +128,114 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
           </div>
         </>
       )}
+
+      {/* --- 💡 [수정] 'search' 엘리먼트 설정 UI --- */}
+      {element.type === 'search' && (
+        <>
+          <div className={styles.formGroup}>
+            <label>Placeholder</label>
+            <input 
+              type="text" 
+              value={element.placeholder || ''} 
+              onChange={(e) => handleInputChange('placeholder', e.target.value)} 
+            />
+          </div>
+          
+          {/* --- 💡 [추가] API Method 선택 드롭다운 --- */}
+          <div className={styles.formGroup}>
+            <label>API Method</label>
+            <select
+              value={element.apiConfig?.method || 'POST'}
+              onChange={(e) => handleApiConfigChange('method', e.target.value)}
+            >
+              <option value="POST">POST</option>
+              <option value="GET">GET</option>
+            </select>
+          </div>
+          {/* --- 💡 [추가 끝] --- */}
+
+          <div className={styles.formGroup}>
+            <label>API URL</label>
+            <input
+              type="text"
+              placeholder="https://api.example.com/search"
+              value={element.apiConfig?.url || ''}
+              onChange={(e) => handleApiConfigChange('url', e.target.value)}
+            />
+            {/* --- 💡 [추가] GET 방식일 때 URL 도움말 --- */}
+            {(element.apiConfig?.method === 'GET') && (
+              <p className={styles.instructionText} style={{ marginTop: '4px', fontSize: '0.75rem' }}>
+                GET 요청 시, <code>{`{{value}}`}</code>를 URL에 직접 포함하세요.
+                <br />
+                예: <code>https://api.example.com/search?q={"{{"}value{`}}`}</code>
+              </p>
+            )}
+            {/* --- 💡 [추가 끝] --- */}
+          </div>
+          
+          {/* --- 💡 [추가] Headers (JSON) 입력란 --- */}
+          <div className={styles.formGroup}>
+            <label>Headers (JSON) <span style={{fontWeight: 'normal', color: '#888'}}>(Optional)</span></label>
+            <textarea
+              value={element.apiConfig?.headers || '{}'}
+              onChange={(e) => handleApiConfigChange('headers', e.target.value)}
+              rows={4}
+            />
+             <p className={styles.instructionText} style={{ marginTop: '4px', fontSize: '0.75rem' }}>
+               Use <code>{`{{slotName}}`}</code> for dynamic values in JSON header strings.
+            </p>
+          </div>
+          {/* --- 💡 [추가 끝] --- */}
+
+          {/* --- 💡 [수정] 'POST' (또는 기본값)일 때만 Body Template 표시 --- */}
+          {(element.apiConfig?.method !== 'GET') && (
+            <div className={styles.formGroup}>
+              <label>Body Template (JSON)</label>
+              <textarea
+                value={element.apiConfig?.bodyTemplate || '{"query": "{{value}}"}'}
+                onChange={(e) => handleApiConfigChange('bodyTemplate', e.target.value)}
+                rows={4}
+              />
+              <p className={styles.instructionText} style={{ marginTop: '4px', fontSize: '0.75rem' }}>
+                Use <code>{`{{value}}`}</code> to insert the search term.
+                You can also use other slots like <code>{`{{slotName}}`}</code>.
+              </p>
+            </div>
+          )}
+          {/* --- 💡 [수정 끝] --- */}
+
+          {/* --- 👇 [추가] Input Fill Key 설정 --- */}
+          <div className={styles.formGroup}>
+            <label>Input Fill Key <span style={{fontWeight: 'normal', color: '#888'}}>(Optional)</span></label>
+            <input
+              type="text"
+              placeholder="e.g., product_name or id"
+              value={element.inputFillKey || ''}
+              onChange={(e) => handleInputChange('inputFillKey', e.target.value)}
+            />
+            <p className={styles.instructionText} style={{ marginTop: '4px', fontSize: '0.75rem' }}>
+              Key from the selected grid row to fill the search input field.
+              (Defaults to the first column if empty)
+            </p>
+          </div>
+          {/* --- 👆 [추가 끝] --- */}
+
+          <div className={styles.formGroup}>
+            <label>Result Slot</label>
+            <input
+              type="text"
+              placeholder="e.g., search_results"
+              value={element.resultSlot || ''}
+              onChange={(e) => handleInputChange('resultSlot', e.target.value)}
+            />
+            <p className={styles.instructionText} style={{ marginTop: '4px', fontSize: '0.75rem' }}>
+              The API response data will be stored in this slot.
+              A Grid element can use this slot in its 'Data Slot' field.
+            </p>
+          </div>
+        </>
+      )}
+      {/* --- 💡 [수정 끝] --- */}
 
       {element.type === 'grid' && (
         <>
@@ -344,7 +464,9 @@ function FormNodeController({ localNode, setLocalNode, backend }) {
     };
 
     const { data } = localNode;
-    const elementTabs = ['input', 'date', 'grid', 'checkbox', 'dropbox'];
+    // --- 💡 [수정] 'search' 탭 추가 ---
+    const elementTabs = ['input', 'search', 'date', 'grid', 'checkbox', 'dropbox'];
+    // --- 💡 [수정 끝] ---
     const elements = data.elements || [];
     const selectedElementIndex = elements.findIndex(el => el.id === selectedElementId);
     const selectedElement = selectedElementIndex > -1 ? elements[selectedElementIndex] : null;
