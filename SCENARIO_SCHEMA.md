@@ -347,6 +347,28 @@ JSON
   "options": "(string | {label: string, value: string})[] | undefined", // Fallback options
   "defaultValue": "string | undefined" // Initially selected value
 }
+
+search Element
+
+JSON
+
+JSON
+
+{
+  "id": "string",
+  "type": "search",
+  "name": "string",        // Slot name to store the search term
+  "label": "string",
+  "placeholder": "string | undefined",
+  "apiConfig": {
+    "url": "string",
+    "method": "'GET' | 'POST'",
+    "headers": "string | undefined", // (Optional) JSON string for headers. Supports {slotName} interpolation.
+    "bodyTemplate": "string | undefined" // (Optional) JSON string, used if method is 'POST'. '{{value}}' is replaced.
+  },
+  "resultSlot": "string" // Slot name to store the API response (e.g., an array for a grid)
+}
+
 Edge Object Structure
 
 JSON

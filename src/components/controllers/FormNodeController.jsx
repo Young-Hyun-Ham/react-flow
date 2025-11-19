@@ -1,3 +1,5 @@
+// src/components/controllers/FormNodeController.jsx
+
 import { useState, useEffect } from 'react';
 import styles from '../../NodeController.module.css';
 import { createFormElement } from '../../nodeFactory';
@@ -172,6 +174,20 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
             )}
             {/* --- 💡 [추가 끝] --- */}
           </div>
+          
+          {/* --- 💡 [추가] Headers (JSON) 입력란 --- */}
+          <div className={styles.formGroup}>
+            <label>Headers (JSON) <span style={{fontWeight: 'normal', color: '#888'}}>(Optional)</span></label>
+            <textarea
+              value={element.apiConfig?.headers || '{}'}
+              onChange={(e) => handleApiConfigChange('headers', e.target.value)}
+              rows={4}
+            />
+             <p className={styles.instructionText} style={{ marginTop: '4px', fontSize: '0.75rem' }}>
+               Use <code>{`{{slotName}}`}</code> for dynamic values in JSON header strings.
+            </p>
+          </div>
+          {/* --- 💡 [추가 끝] --- */}
 
           {/* --- 💡 [수정] 'POST' (또는 기본값)일 때만 Body Template 표시 --- */}
           {(element.apiConfig?.method !== 'GET') && (

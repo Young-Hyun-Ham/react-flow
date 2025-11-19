@@ -107,6 +107,7 @@ export const createFormElement = (elementType) => {
                 apiConfig: { // API 호출 설정
                     url: '',
                     method: 'POST',
+                    headers: '{}', // 💡 [추가] headers 필드 추가
                     bodyTemplate: '{"query": "{{value}}"}' // {{value}}가 검색어로 치환됨
                 },
                 resultSlot: 'search_results' // API 결과가 저장될 슬롯 이름

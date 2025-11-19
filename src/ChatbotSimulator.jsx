@@ -1,3 +1,5 @@
+// src/ChatbotSimulator.jsx
+
 import { useState, useEffect, useCallback } from 'react';
 import useStore from './store';
 import styles from './ChatbotSimulator.module.css';
@@ -107,15 +109,33 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
 
     try {
       const interpolatedUrl = interpolateMessage(apiConfig.url, allValues);
+      
+      // --- 💡 [수정] Headers 처리 ---
+      const rawHeaders = apiConfig.headers || '{}';
+      let interpolatedHeaders = {};
+      try {
+          const interpolatedHeadersString = interpolateMessage(rawHeaders, allValues);
+          interpolatedHeaders = JSON.parse(interpolatedHeadersString);
+      } catch (e) {
+          console.warn("Invalid Headers JSON or interpolation error:", rawHeaders, e);
+      }
+      // --- 💡 [수정 끝] ---
+
 
       const fetchOptions = {
         method: method,
-        headers: {},
+        headers: {
+            // 기본 Content-Type 설정 및 interpolatedHeaders 병합
+            'Content-Type': 'application/json',
+            ...interpolatedHeaders
+        },
       };
 
-      if (method === 'POST') {
-        const interpolatedBody = interpolateMessage(apiConfig.bodyTemplate, allValues);
-        fetchOptions.headers['Content-Type'] = 'application/json';
+      if (method === 'GET') {
+          // GET 요청 시 Body 필드를 제거
+          delete fetchOptions.headers['Content-Type']; 
+      } else if (method === 'POST') {
+        const interpolatedBody = interpolateMessage(apiConfig.bodyTemplate || '{}', allValues);
         fetchOptions.body = interpolatedBody;
       }
       
