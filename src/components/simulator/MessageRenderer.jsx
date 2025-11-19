@@ -76,7 +76,9 @@ const BotMessagePart = ({
 
                     // --- 💡 [수정] Grid 렌더링 로직 (숨김 처리) ---
                     if (el.type === 'grid') {
-                        const gridDataFromSlot = el.optionsSlot ? slots[el.optionsSlot] : null;
+                        // 💡 수정: getNestedValue를 사용하여 슬롯 이름(경로)으로 실제 데이터를 가져옵니다.
+                        const gridDataFromSlot = el.optionsSlot ? getNestedValue(slots, el.optionsSlot) : null;
+                        
                         const hasSlotData = Array.isArray(gridDataFromSlot) && gridDataFromSlot.length > 0;
 
                         if (hasSlotData) {
@@ -220,7 +222,8 @@ const BotMessagePart = ({
                             ))}
                             
                             {el.type === 'dropbox' && (() => { 
-                                const options = Array.isArray(slots[el.optionsSlot]) ? slots[el.optionsSlot] : el.options; 
+                                // 💡 수정: getNestedValue를 사용하여 중첩 경로를 지원합니다.
+                                const options = Array.isArray(getNestedValue(slots, el.optionsSlot)) ? getNestedValue(slots, el.optionsSlot) : el.options; 
                                 return (
                                     <select
                                         className={styles.formInput}
