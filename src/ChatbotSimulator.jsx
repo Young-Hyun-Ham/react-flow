@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import useStore from './store';
 import styles from './ChatbotSimulator.module.css';
 import { useChatFlow } from './hooks/useChatFlow';
-import { validateInput, interpolateMessage } from './simulatorUtils';
+import { validateInput, interpolateMessage, getNestedValue } from './simulatorUtils';
 import SimulatorHeader from './components/simulator/SimulatorHeader';
 import MessageHistory from './components/simulator/MessageHistory';
 import UserInput from './components/simulator/UserInput';
@@ -161,21 +161,13 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
       return;
     }
 
-    // 1. 클릭된 행에서 첫 번째 컬럼 값 찾기
-    const gridKeys = (gridElement.displayKeys && gridElement.displayKeys.length > 0) 
-      ? gridElement.displayKeys.map(k => k.key) 
-      : Object.keys(rowData);
-      
-    const firstColumnKey = gridKeys[0];
-    const firstColumnValue = firstColumnKey ? rowData[firstColumnKey] : '';
-
-    // 2. 이 그리드와 연결된 'search' 엘리먼트 찾기
+    // 1. 이 그리드와 연결된 'search' 엘리먼트 찾기
     const searchElement = currentNode.data.elements.find(
       e => e.type === 'search' && e.resultSlot === gridElement.optionsSlot
     );
 
     if (!searchElement || !searchElement.name) {
-      // 3. (Fallback)
+      // 2. (Fallback) - search element가 없으면 기본 로직 수행
       completeCurrentInteraction();
       const newSlots = { ...slots, ...formData, selectedRow: rowData };
       setSlots(newSlots);
@@ -185,10 +177,27 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
       return;
     }
 
+    // 3. searchElement에 inputFillKey가 지정되어 있는지 확인하고 채울 값 결정
+    const inputFillKey = searchElement.inputFillKey;
+    let valueToFill;
+
+    if (inputFillKey && rowData[inputFillKey] !== undefined) {
+      // 3a. inputFillKey가 지정되어 있고 rowData에 해당 키가 있으면 해당 값을 사용
+      valueToFill = rowData[inputFillKey];
+    } else {
+      // 3b. inputFillKey가 없거나 rowData에 해당 키가 없으면 기존 로직 (첫 번째 컬럼 값) 사용
+      const gridKeys = (gridElement.displayKeys && gridElement.displayKeys.length > 0) 
+        ? gridElement.displayKeys.map(k => k.key) 
+        : Object.keys(rowData);
+        
+      const firstColumnKey = gridKeys[0];
+      valueToFill = firstColumnKey ? rowData[firstColumnKey] : '';
+    }
+
     // 4. (성공) formData 업데이트 (검색창 값 변경)
     setFormData(prevData => ({
       ...prevData,
-      [searchElement.name]: firstColumnValue
+      [searchElement.name]: valueToFill
     }));
 
     // 5. slots 업데이트 (그리드 데이터 지우기 + selectedRow 설정)

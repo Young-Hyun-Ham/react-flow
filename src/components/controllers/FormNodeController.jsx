@@ -1,5 +1,3 @@
-// src/components/controllers/FormNodeController.jsx
-
 import { useState, useEffect } from 'react';
 import styles from '../../NodeController.module.css';
 import { createFormElement } from '../../nodeFactory';
@@ -205,6 +203,22 @@ function ElementEditor({ element, index, onUpdate, onDelete, onGridCellChange })
             </div>
           )}
           {/* --- 💡 [수정 끝] --- */}
+
+          {/* --- 👇 [추가] Input Fill Key 설정 --- */}
+          <div className={styles.formGroup}>
+            <label>Input Fill Key <span style={{fontWeight: 'normal', color: '#888'}}>(Optional)</span></label>
+            <input
+              type="text"
+              placeholder="e.g., product_name or id"
+              value={element.inputFillKey || ''}
+              onChange={(e) => handleInputChange('inputFillKey', e.target.value)}
+            />
+            <p className={styles.instructionText} style={{ marginTop: '4px', fontSize: '0.75rem' }}>
+              Key from the selected grid row to fill the search input field.
+              (Defaults to the first column if empty)
+            </p>
+          </div>
+          {/* --- 👆 [추가 끝] --- */}
 
           <div className={styles.formGroup}>
             <label>Result Slot</label>

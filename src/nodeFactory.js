@@ -110,7 +110,8 @@ export const createFormElement = (elementType) => {
                     headers: '{}', // 💡 [추가] headers 필드 추가
                     bodyTemplate: '{"query": "{{value}}"}' // {{value}}가 검색어로 치환됨
                 },
-                resultSlot: 'search_results' // API 결과가 저장될 슬롯 이름
+                resultSlot: 'search_results', // API 결과가 저장될 슬롯 이름
+                inputFillKey: null // 💡 [추가] 그리드 행 클릭 시 검색 입력창에 채울 키
             };
             break;
         case 'date':
