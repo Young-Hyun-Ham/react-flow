@@ -110,7 +110,7 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
     try {
       const interpolatedUrl = interpolateMessage(apiConfig.url, allValues);
       
-      // --- 💡 [수정] Headers 처리 ---
+      // Headers 처리
       const rawHeaders = apiConfig.headers || '{}';
       let interpolatedHeaders = {};
       try {
@@ -119,7 +119,6 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
       } catch (e) {
           console.warn("Invalid Headers JSON or interpolation error:", rawHeaders, e);
       }
-      // --- 💡 [수정 끝] ---
 
 
       const fetchOptions = {
@@ -161,13 +160,18 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
       return;
     }
 
-    // 1. 이 그리드와 연결된 'search' 엘리먼트 찾기
+    // 1. 그리드의 Data Slot에서 최상위 슬롯 키를 추출 (예: 'key1.key2.array' -> 'key1')
+    const gridSlotPath = gridElement.optionsSlot;
+    const rootSlotKey = gridSlotPath ? gridSlotPath.split('.')[0] : null;
+
+    // 2. 이 그리드와 연결된 'search' 엘리먼트 찾기
+    //    조건: search element의 resultSlot이 grid의 최상위 슬롯 키와 일치해야 함
     const searchElement = currentNode.data.elements.find(
-      e => e.type === 'search' && e.resultSlot === gridElement.optionsSlot
-    );
+      e => e.type === 'search' && e.resultSlot === rootSlotKey
+    ); //
 
     if (!searchElement || !searchElement.name) {
-      // 2. (Fallback) - search element가 없으면 기본 로직 수행
+      // 3. (Fallback) - search element가 없으면 기본 로직 수행
       completeCurrentInteraction();
       const newSlots = { ...slots, ...formData, selectedRow: rowData };
       setSlots(newSlots);
@@ -177,15 +181,15 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
       return;
     }
 
-    // 3. searchElement에 inputFillKey가 지정되어 있는지 확인하고 채울 값 결정
+    // 4. searchElement에 inputFillKey가 지정되어 있는지 확인하고 채울 값 결정
     const inputFillKey = searchElement.inputFillKey;
     let valueToFill;
 
     if (inputFillKey && rowData[inputFillKey] !== undefined) {
-      // 3a. inputFillKey가 지정되어 있고 rowData에 해당 키가 있으면 해당 값을 사용
+      // 4a. inputFillKey가 지정되어 있고 rowData에 해당 키가 있으면 해당 값을 사용
       valueToFill = rowData[inputFillKey];
     } else {
-      // 3b. inputFillKey가 없거나 rowData에 해당 키가 없으면 기존 로직 (첫 번째 컬럼 값) 사용
+      // 4b. inputFillKey가 없거나 rowData에 해당 키가 없으면 기존 로직 (첫 번째 컬럼 값) 사용
       const gridKeys = (gridElement.displayKeys && gridElement.displayKeys.length > 0) 
         ? gridElement.displayKeys.map(k => k.key) 
         : Object.keys(rowData);
@@ -194,19 +198,23 @@ function ChatbotSimulator({ nodes, edges, isVisible, isExpanded, setIsExpanded }
       valueToFill = firstColumnKey ? rowData[firstColumnKey] : '';
     }
 
-    // 4. (성공) formData 업데이트 (검색창 값 변경)
+    // 5. (성공) formData 업데이트 (검색창 값 변경)
     setFormData(prevData => ({
       ...prevData,
       [searchElement.name]: valueToFill
     }));
 
-    // 5. slots 업데이트 (그리드 데이터 지우기 + selectedRow 설정)
+    // 6. slots 업데이트 (그리드 데이터 지우기 + selectedRow 설정)
     const newSlots = {
       ...slots,
-      [gridElement.optionsSlot]: [], // 그리드 숨기기
+      [gridElement.optionsSlot]: [], // 그리드 숨기기 (shallow update)
       selectedRow: rowData        // selectedRow는 여전히 저장
     };
     setSlots(newSlots);
+    
+    // 7. 히스토리에 사용자 동작 추가
+    setHistory(prev => [...prev, { type: 'user', message: `Row selected: ${valueToFill}` }]);
+    // 8. 다음 노드로 진행 (Form 노드는 사용자 입력이 필요하므로 자동으로 진행되지 않음)
   };
 
   const handleExcelUpload = () => {
