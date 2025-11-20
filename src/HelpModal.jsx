@@ -26,6 +26,9 @@ const HelpManual = () => (
  {/* --- 👇 [수정] Clone 기능 추가 --- */}
  <li><strong>Edit/Clone/Delete Scenario</strong>: Use the <code>Edit</code> icon to change the name or job type, the <code>Clone</code> icon to duplicate the scenario with a new name, or the <code>Delete</code> icon to permanently remove the scenario.</li>
  {/* --- 👆 [수정 끝] --- */}
+ {/* --- 👇 [추가] 이름 규칙 설명 --- */}
+ <li><strong>Naming Rules</strong>: Scenario names cannot contain <code>/</code> or <code>+</code> characters.</li>
+ {/* --- 👆 [추가 끝] --- */}
  </ul>
 
   <h2>3. Board Usage</h2>
@@ -227,6 +230,9 @@ const HelpManual_ko = () => (
  {/* --- 👇 [수정] Clone 기능 추가 --- */}
  <li><strong>시나리오 수정/복제/삭제</strong>: 각 항목 옆의 <code>수정</code> 아이콘으로 이름이나 Job 타입을 변경하고, <code>복제</code> 아이콘으로 시나리오를 새 이름으로 복제하며, <code>삭제</code> 아이콘으로 시나리오를 영구적으로 제거합니다.</li>
  {/* --- 👆 [수정 끝] --- */}
+ {/* --- 👇 [추가] 이름 규칙 설명 --- */}
+ <li><strong>이름 규칙</strong>: 시나리오 이름에는 <code>/</code> 또는 <code>+</code> 문자를 사용할 수 없습니다.</li>
+ {/* --- 👆 [추가 끝] --- */}
  </ul>
 
  <h2>3. 게시판 사용법</h2>
@@ -427,6 +433,9 @@ const HelpManual_vi = () => (
  <li><strong>Thêm kịch bản mới</strong>: Nhấp vào nút <code>+ Thêm kịch bản mới</code>, nhập tên kịch bản và chọn loại công việc (job type) để tạo một luồng hội thoại mới.</li>
  <li><strong>Chọn kịch bản</strong>: Nhấp vào tên kịch bản trong danh sách để điều hướng đến màn hình chỉnh sửa của kịch bản đó.</li>
  <li><strong>Chỉnh sửa/Sao chép/Xóa kịch bản</strong>: Sử dụng biểu tượng <code>Chỉnh sửa</code> để thay đổi tên hoặc loại công việc, biểu tượng <code>Sao chép</code> để nhân bản kịch bản với tên mới, hoặc biểu tượng <code>Xóa</code> để xóa vĩnh viễn kịch bản.</li>
+ {/* --- 👇 [추가] Quy tắc đặt tên --- */}
+ <li><strong>Quy tắc đặt tên</strong>: Tên kịch bản không được chứa các ký tự <code>/</code> hoặc <code>+</code>.</li>
+ {/* --- 👆 [추가 끝] --- */}
  </ul>
 
   <h2>3. Cách sử dụng Bảng tin</h2>

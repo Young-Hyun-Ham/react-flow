@@ -29,10 +29,20 @@ function ScenarioModal({ isOpen, onClose, onSave, scenario }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (name.trim()) {
+    const trimmedName = name.trim();
+
+    // <<< [추가] 특수문자 필터링 (/, +) >>>
+    const invalidCharsRegex = /[\/\+]/;
+    if (invalidCharsRegex.test(trimmedName)) {
+      showAlert("Scenario name cannot contain '/' or '+'.");
+      return;
+    }
+    // <<< [추가 끝] >>>
+
+    if (trimmedName) {
       // <<< [수정] job 값을 'Process'로 고정 (수정 시에는 기존 값 유지) >>>
       const jobToSave = isEditMode ? (scenario.job || 'Process') : 'Process';
-      onSave({ name: name.trim(), job: jobToSave, description: description.trim() });
+      onSave({ name: trimmedName, job: jobToSave, description: description.trim() });
       // --- [수정 끝] >>>
     } else {
       showAlert('Please enter a scenario name.');
