@@ -38,7 +38,7 @@ function App() {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       // ... (기존 인증 로직) ...
        if (currentUser) {
-        const allowedEmails = ['cutiefunny@gmail.com', 'hyh8414@gmail.com'];
+        const allowedEmails = ['cutiefunny@gmail.com', 'hyh8414@gmail.com', 'nuisance55@gmail.com'];
         const allowedDomains = ['cyberlogitec.com', 'wisenut.co.kr'];
         const userEmail = currentUser.email;
         const userDomain = userEmail.split('@')[1];
