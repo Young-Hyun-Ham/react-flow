@@ -136,18 +136,7 @@ export const saveScenarioData = async ({ scenario, data }) => {
   await setDoc(scenarioDocRef, saveData, { merge: true });
 };
 
-export const updateScenarioLastUsed = async ({ scenarioId }) => {
-  const docRef = doc(db, 'scenarios', scenarioId);
-  await updateDoc(docRef, {
-    lastUsedAt: serverTimestamp()
-  });
-  const updatedDocSnap = await getDoc(docRef);
-  if (updatedDocSnap.exists()) {
-    const data = updatedDocSnap.data();
-    return { id: updatedDocSnap.id, ...data };
-  }
-  return null;
-};
+
 
 
 // ... (API/Form 템플릿 함수들) ...
@@ -199,4 +188,34 @@ export const fetchNodeVisibility = async () => {
     return docSnap.data(); // { visibleNodeTypes: [...] } 반환
   }
   return null; // 데이터가 없음
+};
+
+// Node Colors
+export const fetchNodeColors = async () => {
+  const docRef = doc(db, "settings", "nodeColors");
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    return docSnap.data();
+  }
+  return null;
+};
+
+export const saveNodeColors = async (colors) => {
+  const docRef = doc(db, "settings", "nodeColors");
+  await setDoc(docRef, colors);
+};
+
+// Node Text Colors
+export const fetchNodeTextColors = async () => {
+  const docRef = doc(db, "settings", "nodeTextColors");
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    return docSnap.data();
+  }
+  return null;
+};
+
+export const saveNodeTextColors = async (textColors) => {
+  const docRef = doc(db, "settings", "nodeTextColors");
+  await setDoc(docRef, textColors);
 };

@@ -1,13 +1,24 @@
-const API_BASE_URL = '/api/proxy/chat/scenarios';
-const TENANT_ID = '1000';
-const STAGE_ID = 'DEV';
+// src/fastApi.js
+
+import {
+  MOCK_NODE_COLORS,
+  MOCK_NODE_TEXT_COLORS,
+  delay,
+} from './mockData';
+
+const BASE_URL = 'http://202.20.84.65:8083/api/v1/builder';
+
+// 리소스별 Base URL 정의
+const API_BASE_URL = `${BASE_URL}/scenarios`;
+const SETTINGS_BASE_URL = `${BASE_URL}/settings`;
+const TEMPLATE_BASE_URL = `${BASE_URL}/templates`;
 
 const handleApiResponse = async (response) => {
-    // ... (기존 에러 핸들링 로직) ...
     if (!response.ok) {
         let errorDetail = `HTTP error! status: ${response.status}`;
         try {
             const errorData = await response.json();
+            // FastAPI의 HTTPException detail 파싱
             errorDetail = errorData.detail ? JSON.stringify(errorData.detail) : errorDetail;
         } catch (e) {
             // JSON 파싱 실패 시, 상태 코드로 오류 메시지 설정
@@ -21,104 +32,105 @@ const handleApiResponse = async (response) => {
 };
 
 export const fetchScenarios = async () => {
-    const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}`);
+    // GET 요청 시 슬래시 유무 확인이 필요할 수 있습니다.
+    const response = await fetch(`${API_BASE_URL}`);
     const data = await handleApiResponse(response);
     const scenarios = data?.scenarios || (Array.isArray(data) ? data : []);
-    // <<< [수정] description 필드 추가 및 updatedAt/lastUsedAt 필드명 정규화 ---
+    
     return scenarios.map(scenario => ({
        ...scenario,
+       name: scenario.name || scenario.title || '',
+       title: scenario.title,
        job: scenario.job || 'Process',
-       description: scenario.description || '', // description 추가
-       updatedAt: scenario.updated_at || null, // 'updated_at'을 'updatedAt'으로 정규화
-       lastUsedAt: scenario.last_used_at || null, // 'last_used_at'을 'lastUsedAt'으로 정규화
+       description: scenario.description || '',
+       // Python snake_case -> JS camelCase 매핑
+       updatedAt: scenario.updated_at || null,
+       lastUsedAt: scenario.last_used_at || null,
     }));
-    // --- [수정 끝] >>>
 };
 
-// <<< [수정] description 파라미터 추가 ---
 export const createScenario = async ({ newScenarioName, job, description }) => {
-// --- [수정 끝] >>>
-    const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}`, {
+    // 💡 405 에러 해결을 위해 엔드포인트 뒤에 / 를 붙이거나 백엔드 라우팅 설정을 확인해야 합니다.
+    // 많은 경우 FastAPI는 /scenarios/ (POST) 처럼 마지막 슬래시를 명시적으로 요구할 수 있습니다.
+    const response = await fetch(`${API_BASE_URL}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // <<< [수정] description 필드 추가 ---
         body: JSON.stringify({
-            category_id: 'DEV_1000_S_1_1_1',
             name: newScenarioName,
             job: job,
-            description: description, // description 추가
+            description: description,
             nodes: [],
             edges: [],
             start_node_id: null
-            // last_used_at은 백엔드에서 null로 자동 설정 가정
         }),
-        // --- [수정 끝] >>>
     });
     const data = await handleApiResponse(response);
-    // <<< [수정] 응답에 description 추가 및 updatedAt/lastUsedAt 정규화 ---
-    return { ...data, startNodeId: data.start_node_id, description: data.description || '', updatedAt: data.updated_at || null, lastUsedAt: data.last_used_at || null };
-    // --- [수정 끝] >>>
+    return { 
+        ...data, 
+        startNodeId: data.start_node_id, 
+        description: data.description || '', 
+        updatedAt: data.updated_at || null, 
+        lastUsedAt: data.last_used_at || null 
+    };
 };
 
 export const cloneScenario = async ({ scenarioToClone, newName }) => {
-  const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}`, {
+  const response = await fetch(`${API_BASE_URL}/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    // <<< [수정] 복제 요청 시 description 포함 (백엔드 스키마에 따라 달라질 수 있음) ---
     body: JSON.stringify({
       name: newName,
       job: scenarioToClone.job,
       clone_from_id: scenarioToClone.id,
-      category_id: 'DEV_1000_S_1_1_1',
-      description: scenarioToClone.description // 필요시 추가
-      // last_used_at은 백엔드에서 null로 자동 설정 가정
+      description: scenarioToClone.description
     }),
-    // --- [수정 끝] >>>
   });
   const data = await handleApiResponse(response);
-  // <<< [수정] 응답에 description 추가 및 updatedAt/lastUsedAt 정규화 ---
-  return { ...data, startNodeId: data.start_node_id, description: data.description || '', updatedAt: data.updated_at || null, lastUsedAt: data.last_used_at || null };
-  // --- [수정 끝] >>>
+  return { 
+      ...data, 
+      startNodeId: data.start_node_id, 
+      description: data.description || '', 
+      updatedAt: data.updated_at || null, 
+      lastUsedAt: data.last_used_at || null 
+  };
 };
 
-// <<< [수정] description 파라미터 추가 ---
 export const renameScenario = async ({ oldScenario, newName, job, description }) => {
-// --- [수정 끝] >>>
-    const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}/${oldScenario.id}`, {
+    const response = await fetch(`${API_BASE_URL}/${oldScenario.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        // <<< [수정] 요청 본문에 description 추가 ---
         body: JSON.stringify({ name: newName, job: job, description: description }),
-        // --- [수정 끝] >>>
     });
     const data = await handleApiResponse(response);
-     // <<< [수정] 응답에 description 추가 및 updatedAt/lastUsedAt 정규화 ---
-    return { ...data, startNodeId: data.start_node_id, description: data.description || '', updatedAt: data.updated_at || null, lastUsedAt: data.last_used_at || null };
-     // --- [수정 끝] >>>
+    return { 
+        ...data, 
+        startNodeId: data.start_node_id, 
+        description: data.description || '', 
+        updatedAt: data.updated_at || null, 
+        lastUsedAt: data.last_used_at || null 
+    };
 };
 
 export const deleteScenario = async ({ scenarioId }) => {
-    const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}/${scenarioId}`, {
+    const response = await fetch(`${API_BASE_URL}/${scenarioId}`, {
         method: 'DELETE',
     });
     return handleApiResponse(response);
 };
 
 export const fetchScenarioData = async ({ scenarioId }) => {
-    if (!scenarioId) return { nodes: [], edges: [], startNodeId: null, description: '' }; // description 기본값 추가
-    const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}/${scenarioId}`);
+    if (!scenarioId) return { nodes: [], edges: [], startNodeId: null, description: '' };
+    const response = await fetch(`${API_BASE_URL}/${scenarioId}`);
     const data = await handleApiResponse(response);
-    // <<< [수정] description 로드 추가 및 updatedAt/lastUsedAt 정규화 ---
     return {
         ...data,
         nodes: data.nodes || [],
         edges: data.edges || [],
         startNodeId: data.start_node_id || null,
-        description: data.description || '', // description 추가
+        description: data.description || '',
         updatedAt: data.updated_at || null,
         lastUsedAt: data.last_used_at || null
     };
-    // --- [수정 끝] >>>
 };
 
 export const saveScenarioData = async ({ scenario, data }) => {
@@ -126,56 +138,128 @@ export const saveScenarioData = async ({ scenario, data }) => {
         throw new Error('No scenario selected to save.');
     }
 
-    // <<< [수정] payload에 description 포함 ---
     const payload = {
-        ten_id: TENANT_ID,
-        stg_id: STAGE_ID,
-        category_id: "DEV_1000_S_1_1_1",
         name: scenario.name,
         job: scenario.job,
-        description: scenario.description || '', // description 추가
+        description: scenario.description || '',
         nodes: data.nodes,
         edges: data.edges,
         start_node_id: data.startNodeId
-        // save는 updatedAt만 갱신 (백엔드 로직)
     };
-    // --- [수정 끝] >>>
 
-    const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}/${scenario.id}`, {
+    const response = await fetch(`${API_BASE_URL}/${scenario.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
     });
     const responseData = await handleApiResponse(response);
-    // <<< [수정] 응답에 description 추가 및 updatedAt/lastUsedAt 정규화 ---
-    return { ...responseData, startNodeId: responseData.start_node_id, description: responseData.description || '', updatedAt: responseData.updated_at || null, lastUsedAt: responseData.last_used_at || null };
-    // --- [수정 끝] >>>
+    return { 
+        ...responseData, 
+        startNodeId: responseData.start_node_id, 
+        description: responseData.description || '', 
+        updatedAt: responseData.updated_at || null
+    };
 };
 
-// --- 💡 [추가] lastUsedAt 업데이트 함수 (PATCH 사용) ---
-export const updateScenarioLastUsed = async ({ scenarioId }) => {
-  const response = await fetch(`${API_BASE_URL}/${TENANT_ID}/${STAGE_ID}/${scenarioId}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    // 백엔드가 last_used_at 필드를 현재 시간으로 업데이트하도록 요청
-    // (이 API 명세는 FastAPI Docs에 정의되어 있어야 함)
-    body: JSON.stringify({ last_used_at: new Date().toISOString() }), 
-  });
-  const data = await handleApiResponse(response);
-  return { ...data, startNodeId: data.start_node_id, description: data.description || '', updatedAt: data.updated_at || null, lastUsedAt: data.last_used_at || null };
-};
-// --- 💡 [추가 끝] ---
 
-// --- 💡 [추가] FastAPI용 템플릿 함수 (임시 구현) ---
-const notImplemented = () => {
-    console.warn("FastAPI 템플릿 기능은 아직 구현되지 않았습니다.");
-    return Promise.resolve([]); // 우선 빈 배열 반환
+
+// --- 템플릿 (API/Form) 관련 함수 ---
+
+// API Templates
+export const fetchApiTemplates = async () => {
+    const response = await fetch(`${TEMPLATE_BASE_URL}/api`);
+    return handleApiResponse(response);
 };
 
-export const fetchApiTemplates = notImplemented;
-export const saveApiTemplate = notImplemented;
-export const deleteApiTemplate = notImplemented;
-export const fetchFormTemplates = notImplemented;
-export const saveFormTemplate = notImplemented;
-export const deleteFormTemplate = notImplemented;
-// --- 💡 [추가 끝] ---
+export const saveApiTemplate = async (templateData) => {
+    const response = await fetch(`${TEMPLATE_BASE_URL}/api`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(templateData),
+    });
+    return handleApiResponse(response);
+};
+
+export const deleteApiTemplate = async (templateId) => {
+    const response = await fetch(`${TEMPLATE_BASE_URL}/api/${templateId}`, {
+        method: 'DELETE',
+    });
+    return handleApiResponse(response);
+};
+
+// Form Templates
+export const fetchFormTemplates = async () => {
+    const response = await fetch(`${TEMPLATE_BASE_URL}/form`);
+    return handleApiResponse(response);
+};
+
+export const saveFormTemplate = async (templateData) => {
+    const response = await fetch(`${TEMPLATE_BASE_URL}/form`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(templateData),
+    });
+    return handleApiResponse(response);
+};
+
+export const deleteFormTemplate = async (templateId) => {
+    const response = await fetch(`${TEMPLATE_BASE_URL}/form/${templateId}`, {
+        method: 'DELETE',
+    });
+    return handleApiResponse(response);
+};
+
+// --- 노드 표시 설정 (Settings) 관련 함수 (Mock 사용) ---
+
+export const saveNodeVisibility = async (visibleNodeTypes) => {
+    await delay();
+    console.log('[Mock API] Saved node visibility');
+    return { visibleNodeTypes };
+};
+
+export const fetchNodeVisibility = async () => {
+    await delay();
+    // 모든 노드 타입을 true로 반환
+    const allNodeTypes = {
+        message: true,
+        apiNode: true,
+        formNode: true,
+        branchNode: true,
+        delayNode: true,
+        setSlotNode: true,
+        slotFillingNode: true,
+        fixedMenuNode: true,
+        linkNode: true,
+        iframeNode: true,
+        toastNode: true,
+        llmNode: true,
+    };
+    console.log('[Mock API] Fetching node visibility');
+    return { visibleNodeTypes: allNodeTypes };
+};
+
+// Node Colors - Mock 사용
+export const fetchNodeColors = async () => {
+    await delay();
+    console.log('[Mock API] Fetching node colors');
+    return MOCK_NODE_COLORS;
+};
+
+export const saveNodeColors = async (colors) => {
+    await delay();
+    console.log('[Mock API] Saved node colors');
+    return colors;
+};
+
+// Node Text Colors - Mock 사용
+export const fetchNodeTextColors = async () => {
+    await delay();
+    console.log('[Mock API] Fetching node text colors');
+    return MOCK_NODE_TEXT_COLORS;
+};
+
+export const saveNodeTextColors = async (textColors) => {
+    await delay();
+    console.log('[Mock API] Saved node text colors');
+    return textColors;
+};
